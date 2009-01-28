@@ -1,0 +1,7 @@
+.project
+debug/
+bin/
+build/
+debug/
+doc/
+*~

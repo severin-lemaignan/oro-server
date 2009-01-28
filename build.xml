@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project oro-server">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/home/slemaign/work/prog/oro-server/OroServer.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Main-Class" value="laas.openrobots.ontology.connectors.OroServer"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="/home/slemaign/work/prog/oro-server/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/arq.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/commons-logging-1.1.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/concurrent.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/icu4j_3_4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/jena.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/log4j-1.2.12.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/stax-api-1.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/xercesImpl.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/xml-apis.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/usr/lib/eclipse/dropins/jdt/plugins/org.junit_3.8.2.v20080602-1318/junit.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/home/slemaign/applis/Jena-2.5.7/lib/iri.jar"/>
+        </jar>
+    </target>
+</project>
