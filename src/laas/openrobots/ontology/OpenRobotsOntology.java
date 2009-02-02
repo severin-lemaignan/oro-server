@@ -617,7 +617,6 @@ public class OpenRobotsOntology implements IOntologyServer {
 		Properties parameters = new Properties();
         try
 		{
-        	//TODO Be more flexible on the config file location and presence!
         	FileInputStream fstream = new FileInputStream(configFileURI);
         	parameters.load(fstream);
 			fstream.close();
