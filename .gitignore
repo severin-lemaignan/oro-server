@@ -2,6 +2,8 @@
 debug/
 bin/
 build/
-debug/
 doc/
+.classpath
+oro-server.jar
+start
 *~
