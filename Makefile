@@ -32,7 +32,7 @@ GROUPTESTS = "Tests Packages" "$(BASE_PACKAGE).tests*"
 
 all : oro-server doc
 
-oro-serveroro-jar
+oro-server: oro-jar
 	echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar' > $(JAR_DIR)/start
 	chmod +x $(JAR_DIR)/start
 

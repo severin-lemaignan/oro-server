@@ -53,7 +53,7 @@ import yarp.Value;
  * {@code OroServer} has a {@code main} function which expect a configuration file.<br/> 
  * For the server, the following options are currently available:
  * <ul>
- * <li><em>yarp = [enabled|disabled]</em>: set it to <em>true</em> to enable YARP bindings.</li>
+ * <li><em>yarp = [enabled|disabled]</em>: set it to <em>enabled</em> to enable YARP bindings.</li>
  * </ul>
  * YARP specific options:
  * <ul>

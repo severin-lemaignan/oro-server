@@ -346,7 +346,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#add(java.lang.String)
 	 */
-	public boolean add(String statement) throws IllegalStatementException
+	public void add(String statement) throws IllegalStatementException
 	{
 		if (verbose) System.out.print(" * Adding new statement ["+statement+"]...");
 				
@@ -368,13 +368,12 @@ public class OpenRobotsOntology implements IOntologyServer {
 			if (verbose) {
 				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
 				e.printStackTrace();
+				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
+				System.exit(1);
 			}			
-			return false;
 		}
 		
-		
 		if (verbose) System.out.println("done.");
-		return true;
 	}
 	
 	
@@ -689,6 +688,17 @@ public class OpenRobotsOntology implements IOntologyServer {
 		}
 		
 
+	}
+
+	@Override
+	public void clear(Resource subject, Property predicate) {
+		
+		
+	}
+
+	@Override
+	public void remove(Statement stmt) throws NotFoundException {
+		onto.remove(stmt);		
 	}
 
 
