@@ -143,7 +143,7 @@ public interface IOntologyServer {
 	 * @throws IllegalStatementException 
 	 * @see #createStatement(String) Syntax details.
 	 */
-	public abstract boolean add(String statement)
+	public abstract void add(String statement)
 			throws IllegalStatementException;
 
 	/**
@@ -301,5 +301,22 @@ public interface IOntologyServer {
 	 * @see #getInfos(String)
 	 */
 	public abstract Model getInfos(Resource resource) throws NotFoundException;
+	
+	/**
+	 * Remove a given statement from the ontology.
+	 * 
+	 * @param stmt The statement to remove from the ontology.
+	 * @throws NotFoundException thrown if no matching statement can be found.
+	 * @see #add(String)
+	 */
+	public abstract void remove(Statement stmt) throws NotFoundException;
+	
+	/**
+	 * Remove all statements matching (subject, predicate, ?).
+	 * 
+	 * @param subject The subject you want to clear a property.
+	 * @param predicate The property you want to clear.
+	 */
+	public abstract void clear(Resource subject, Property predicate);
 
 }

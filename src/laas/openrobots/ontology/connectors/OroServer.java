@@ -39,17 +39,12 @@ package laas.openrobots.ontology.connectors;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Vector;
-
-import com.hp.hpl.jena.rdf.model.Resource;
 
 import laas.openrobots.ontology.OpenRobotsOntology;
-import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.connectors.YarpConnector;
-import laas.openrobots.ontology.exceptions.IllegalStatementException;
-
-import yarp.*;
+import yarp.Bottle;
+import yarp.BufferedPortBottle;
+import yarp.Network;
+import yarp.Value;
 
 /**
  * {@code OroServer} is the door of the ontology for network client.</br>
