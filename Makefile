@@ -9,11 +9,12 @@ DOC_DIR = doc
 BASE_PACKAGE = laas.openrobots.ontology
 ENTRYPOINT = $(BASE_PACKAGE).connectors.OroServer
 
-OPENROBOTS_BASE = /home/slemaign/openrobots
-JENA_LIBS = $(OPENROBOTS_BASE)/java/Jena-2.5.7/lib
-JYARP_LIB = $(OPENROBOTS_BASE)/java/libjyarp/lib
+JAR_BASE = /home/slemaign/openrobots
+JENA_LIBS = $(JAR_BASE)/java/Jena-2.5.7/lib
+JYARP_LIB = $(JAR_BASE)/java/libjyarp/lib
 CLASSPATH = $(JENA_LIBS)/arq.jar:$(JENA_LIBS)/commons-logging-1.1.1.jar:$(JENA_LIBS)/concurrent.jar:$(JENA_LIBS)/icu4j_3_4.jar:$(JENA_LIBS)/jena.jar:$(JENA_LIBS)/log4j-1.2.12.jar:$(JENA_LIBS)/stax-api-1.0.jar:$(JENA_LIBS)/xercesImpl.jar:$(JENA_LIBS)/xml-apis.jar:$(JENA_LIBS)/junit.jar:$(JENA_LIBS)/iri.jar:$(JYARP_LIB)/libjyarp.jar
 
+JAVA = java
 JAVAC = javac
 JAVADOC = javadoc
 JAR = jar
@@ -33,11 +34,11 @@ GROUPTESTS = "Tests Packages" "$(BASE_PACKAGE).tests*"
 all : oro-server doc
 
 oro-server: oro-jar
-	echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar' > $(JAR_DIR)/start
+	/bin/echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar' > $(JAR_DIR)/start
 	chmod +x $(JAR_DIR)/start
 
 oro-jar: oro-build
-	echo -e "Class-Path: \n `echo $(CLASSPATH) | sed 's/:/ \n /g'`" > MANIFEST.MF
+	/bin/echo -e "Class-Path: \n `echo $(CLASSPATH) | sed 's/:/ \n /g'`" > MANIFEST.MF
 	$(JAR) cfme $(JAR_DIR)/oro-server.jar MANIFEST.MF $(ENTRYPOINT) -C $(BUILD_DIR) .
 	$(CLEAN) MANIFEST.MF
 
@@ -75,4 +76,7 @@ doc:
 	-J-Xmx180m \
 	-stylesheetfile $(SRC_DIR)/javadoc.css \
 	-subpackages $(BASE_PACKAGE)
+
+test: oro-server
+	$(JAVA) -classpath $(CLASSPATH):$(JAR_DIR)/$<.jar junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
 

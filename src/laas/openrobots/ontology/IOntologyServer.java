@@ -104,7 +104,8 @@ public interface IOntologyServer {
 	 *		System.out.println(result.nextSolution().toString());
 	 *	}
 	 * </pre>
-	 * This example would print all the instances existing in the ontology.
+	 * This example would print all the instances existing in the ontology.<br/>
+	 * Attention! Unlike other methods which take string representation of statements or resource, namespaces or namespace prefixes CAN NOT be omitted: {@code SELECT ?instance WHERE {?instance eats bananas}} won't match the same things as {@code SELECT ?instance WHERE {?instance oro:eats oro:bananas}} even if {@code oro} is the prefix of the default namespace. 
 	 * 
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
 	 * @return The result of the query as a Jena ResultSet.
@@ -122,7 +123,14 @@ public interface IOntologyServer {
 	public abstract String queryAsXML(String query);
 
 	/**
-	 * Adds a new statement to the ontology. Does nothing is the statement already exists.<br/>
+	 * Adds a new statement (assertion) to the ontology. Does nothing is the statement already exists.<br/>
+	 *   
+	 * @param statement The new statement.
+	 */
+	public abstract void add(Statement statement);
+	
+	/**
+	 * Adds a new statement (assertion) to the ontology from its string representation. Does nothing is the statement already exists.<br/>
 	 * 
 	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype. Cf an example below.</br>
 	 * 
@@ -136,16 +144,50 @@ public interface IOntologyServer {
 	 * <ul>
 	 * 	<li>{@code "oro:instance1 rdf:type oro:Class1"}</li>
 	 *  <li>{@code "oro:instance1 oro:dataProperty1 true^^xsd:boolean"}</li>
+	 *  <li>{@code "instance1 dataProperty1 true"} (if no namespace is specified, it uses the default one)</li>
 	 * </ul>
 	 *  
 	 * @param statement The new statement.
-	 * @return True if the statement has been successfully parsed (and added, if it didn't exist), false if an error occurs.
-	 * @throws IllegalStatementException 
-	 * @see #createStatement(String) Syntax details.
+	 * @see #add(Statement)
+	 * @see {@link #createStatement(String)} for more complete syntax details.
 	 */
-	public abstract void add(String statement)
-			throws IllegalStatementException;
+	public abstract void add(String statement) throws IllegalStatementException;
+	
+	/**
+	 * Adds a set of statements (assertions) to the ontology from their string representation.<br/>
+	 * If the statements are already present, nothing is done.
+	 * 
+	 * @param statements A vector of string representing statements to be inserted in the ontology.
+	 * @see {@link #add(String)} for details.
+	 */
+	public abstract void add(Vector<String> statements) throws IllegalStatementException;
+	
+	/**
+	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.
+	 * 
+	 * @param stmt The statement to remove from the ontology.
+	 * @see #add(String)
+	 */
+	public abstract void remove(Statement stmt);
 
+	/**
+	 * Remove a given statement (represented as a string) from the ontology. Does nothing if the statement doesn't exist.
+	 * 
+	 * @param stmt A string representing the statement to remove from the ontology.
+	 * @see #add(String)
+	 * @see #remove(Statement)
+	 */
+	public abstract void remove(String stmt) throws IllegalStatementException;
+	
+	/**
+	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
+	 * 
+	 * @param stmts A vector of strings representing the statements to remove from the ontology.
+	 * @see #add(Vector)
+	 * @see #remove(String)
+	 */
+	public abstract void remove(Vector<String> stmts) throws IllegalStatementException;
+	
 	/**
 	 * Tries to identify a resource given a set of partially defined statements (plus optional restrictions) about this resource.<br/>
 	 * 
@@ -301,22 +343,43 @@ public interface IOntologyServer {
 	 * @see #getInfos(String)
 	 */
 	public abstract Model getInfos(Resource resource) throws NotFoundException;
+
 	
 	/**
-	 * Remove a given statement from the ontology.
+	 * Remove all statements matching the partial statement.
+	 * Usage example:<br/>
+	 * <pre>
+	 * IOntologyServer myOntology = new OpenRobotsOntology();
+	 * Model results = myOntology.getInfos("ns:individual1");
 	 * 
-	 * @param stmt The statement to remove from the ontology.
-	 * @throws NotFoundException thrown if no matching statement can be found.
-	 * @see #add(String)
+	 * NodeIterator types = results.listObjectsOfProperty(myOntology.createProperty("rdf:type"));
+	 *
+	 * for ( ; types.hasNext() ; )
+	 * {
+	 *	System.out.println(types.nextNode().toString());
+	 * }
+	 * </pre>
+	 * 
+	 * @param partialStmt The partial statement representing a "mask" of statements to delete.
 	 */
-	public abstract void remove(Statement stmt) throws NotFoundException;
+	public abstract void clear(PartialStatement partialStmt);
 	
 	/**
-	 * Remove all statements matching (subject, predicate, ?).
+	 * Remove all statements matching the partial statement.
 	 * 
-	 * @param subject The subject you want to clear a property.
-	 * @param predicate The property you want to clear.
+	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
+	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
+	 * @see {@link #clear(PartialStatement)} for an example.
+	 * @see PartialStatement
 	 */
-	public abstract void clear(Resource subject, Property predicate);
+	public abstract void clear(String partialStmt) throws IllegalStatementException;
+	
+	
+	/**
+	 * Saves the in-memory ontology model to a RDF/XML file.
+	 * 
+	 * @param path The path and name of the OWL file to save to (for instance {@code ./ontos/saved.owl})
+	 */
+	public abstract void save(String path);
 
 }

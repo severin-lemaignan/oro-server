@@ -244,6 +244,26 @@ public class YarpConnector {
 		result.addString("true");
 		return result;
 	}
+	
+	/**
+	 * 
+	 * 
+	 */
+	public Bottle removeMultiple(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
+		Bottle result = Bottle.getNullBottle();
+		
+		result.clear();
+		
+		checkValidArgs(bottleToArray(args), 1);
+		
+		for (Value v : bottleToArray(args.pop().asList()))
+		{
+				oro.add(v.asString().c_str());
+		}
+		
+		result.addString("true");
+		return result;
+	}
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements plus restrictions about this resource.

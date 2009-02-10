@@ -36,6 +36,8 @@
 
 package laas.openrobots.ontology.tests;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
@@ -47,11 +49,21 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecException;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
+
 
 /**
  * This class holds unit tests to check that {@code liboro} works as expected.<br/>
@@ -236,22 +248,37 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
+		
+		Vector<String> stmts = new Vector<String>();
+		stmts.add("fish rdf:type Animal");
+		stmts.add("sparrow rdf:type Bird");
+		stmts.add("Bird rdfs:subClassOf Animal");
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements!");
+			e.printStackTrace();
+		}
+		
 		long intermediateTime = System.currentTimeMillis();
 		
+		//Note: there are easier ways to query to ontology for simple cases (see find() for instance). But it comes later in the unit tests.
 		ResultSet result =	oro.query(
 				"SELECT ?instances \n" +
 				"WHERE { \n" +
 				"?instances rdf:type oro:Animal}\n");
-		assertNotNull("query didn't answered anything!",result);
+		assertTrue("query didn't answer anything!",result.hasNext());
 
-		System.out.println("[UNITTEST] Statement added in roughly "+ (intermediateTime - startTime) + "ms, and ontology queried in roughly "+(System.currentTimeMillis()-intermediateTime)+"ms.");
+		System.out.println("[UNITTEST] One statement added in roughly "+ ((intermediateTime - startTime) / 4) + "ms, and ontology queried in roughly "+(System.currentTimeMillis()-intermediateTime)+"ms.");
 		
 		int count = 0;
-		while (result.hasNext()){
+		while (result.hasNext()){			
 			result.next();
 			count++;
 		}
-		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
+		assertEquals("Six individuals, instances of Animal, should be returned.", 6, count);
+		
+	
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -328,6 +355,175 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 
 		
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+//public void testRawRemoveAndClear() {
+//		
+//		System.out.println("[UNITTEST] ***** TEST: RAW Remove & Clear *****");
+//		
+//		Model tmp = ModelFactory.createOntologyModel();
+//		ResultSet result = null;
+//		
+//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#cow"), ResourceFactory.createProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
+//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#fish"), tmp.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
+//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#sparrow"), tmp.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#bird"));
+//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#bird"), ResourceFactory.createProperty("http://www.w3.org/2000/01/rdf-schema#subClassOf"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
+//
+//		
+//		String who_is_an_animal = "SELECT ?instances \n" +
+//				"WHERE { \n" +
+//				"?instances <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.laas.fr/~slemaign/onto#animal>}\n";
+//
+//		
+//		try	{
+//			Query myQuery = QueryFactory.create(who_is_an_animal, Syntax.syntaxSPARQL );
+//		
+//			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, tmp);
+//			result = myQueryExecution.execSelect();
+//		}
+//		catch (QueryParseException e) {
+//			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
+//			fail();
+//		}
+//		catch (QueryExecException e) {
+//			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
+//			fail();
+//		}
+//		
+//		FileOutputStream file = null;
+//		try {
+//			file = new FileOutputStream("/home/slemaign/Desktop/tmp.owl");
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//			System.exit(1);
+//		}
+//		tmp.write(file);
+//		
+//		int count = 0;
+//		while (result.hasNext()){
+//			result.nextSolution();
+//			count++;
+//		}
+//		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
+//		
+//		//Let's remove a statement: Birds are no more animals, and thus, the sparrow shouldn't be counted as an animal.
+//		try {
+//			oro.remove("Bird rdfs:subClassOf Animal");
+//		} catch (IllegalStatementException e) {
+//			fail("Error while removing a set of statements!");
+//			e.printStackTrace();
+//		}
+//		
+//		result = oro.query(who_is_an_animal);
+//		
+//		count = 0;
+//		while (result.hasNext()){
+//			System.out.println(result.next());
+//			count++;
+//		}
+//		assertEquals("Four individuals, instances of Animal, should be returned.", 5, count);
+//		
+//		String what_does_the_sparrow_eat = "SELECT ?food \n" +
+//		"WHERE { \n" +
+//		"oro:sparrow oro:eats ?food}\n";
+//
+//		result = oro.query(what_does_the_sparrow_eat);		
+//		count = 0;
+//		while (result.hasNext()){
+//			result.next();
+//			count++;
+//		}
+//		assertEquals("Two objects should be returned.", 2, count);
+//		
+
+//	}
+
+	/**
+	 * This test checks that the Remove and Clear methods work as expected.
+	 */
+	public void testRemoveAndClear() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
+		
+		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		
+		String who_is_an_animal = "SELECT ?instances \n" +
+				"WHERE { \n" +
+				"?instances rdf:type oro:Animal}\n";
+		
+		
+		Vector<String> stmts = new Vector<String>();
+		stmts.add("fish rdf:type Animal");
+		stmts.add("sparrow rdf:type Bird");
+		stmts.add("Bird rdfs:subClassOf Animal");
+		stmts.add("sparrow eats seeds");
+		stmts.add("sparrow eats butter");
+		
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements!");
+			e.printStackTrace();
+		}
+				
+		ResultSet result =	oro.query(who_is_an_animal);
+		
+		int count = 0;
+		while (result.hasNext()){
+			result.next();
+			count++;
+		}
+		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
+		
+		//Let's remove a statement: Birds are no more animals, and thus, the sparrow shouldn't be counted as an animal.
+		try {
+			oro.remove("Bird rdfs:subClassOf Animal");
+		} catch (IllegalStatementException e) {
+			fail("Error while removing a set of statements!");
+			e.printStackTrace();
+		}
+		
+		result = oro.query(who_is_an_animal);
+		
+		count = 0;
+		while (result.hasNext()){
+			System.out.println(result.next());
+			count++;
+		}
+		assertEquals("Four individuals, instances of Animal, should be returned.", 5, count);
+		
+		String what_does_the_sparrow_eat = "SELECT ?food \n" +
+		"WHERE { \n" +
+		"oro:sparrow oro:eats ?food}\n";
+
+		result = oro.query(what_does_the_sparrow_eat);		
+		count = 0;
+		while (result.hasNext()){
+			result.next();
+			count++;
+		}
+		assertEquals("Two objects should be returned.", 2, count);
+		
+		//Let's clear infos about what the sparrow eats.
+		
+		try {
+			oro.clear("sparrow eats ?food");
+		} catch (IllegalStatementException e) {
+			fail("Error while clearing statements!");
+			e.printStackTrace();
+		}
+		
+		result = oro.query(what_does_the_sparrow_eat);		
+		count = 0;
+		while (result.hasNext()){
+			System.out.println(result.next());
+			count++;
+		}
+		assertEquals("Nothing should be returned.", 0, count);
+		
+	
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

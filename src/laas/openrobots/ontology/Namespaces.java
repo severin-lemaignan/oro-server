@@ -93,12 +93,17 @@ public class Namespaces {
 	 */
 	public static String prefixes()
 	{
-		return 
-		"PREFIX owl: <" + owl_ns + "> \n" +
-		"PREFIX xsd: <" + xsd_ns + "> \n" +
-		"PREFIX rdf: <" + rdf_ns + "> \n" +
-		"PREFIX rdfs: <" + rdfs_ns + "> \n" +
-		"PREFIX oro: <"+ oro_ns +"> \n"; //OpenRobots namespace.
+		String result = "";
+		
+		for(String prefix: namespaces.keySet()){
+	        	result += "PREFIX "+ prefix + ": <" + namespaces.get(prefix) + "> \n";
+	    }
+	    
+		//Doesn't seem to work...
+		//result += "PREFIX <" + DEFAULT_NS + "> \n";
+		//result += "BASE <" + DEFAULT_NS + "> \n";
+		
+		return result;
 	}
 	
 	/**

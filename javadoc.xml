@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="javadoc">
-    <target name="javadoc">
-        <javadoc access="protected" author="true" classpath="/home/slemaign/applis/Jena-2.5.7/lib/xml-apis.jar:/home/slemaign/applis/Jena-2.5.7/lib/icu4j_3_4.jar:/home/slemaign/applis/Jena-2.5.7/lib/log4j-1.2.12.jar:/home/slemaign/applis/Jena-2.5.7/lib/stax-api-1.0.jar:/home/slemaign/applis/Jena-2.5.7/lib/commons-logging-1.1.1.jar:/home/slemaign/applis/Jena-2.5.7/lib/jena.jar:/home/slemaign/work/prog/java/libjyarp/libjyarp.jar:/home/slemaign/applis/Jena-2.5.7/lib/arq.jar:/home/slemaign/applis/Jena-2.5.7/lib/concurrent.jar:/usr/lib/eclipse/dropins/jdt/plugins/org.junit_3.8.2.v20080602-1318/junit.jar:/home/slemaign/applis/Jena-2.5.7/lib/lucene-core-2.3.1.jar:/home/slemaign/applis/Jena-2.5.7/lib/xercesImpl.jar:/home/slemaign/applis/Jena-2.5.7/lib/iri.jar" destdir="doc" doctitle="OpenRobotsOntology Documentation" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="laas.openrobots.ontology.exceptions,laas.openrobots.ontology.connectors,laas.openrobots.ontology,laas.openrobots.ontology.tests" source="1.5" sourcefiles="src/yarp/Value.java,src/yarp/Bottle.java" sourcepath="src" splitindex="true" stylesheetfile="/home/slemaign/work/prog/oro-server/javadoc.css" use="true" version="true">
-            <link href="http://jena.sourceforge.net/javadoc/"/>
-            <link href="http://jena.sourceforge.net/ARQ/javadoc/"/>
-        </javadoc>
-    </target>
-</project>

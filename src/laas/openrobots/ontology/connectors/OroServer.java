@@ -49,7 +49,12 @@ import yarp.Value;
 /**
  * {@code OroServer} is the door of the ontology for network client.</br>
  * It relies on other classes to handle specific network protocols. Currently, only <a href="http://eris.liralab.it/yarp/">YARP</a> is implemented, through {@link YarpConnector}. Others (ROS...) may follow.<br/>
- * 
+ * <br/>
+ * <ul>
+ * <li>The main definition of the server interface is here {@link laas.openrobots.ontology.IOntologyServer}.</li>
+ * <li>If you need details on the YARP API, {@linkplain YarpConnector jump here}.</li>
+ * </ul>
+ * <br/>
  * {@code OroServer} has a {@code main} function which expect a configuration file.<br/> 
  * For the server, the following options are currently available:
  * <ul>
@@ -59,8 +64,7 @@ import yarp.Value;
  * <ul>
  * <li><em>yarp_input_port = PORT (default:oro)</em>: set the name of the YARP port where queries can be sent to the ontology server.</li> 
  * </ul>
- * 
- * See {@link laas.openrobots.ontology.OpenRobotsOntology#OpenRobotsOntology(String)} for others options, specific to the ontologies. Have a look at the config file itself for more details.
+ * <i>See {@link laas.openrobots.ontology.OpenRobotsOntology#OpenRobotsOntology(String)} for others options, specific to the ontologies. Have a look at the config file itself for more details.</i>
  *
  */
 public class OroServer {
@@ -157,8 +161,7 @@ public class OroServer {
 						} catch (InvocationTargetException e) {
 							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
 							result.clear();
-							result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");
-							
+							result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");							
 						}
         	    	}
         	    }

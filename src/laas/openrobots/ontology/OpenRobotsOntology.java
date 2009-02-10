@@ -41,6 +41,7 @@ package laas.openrobots.ontology;
 ///////////////
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -112,7 +113,8 @@ public class OpenRobotsOntology implements IOntologyServer {
 	 * <ul>
 	 * <li><em>verbose = [true|false]</em>: set it to <em>true</em> to get more infos from the engine.</li>
 	 * <li><em>ontology = PATH</em>: the path to the OWL (or RDF) ontology to be loaded.</li> 
-	 * <li><em>default_namespace = NAMESPACE</em>: set the default namespace. Don't forget the trailing #!
+	 * <li><em>default_namespace = NAMESPACE</em>: set the default namespace. Don't forget the trailing #!</li>
+	 * <li><em>short_namespaces = [true|false]</em> (default: true): if true, the ontology engine will return resource with prefix instead of full URI, or nothing if the resource is in the default namespace.</li>
 	 * </ul>
 	 * The file may contain other options, related to the server configuration. See {@link laas.openrobots.ontology.connectors.OroServer}. Have a look as well at the config file itself for more details.
 	 * 
@@ -245,11 +247,11 @@ public class OpenRobotsOntology implements IOntologyServer {
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
 		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
+			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
 			return null;
 		}
 		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
+			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
 			return null;
 		}
 		
@@ -272,97 +274,43 @@ public class OpenRobotsOntology implements IOntologyServer {
 			return null;
 	}
 	
-	/**
-	 * Updates a statement already present in the ontology. 
-	 * 
-	 * @deprecated
-	 * @param update The old and the new statements, separated by a "->" . For instance, "oro:individual1 oro:name 'Gerard' -> oro:individual1 oro:name 'Dédé'"
-	 * @return True if the statement has been successfully updated, else false.
-	 */
-	public boolean update(String update)
-	{
-		if (verbose) System.out.print(" * Processing update...");
-		String statements[] = update.split("->");
-		
-		if (statements.length != 2)
-		{
-			if (verbose) System.err.println("[ERROR] malformed update (2 statements were expected, got \""+update+"\").");
-			return false;
-		}
-		
-		String tokens_old_statement[] = statements[0].trim().split(" ");
-		
-		
-		if (tokens_old_statement.length != 3)
-		{
-			if (verbose) System.err.println("[ERROR] malformed original statement (3 tokens were expected, got \""+statements[0]+"\").");
-			return false;
-		}
-		
-		Resource subject = onto.getResource(tokens_old_statement[0]);
-		Property predicate = onto.getProperty(tokens_old_statement[1]);
-
-		if (!subject.hasProperty(predicate))
-		{
-			if (verbose) System.err.println("[ERROR] subject ("+subject.getLocalName()+") doesn't have this property ("+predicate.getLocalName()+").");
-			return false;
-		}
-		
-		Resource object = onto.getResource(tokens_old_statement[2]); //will return NULL if the last token is not a resource present in the ontology. In this case, we assume it's a litteral. If this token contain a semi-colon, we issue a warning (it was probably meant to be a resource)
-		
-		Statement originalStatement = onto.createStatement(subject, predicate, object);
-		
-		if (object==null)
-		{
-			if (tokens_old_statement[2].contains(":"))
-				if (verbose) System.out.println("[WARNING] original object ("+tokens_old_statement[2]+") contains a semi-colon, but couldn't be matched to an existing resource. We assume it's a litteral, but it's maybe a mistake.");
-			
-			originalStatement.changeObject(tokens_old_statement[2]); //change the object to use the string representation of the object (as plain literal) 
-
-		}
-				
-		if (!onto.contains(originalStatement))
-		{
-			if (verbose) System.err.println("[ERROR] the original statement \""+statements[0]+"\" was not found in the ontology. Unable to perform an update.");
-			return false;
-		}
-
-		String tokens_new_statement[] = statements[1].trim().split(" ");
-		
-		
-		if (tokens_new_statement.length != 3)
-		{
-			if (verbose) System.err.println("[ERROR] malformed new statement (3 tokens were expected, got \""+statements[1]+"\").");
-			return false;
-		}
-		
-				
-		//RDFNode object = onto.getRDFNode(tokens[2]);
-
-		if (verbose) System.out.println("done.");
-		return true;
-	}
-	
 	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(java.lang.String)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(Statement)
 	 */
-	public void add(String statement) throws IllegalStatementException
+	public void add(Statement statement)
 	{
 		if (verbose) System.out.print(" * Adding new statement ["+statement+"]...");
-				
-		Statement oprStatement = null;
 		
 		try {
-			oprStatement = createStatement(statement);
+			onto.add(statement);
+		}
+		catch (Exception e)
+		{
+			if (verbose) {
+				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
+				e.printStackTrace();
+				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
+				System.exit(1);
+			}			
+		}
+		
+		if (verbose) System.out.println("done.");
+	}
 
-			onto.add(oprStatement);
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(String)
+	 */
+	public void add(String rawStmt) throws IllegalStatementException
+	{
+		if (verbose) System.out.print(" * Adding a new statement ["+rawStmt+"]...");
+			
+		try {
+			onto.add(createStatement(rawStmt));
 		}
 		catch (IllegalStatementException ise)
 		{
-			if (verbose) System.err.println("\n[ERROR] "+ ise.getMessage());
 			throw ise;
 		}
-
 		catch (Exception e)
 		{
 			if (verbose) {
@@ -376,7 +324,13 @@ public class OpenRobotsOntology implements IOntologyServer {
 		if (verbose) System.out.println("done.");
 	}
 	
-	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(Vector<String>)
+	 */
+	public void add(Vector<String> rawStmts) throws IllegalStatementException
+	{
+		for (String rawStmt : rawStmts) add(rawStmt);
+	}
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#find(java.lang.String, java.util.Vector, java.util.Vector)
@@ -691,14 +645,45 @@ public class OpenRobotsOntology implements IOntologyServer {
 	}
 
 	@Override
-	public void clear(Resource subject, Property predicate) {
+	public void clear(PartialStatement partialStmt) {
 		
-		
+		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
+		StmtIterator stmtsToRemove = onto.listStatements(selector);
+			
+		onto.remove(stmtsToRemove.toList());
+	}
+	
+	@Override
+	public void clear(String partialStmt) throws IllegalStatementException {		
+		clear(createPartialStatement(partialStmt));
 	}
 
 	@Override
-	public void remove(Statement stmt) throws NotFoundException {
+	public void remove(Statement stmt) {
 		onto.remove(stmt);		
+	}
+	
+	@Override
+	public void remove(String stmt) throws IllegalStatementException {
+		onto.remove(createStatement(stmt));		
+	}
+	
+	@Override
+	public void remove(Vector<String> stmts) throws IllegalStatementException {
+		for (String stmt : stmts) remove(stmt);		
+	}
+
+	@Override
+	public void save(String path) {
+		FileOutputStream file;
+		try {
+			file = new FileOutputStream(path);
+		} catch (FileNotFoundException e) {
+			System.err.println("[ERROR] Error while opening " + path + " to output the ontology. Check it's a valid filename!");
+			return;
+		}
+		onto.write(file);
+		
 	}
 
 
