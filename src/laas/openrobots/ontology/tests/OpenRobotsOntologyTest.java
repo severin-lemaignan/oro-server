@@ -47,6 +47,7 @@ import laas.openrobots.ontology.IOntologyServer;
 import laas.openrobots.ontology.OpenRobotsOntology;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
 import com.hp.hpl.jena.query.Query;
@@ -97,7 +98,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/***********************************************************************
 	 *                          BASIC TESTS                                *
 	 ***********************************************************************/
-	
 	
 	/**
 	 * Performs a simple query on the ontology to check OWL loading and SPARQL query engine both work.
@@ -185,14 +185,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfos didn't answered anything!",infos);
-		assertEquals("getInfos method should return 8 statements about baboon.", 8, infos.size());
+		assertEquals("getInfos method should return 10 statements about baboon.", 10, infos.size());
 		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
 		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
 		
 		// Second test, to check getInfo(Resource) works as well as intended.
 		infos = oro.getInfos(oro.createResource("oro:baboon"));
 		assertNotNull("getInfos didn't answered anything!",infos);
-		assertEquals("getInfos method should return 8 statements about baboon.", 8, infos.size());
+		assertEquals("getInfos method should return 10 statements about baboon.", 10, infos.size());
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -223,7 +223,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfosDefaultNs didn't answered anything!",infos);
-		assertEquals("getInfosDefaultNs method should return 8 statements about baboon.", 8, infos.size());
+		assertEquals("getInfosDefaultNs method should return 10 statements about baboon.", 10, infos.size());
 		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("baboon rdf:type Animal")));
 		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon isFemale \"true\"^^xsd:boolean")));
 			
@@ -579,6 +579,59 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * Tests ontology consistency checking.
+	 */
+	public void testConsistency() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
+		
+
+		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+				
+		try {
+			oro.check();
+		} catch (InconsistentOntologyException e) {
+			fail("Initial ontology should be detected as consistent!");
+		}
+		
+				
+		try {
+			oro.add("cow rdf:type Plant");
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements in testConsistency!");
+		}
+		
+		oro.save("tmp.owl");
+		
+		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
+		try {
+			oro.check();
+			fail("Ontology should be detected as inconsistent! Cows are not plants!");
+		} catch (InconsistentOntologyException e) {			
+		}
+		
+		try {
+			oro.remove("cow rdf:type Plant");
+			oro.check();
+		} catch (InconsistentOntologyException e) {
+			fail();
+		} catch (IllegalStatementException e) {
+			fail();
+		}
+		
+		try {
+			oro.add("cow climbsOn banana_tree");
+			oro.check();
+			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees!");
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements in testConsistency!");
+		} catch (InconsistentOntologyException e) {
+		}
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test try to match a given set of statements against the ontology, and to get back the class of an object.
 	 */
 	public void testMatching() {
@@ -824,7 +877,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		runtime.gc();
 		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
 		   
-		long max = 10000;
+		long max = 1000;
 		for (long i = 0 ; i < max ; i++)
 			try {
 				oro.add("individual" + i +" age 10^^xsd:int");

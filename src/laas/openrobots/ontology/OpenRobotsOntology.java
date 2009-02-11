@@ -58,6 +58,7 @@ import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
 import com.hp.hpl.jena.reasoner.ReasonerException;
+import com.hp.hpl.jena.reasoner.ValidityReport;
 import com.hp.hpl.jena.shared.JenaException;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
@@ -630,8 +631,10 @@ public class OpenRobotsOntology implements IOntologyServer {
 				System.err.println("[ERROR] Could not find " + owlUri + ". Exiting.");
 				System.exit(1);
 			}
-			//Ontology model is bound to a RDFS reasoner -> quick and enough for Jade's needs
-			onto = ModelFactory.createOntologyModel(OntModelSpec.OWL_DL_MEM_RDFS_INF, tempModel);
+			//Ontology model and reasonner type
+			// OWL_DL_MEM_RDFS_INF: RDFS reasoner -> quick and light
+			// OWL_DL_MEM_RULE_INF: uses a more complete OWL reasonning scheme. REQUIRED for "useful" consistency checking
+			onto = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_RULE_INF, tempModel);
 			
 			if (verbose) System.out.println("OK (bound to Jena internal reasoner).");
 			
@@ -683,6 +686,23 @@ public class OpenRobotsOntology implements IOntologyServer {
 			return;
 		}
 		onto.write(file);
+		
+	}
+
+	@Override
+	public void check() throws InconsistentOntologyException {
+		ValidityReport report = onto.validate();
+		
+		String cause = "";
+		
+		if (!report.isValid())
+		{
+			for (Iterator i = report.getReports(); i.hasNext(); ) {
+	            cause += " - " + i.next();
+			}
+
+			throw new InconsistentOntologyException(cause);
+		}
 		
 	}
 

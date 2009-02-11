@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
 import com.hp.hpl.jena.ontology.OntModel;
@@ -86,6 +87,14 @@ public interface IOntologyServer {
 	 */
 	public abstract OntModel getModel();
 
+	/**
+	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
+	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
+	 */
+	public abstract void check()
+			throws InconsistentOntologyException;
+	
+	
 	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>
 	 * 

@@ -11,7 +11,7 @@ ENTRYPOINT = $(BASE_PACKAGE).connectors.OroServer
 
 JAR_BASE = /home/slemaign/openrobots
 
-#this variable point to the place where lib/libjyarp.so is expected to be found.
+#this variable points to the place where lib/libjyarp.so is expected to be found.
 OPENROBOTS_BASE = $(JAR_BASE)
 
 JENA_LIBS = $(JAR_BASE)/java/Jena/lib
@@ -41,6 +41,7 @@ all : oro-server doc
 oro-server: oro-jar
 	/bin/echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar' > $(JAR_DIR)/start
 	chmod +x $(JAR_DIR)/start
+	echo "If you have the test ontology oro_test.owl, you can now run 'make test' to run the unit tests"
 
 oro-jar: oro-build
 	/bin/echo -e "Class-Path: \n `echo $(CLASSPATH) | sed 's/:/ \n /g'`" > MANIFEST.MF
