@@ -99,6 +99,18 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 *                          BASIC TESTS                                *
 	 ***********************************************************************/
 	
+	public void testSave() {
+		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		
+		System.out.println(" * Serializing the ontology to disk...");
+		try {
+			oro.save("./test.owl");
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
 	/**
 	 * Performs a simple query on the ontology to check OWL loading and SPARQL query engine both work.
 	 * The query should return the list of instances present in the ontology. 
@@ -877,7 +889,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		runtime.gc();
 		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
 		   
-		long max = 1000;
+		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
 				oro.add("individual" + i +" age 10^^xsd:int");

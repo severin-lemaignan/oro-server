@@ -50,6 +50,8 @@ import java.util.Vector;
 
 import laas.openrobots.ontology.exceptions.*;
 
+import org.mindswap.pellet.jena.PelletReasonerFactory;
+
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
@@ -598,15 +600,13 @@ public class OpenRobotsOntology implements IOntologyServer {
 	
 	private void initialize(){
 				
-		//This points to the local copy of the ontology.
-		this.owlUri  = parameters.getProperty("ontology");
-		
+				
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
 		Namespaces.setDefault(parameters.getProperty("default_namespace"));
 		
-		if (verbose) System.out.println(" * Ontology instance initialized with "+owlUri);
+		
 		
 		this.load();
 		
@@ -618,30 +618,51 @@ public class OpenRobotsOntology implements IOntologyServer {
 	 */
 	private void load() {
 
+		String owlUri = parameters.getProperty("ontology");
+		String owlInstanceUri = parameters.getProperty("instances");
 		
 		//		loading of the OWL ontology thanks Jena	
 		try {
-			Model tempModel = null;
-			
-			if (verbose) System.out.print(" * Loading ontology... ");
-			
+			Model mainModel = null;
+			Model instancesModel = null;
+					
 			try {
-				tempModel = FileManager.get().loadModel(owlUri);
+				mainModel = FileManager.get().loadModel(owlUri);
+				if (verbose) System.out.print(" * Ontology initialized with "+ owlUri +".");
+				
+				if (owlInstanceUri != null) 
+					{
+					instancesModel = FileManager.get().loadModel(owlInstanceUri);
+					if (verbose) System.out.println(" Instances loaded from " + owlInstanceUri + ".");
+					}
+				else if (verbose) System.out.print("\n");
+				
+				
 			} catch (NotFoundException nfe) {
-				System.err.println("[ERROR] Could not find " + owlUri + ". Exiting.");
+				System.err.println("[ERROR] Could not find " + owlUri + " or " + owlInstanceUri + ". Exiting.");
 				System.exit(1);
 			}
 			//Ontology model and reasonner type
 			// OWL_DL_MEM_RDFS_INF: RDFS reasoner -> quick and light
 			// OWL_DL_MEM_RULE_INF: uses a more complete OWL reasonning scheme. REQUIRED for "useful" consistency checking
-			onto = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM_RULE_INF, tempModel);
+			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
+			onto = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC, mainModel);
 			
-			if (verbose) System.out.println("OK (bound to Jena internal reasoner).");
+			if (instancesModel != null) onto.add(instancesModel);
+			
+			if (verbose) {
+				System.out.print(" * Ontology successfully loaded (");
+				if (instancesModel != null) System.out.print("domain instances loaded and merged. ");
+				System.out.println("Pellet reasoner initialized).");
+			}
+			
 			
 		} catch (ReasonerException re){
 			re.printStackTrace();
+			System.exit(1);
 		} catch (JenaException je){
 			je.printStackTrace();
+			System.exit(1);
 		}
 		
 
