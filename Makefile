@@ -9,15 +9,16 @@ DOC_DIR = doc
 BASE_PACKAGE = laas.openrobots.ontology
 ENTRYPOINT = $(BASE_PACKAGE).connectors.OroServer
 
-JAR_BASE = /home/slemaign/openrobots
+JAR_BASE = /media/Documents/These/OpenRobots
 
 #this variable points to the place where lib/libjyarp.so is expected to be found.
 OPENROBOTS_BASE = $(JAR_BASE)
 
 JENA_LIBS = $(JAR_BASE)/java/Jena/lib
+PELLET_LIBS = $(JAR_BASE)/java/pellet/lib
 JYARP_LIB = $(JAR_BASE)/java/libjyarp/lib
 
-CLASSPATH = $(JENA_LIBS)/arq.jar:$(JENA_LIBS)/commons-logging-1.1.1.jar:$(JENA_LIBS)/concurrent.jar:$(JENA_LIBS)/icu4j_3_4.jar:$(JENA_LIBS)/jena.jar:$(JENA_LIBS)/log4j-1.2.12.jar:$(JENA_LIBS)/stax-api-1.0.jar:$(JENA_LIBS)/xercesImpl.jar:$(JENA_LIBS)/xml-apis.jar:$(JENA_LIBS)/junit.jar:$(JENA_LIBS)/iri.jar:$(JYARP_LIB)/libjyarp.jar
+CLASSPATH = $(JENA_LIBS)/arq.jar:$(JENA_LIBS)/commons-logging-1.1.1.jar:$(JENA_LIBS)/concurrent.jar:$(JENA_LIBS)/icu4j_3_4.jar:$(JENA_LIBS)/jena.jar:$(JENA_LIBS)/log4j-1.2.12.jar:$(JENA_LIBS)/stax-api-1.0.jar:$(JENA_LIBS)/xercesImpl.jar:$(JENA_LIBS)/xml-apis.jar:$(JENA_LIBS)/junit.jar:$(JENA_LIBS)/iri.jar:$(PELLET_LIBS)/aterm-java-1.6.jar:$(PELLET_LIBS)/pellet-core.jar:$(PELLET_LIBS)/pellet-datatypes.jar:$(PELLET_LIBS)/pellet-el.jar:$(PELLET_LIBS)/pellet-jena.jar:$(PELLET_LIBS)/pellet-query.jar:$(PELLET_LIBS)/pellet-rules.jar:$(PELLET_LIBS)/xsdlib/relaxngDatatype.jar:$(PELLET_LIBS)/xsdlib/xsdlib.jar:$(JYARP_LIB)/libjyarp.jar
 
 JAVA = java
 JAVAC = javac
