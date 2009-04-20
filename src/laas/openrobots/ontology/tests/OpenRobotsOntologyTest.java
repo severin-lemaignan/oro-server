@@ -112,18 +112,66 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
-	 * Performs a simple query on the ontology to check OWL loading and SPARQL query engine both work.
-	 * The query should return the list of instances present in the ontology. 
+	 * Check that some facts are correctly asserted/infered in the ontology. 
 	 */
-	public void testQuery() {
+	public void testCheck() {
 		
-		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
+		System.out.println("[UNITTEST] ***** TEST: Check facts in the ontology *****");
 		
 		long startTime = System.currentTimeMillis();
 		
 		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
 		
 		System.out.println("[UNITTEST] Ontology loaded in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
+		
+		/****************
+		 *  First check *
+		 ****************/
+		
+		try {
+			assertTrue("The fact that gorillas are monkey IS an asserted fact.", oro.check(oro.createStatement("gorilla rdf:type Monkey")));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		/****************
+		 *  Second check *
+		 ****************/
+		
+		try {
+			assertTrue("The fact that apples are plants should be infered!", oro.check(oro.createStatement("apple rdf:type Plant")));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		/****************
+		 *  Third check *
+		 ****************/
+		
+		try {
+			assertFalse("The fact that gorillas are plants is false!", oro.check(oro.createStatement("gorilla rdf:type Plant")));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	
+	/**
+	 * Performs a simple query on the ontology to check OWL loading and SPARQL query engine both work.
+	 * The query should return the list of instances present in the ontology. 
+	 */
+	public void testQuery() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
+	
+		
+		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+
 		
 		/****************
 		 *  First query *
@@ -142,7 +190,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		while (result.hasNext())
 		{
 			String name = result.nextSolution().getResource("instances").getLocalName();
-			assertTrue("Only individuals should be returned.", name.contains("cow") || name.contains("banana_tree") || name.contains("gorilla") || name.contains("baboon"));
+			assertTrue("Only individuals should be returned. Got " + name, name.contains("apple") ||name.contains("cow") || name.contains("banana_tree") || name.contains("gorilla") || name.contains("baboon"));
 		}
 		//
 		
@@ -197,15 +245,20 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfos didn't answered anything!",infos);
-		assertEquals("getInfos method should return 10 statements about baboon.", 10, infos.size());
+		//remove this test which depends on the type of reasonner
+		//assertEquals("getInfos method should return 11 statements about baboon.", 11, infos.size());
 		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
 		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
+		
 		
 		// Second test, to check getInfo(Resource) works as well as intended.
 		infos = oro.getInfos(oro.createResource("oro:baboon"));
 		assertNotNull("getInfos didn't answered anything!",infos);
-		assertEquals("getInfos method should return 10 statements about baboon.", 10, infos.size());
-		
+		//remove this test which depends on the type of reasonner
+		//assertEquals("getInfos method should return 11 statements about baboon.", 11, infos.size());
+		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
+		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
+				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -235,7 +288,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfosDefaultNs didn't answered anything!",infos);
-		assertEquals("getInfosDefaultNs method should return 10 statements about baboon.", 10, infos.size());
+		//remove this test which depends on the type of reasonner
+		//assertEquals("getInfosDefaultNs method should return 10 statements about baboon.", 11, infos.size());
 		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("baboon rdf:type Animal")));
 		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon isFemale \"true\"^^xsd:boolean")));
 			
@@ -470,8 +524,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		stmts.add("fish rdf:type Animal");
 		stmts.add("sparrow rdf:type Bird");
 		stmts.add("Bird rdfs:subClassOf Animal");
-		stmts.add("sparrow eats seeds");
-		stmts.add("sparrow eats butter");
 		
 		try {
 			oro.add(stmts);
@@ -504,8 +556,29 @@ public class OpenRobotsOntologyTest extends TestCase {
 			System.out.println(result.next());
 			count++;
 		}
-		assertEquals("Four individuals, instances of Animal, should be returned.", 5, count);
+		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
 		
+		//Let's add 2 more statements
+		stmts.clear();
+		stmts.add("sparrow eats seeds");
+		stmts.add("sparrow eats butter");
+		
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements!");
+			e.printStackTrace();
+		}
+		
+		result =	oro.query(who_is_an_animal);		
+		count = 0;
+		while (result.hasNext()){
+			result.next();
+			count++;
+		}
+		//Since sparrows are said to eat something, they are animals.
+		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
+
 		String what_does_the_sparrow_eat = "SELECT ?food \n" +
 		"WHERE { \n" +
 		"oro:sparrow oro:eats ?food}\n";
@@ -519,7 +592,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Two objects should be returned.", 2, count);
 		
 		//Let's clear infos about what the sparrow eats.
-		
 		try {
 			oro.clear("sparrow eats ?food");
 		} catch (IllegalStatementException e) {
@@ -530,10 +602,19 @@ public class OpenRobotsOntologyTest extends TestCase {
 		result = oro.query(what_does_the_sparrow_eat);		
 		count = 0;
 		while (result.hasNext()){
-			System.out.println(result.next());
+			result.next();
 			count++;
 		}
 		assertEquals("Nothing should be returned.", 0, count);
+		
+		result =	oro.query(who_is_an_animal);
+		count = 0;
+		while (result.hasNext()){
+			result.next();
+			count++;
+		}
+		//There's no more assertions permitting to say that sparrows are animals, so they shouldn't appear.
+		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
 		
 	
 		
@@ -601,7 +682,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
 				
 		try {
-			oro.check();
+			oro.checkConsistency();
 		} catch (InconsistentOntologyException e) {
 			fail("Initial ontology should be detected as consistent!");
 		}
@@ -613,18 +694,16 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
 		
-		oro.save("tmp.owl");
-		
 		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
 		try {
-			oro.check();
+			oro.checkConsistency();
 			fail("Ontology should be detected as inconsistent! Cows are not plants!");
 		} catch (InconsistentOntologyException e) {			
 		}
 		
 		try {
 			oro.remove("cow rdf:type Plant");
-			oro.check();
+			oro.checkConsistency();
 		} catch (InconsistentOntologyException e) {
 			fail();
 		} catch (IllegalStatementException e) {
@@ -633,8 +712,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			oro.add("cow climbsOn banana_tree");
-			oro.check();
-			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees!");
+			oro.checkConsistency();
+			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!");
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		} catch (InconsistentOntologyException e) {

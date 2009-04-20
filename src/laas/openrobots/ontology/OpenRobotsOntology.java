@@ -507,11 +507,11 @@ public class OpenRobotsOntology implements IOntologyServer {
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
 		}
 	
-			
+		
 		String resultQuery = Namespaces.prefixes();
 		
-		//we use the SPARQL query type "DESCRIBE" to get a RDF graph with all the links to this resource.
-		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
+//		//we use the SPARQL query type "DESCRIBE" to get a RDF graph with all the links to this resource.
+//		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + lex_resource +">";
 		
 		try	{
@@ -562,7 +562,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 	
 	/**
 	 * Read a configuration file and return to corresponding "Properties" object.
-	 * The configuration file mainly contains the path to the ontology to be loaded.
+	 * The configuration file contains the path to the ontology to be loaded and several options regarding the server configuration.
 	 * @param configFileURI The path and filename of the configuration file.
 	 * @return A Java.util.Properties instance containing the application configuration.
 	 */
@@ -579,7 +579,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 			
 			if (!parameters.containsKey("ontology"))
 			{
-				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.rdf");
+				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
 	        	System.exit(1);
 			}
 		}
@@ -621,6 +621,23 @@ public class OpenRobotsOntology implements IOntologyServer {
 		String owlUri = parameters.getProperty("ontology");
 		String owlInstanceUri = parameters.getProperty("instances");
 		
+		OntModelSpec onto_model_reasonner;
+		String onto_model_reasonner_name = parameters.getProperty("reasonner", "jena_internal_owl_rule");
+		
+		//select the inference model and reasonner from the "reasonner" parameter specified in the configuration file.
+		if ( onto_model_reasonner_name.equalsIgnoreCase("pellet")){
+			onto_model_reasonner = PelletReasonerFactory.THE_SPEC;
+			onto_model_reasonner_name = "Pellet reasonner";
+		}
+		else if(onto_model_reasonner_name.equalsIgnoreCase("jena_internal_rdfs")){
+			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RDFS_INF;
+			onto_model_reasonner_name = "Jena internal reasonner - RDFS inference engine -";
+		}
+		else {
+			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RULE_INF;
+			onto_model_reasonner_name = "Jena internal reasonner - OWL rule inference engine -";
+		}
+		
 		//		loading of the OWL ontology thanks Jena	
 		try {
 			Model mainModel = null;
@@ -646,14 +663,14 @@ public class OpenRobotsOntology implements IOntologyServer {
 			// OWL_DL_MEM_RDFS_INF: RDFS reasoner -> quick and light
 			// OWL_DL_MEM_RULE_INF: uses a more complete OWL reasonning scheme. REQUIRED for "useful" consistency checking
 			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
-			onto = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC, mainModel);
+			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
 			if (instancesModel != null) onto.add(instancesModel);
 			
 			if (verbose) {
 				System.out.print(" * Ontology successfully loaded (");
 				if (instancesModel != null) System.out.print("domain instances loaded and merged. ");
-				System.out.println("Pellet reasoner initialized).");
+				System.out.println(onto_model_reasonner_name + " initialized).");
 			}
 			
 			
@@ -673,8 +690,8 @@ public class OpenRobotsOntology implements IOntologyServer {
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		StmtIterator stmtsToRemove = onto.listStatements(selector);
-			
 		onto.remove(stmtsToRemove.toList());
+		
 	}
 	
 	@Override
@@ -689,7 +706,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 	
 	@Override
 	public void remove(String stmt) throws IllegalStatementException {
-		onto.remove(createStatement(stmt));		
+		onto.remove(createStatement(stmt));
 	}
 	
 	@Override
@@ -711,7 +728,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 	}
 
 	@Override
-	public void check() throws InconsistentOntologyException {
+	public void checkConsistency() throws InconsistentOntologyException {
 		ValidityReport report = onto.validate();
 		
 		String cause = "";
@@ -725,6 +742,31 @@ public class OpenRobotsOntology implements IOntologyServer {
 			throw new InconsistentOntologyException(cause);
 		}
 		
+	}
+
+	@Override
+	public boolean check(Statement statement) {
+		
+		//trivial to answer true is the statement has been asserted.
+		if (onto.contains(statement)) return true;
+		
+		String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
+		
+		try	{
+			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
+		
+			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
+			return myQueryExecution.execAsk();
+		}
+		catch (QueryParseException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+		catch (QueryExecException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+
 	}
 
 

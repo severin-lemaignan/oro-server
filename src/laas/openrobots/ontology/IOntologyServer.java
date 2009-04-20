@@ -91,9 +91,16 @@ public interface IOntologyServer {
 	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
 	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
 	 */
-	public abstract void check()
+	public abstract void checkConsistency()
 			throws InconsistentOntologyException;
-	
+
+	/**
+	 * Checks if a statement is asserted or can be inferred from the ontology. If the method returns false, IT DOES NOT mean that the statement itself is false. Most probably, the fact expressed by the statement is simply not known.
+	 * 
+	 * @param statement the statement to be evaluated
+	 * @return true if the statement is asserted in or can be inferred from the ontology
+	 */
+	public abstract boolean check(Statement statement);
 	
 	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>

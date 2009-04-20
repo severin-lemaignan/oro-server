@@ -150,7 +150,7 @@ public class PartialStatement implements Statement {
 	public Resource getSubject() 
 	{
 		Resource result = baseStmt.getSubject();
-		if (result.getLocalName().equals("nullSubject"))
+		if (result.toString().equals("nullSubject"))
 			return null;
 		else
 			return result;
@@ -160,7 +160,7 @@ public class PartialStatement implements Statement {
 	public Property getPredicate() 
 	{
 		Property result = baseStmt.getPredicate();
-		if (result.getLocalName().equals("nullPredicate"))
+		if (result.toString().equals("nullPredicate"))
 			return null;
 		else
 			return result;
@@ -170,7 +170,7 @@ public class PartialStatement implements Statement {
 	public RDFNode getObject() 
 	{
 		RDFNode result = baseStmt.getObject();
-		if (result.isResource() && ((Resource)result).getLocalName().equals("nullObject"))
+		if (result.isResource() && ((Resource)result).toString().equals("nullObject"))
 			return null;
 		else
 			return result;

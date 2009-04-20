@@ -9,10 +9,9 @@ DOC_DIR = doc
 BASE_PACKAGE = laas.openrobots.ontology
 ENTRYPOINT = $(BASE_PACKAGE).connectors.OroServer
 
-JAR_BASE = /media/Documents/These/OpenRobots
-
 #this variable points to the place where lib/libjyarp.so is expected to be found.
-OPENROBOTS_BASE = $(JAR_BASE)
+JAR_BASE = $(OPENROBOTS_BASE)
+#OPENROBOTS_BASE = $(JAR_BASE)
 
 JENA_LIBS = $(JAR_BASE)/java/Jena/lib
 PELLET_LIBS = $(JAR_BASE)/java/pellet/lib
