@@ -45,11 +45,25 @@ import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 
+/**
+ * This class provides various static helper methods for some common parsing and formatting tasks.
+ * @author slemaign
+ *
+ */
 public class Helpers {
+	/**
+	 * Parse a SPARQL string representing a literal to an actual Jena {@link com.hp.hpl.jena.rdf.model.Literal}. The method actually returns a {@link com.hp.hpl.jena.rdf.model.RDFNode} because if the literal is not recognized, it falls back on a generic RDFNode. To be sure the result is actually a literal, the {@link com.hp.hpl.jena.rdf.model.RDFNode#isLiteral()} method can be used.<br/> 
+	 * @param lex the string representing the literal.
+	 * @param model the model linked to the ontology in which the literal is to be created
+	 * @return a RDFNode holding the literal
+	 * @throws IllegalStatementException
+	 * @see #literalToSparqlSyntax(Literal)
+	 */
 	public static RDFNode parseLiteral(final String lex, ModelCom model) throws IllegalStatementException
 	{
 		int separatorIndex = lex.indexOf("^^");
 		
+		//handle the case of
 		if (separatorIndex == -1)
 		{
 			
@@ -88,6 +102,12 @@ public class Helpers {
 		
 	}
 	
+	/**
+	 * Formats a literal to a SPARQL-compatible string.
+	 * @param lit a literal to be formatted
+	 * @return a string representing the literal with SPARQL syntax.
+	 * @see #parseLiteral(String, ModelCom)
+	 */
 	public static String literalToSparqlSyntax(Literal lit)
 	{
 		RDFDatatype litClass = lit.getDatatype();

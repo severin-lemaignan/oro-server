@@ -79,6 +79,7 @@ doc:
 	-group $(GROUPCORE) \
 	-group $(GROUPSERVER) \
 	-group $(GROUPTESTS) \
+	-link http://jena.sourceforge.net/javadoc \
 	-J-Xmx180m \
 	-stylesheetfile $(SRC_DIR)/javadoc.css \
 	-subpackages $(BASE_PACKAGE)

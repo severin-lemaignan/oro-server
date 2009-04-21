@@ -165,7 +165,8 @@ public interface IOntologyServer {
 	 *  
 	 * @param statement The new statement.
 	 * @see #add(Statement)
-	 * @see {@link #createStatement(String)} for more complete syntax details.
+	 * @see #remove(Statement)
+	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 */
 	public abstract void add(String statement) throws IllegalStatementException;
 	
@@ -174,7 +175,7 @@ public interface IOntologyServer {
 	 * If the statements are already present, nothing is done.
 	 * 
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
-	 * @see {@link #add(String)} for details.
+	 * @see #add(String) for details.
 	 */
 	public abstract void add(Vector<String> statements) throws IllegalStatementException;
 	
@@ -192,6 +193,7 @@ public interface IOntologyServer {
 	 * @param stmt A string representing the statement to remove from the ontology.
 	 * @see #add(String)
 	 * @see #remove(Statement)
+	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 */
 	public abstract void remove(String stmt) throws IllegalStatementException;
 	

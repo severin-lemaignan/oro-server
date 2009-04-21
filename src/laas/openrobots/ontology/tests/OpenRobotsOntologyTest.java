@@ -67,17 +67,22 @@ import com.hp.hpl.jena.shared.NotFoundException;
 
 
 /**
- * This class holds unit tests to check that {@code liboro} works as expected.<br/>
+ * This class holds unit tests that cover most of the {@code oro-server} features.<br/>
  * For the tests to be executed, the {@code oro_test.owl} ontology is required, and must be referenced by the {@code oro_test.conf} configuration file.<br/>
  * Currently implemented:
  * <ul>
  * <li> Basic tests
  * <ul>
+ *  <li> {@link #testSave() testSave}: serialization of the ontology.</li>
+ *  <li> {@link #testCheck() testCheck}: check that some facts are correctly asserted/infered in the ontology.</li>
  * 	<li> {@link #testQuery() testQuery}: simple query on the test ontology.</li>
  *  <li> {@link #testGetInfos() testGetInfos}: informations retrieval on a resource.</li>
  *  <li> {@link #testGetInfosDefaultNs() testGetInfosDefaultNs}: informations retrieval on a resource test namespace defaulting.</li>
  *  <li> {@link #testAddStmnt() testAddStmnt}: insertion of a simple statement.</li>
  *  <li> {@link #testAddStmntWithLiteral() testAddStmntWithLiteral}: insertion of a statement containing literals.</li>
+ *  <li> {@link #testLiterals() testLiterals}: test support for various possible way of representing literals.</li>
+ *  <li> {@link #testRemoveAndClear() testRemoveAndClear}: removal of statements from the ontology.</li>
+ *  <li> {@link #testConsistency() testConsistency}: ontology consistency.</li>
  *  <li> {@link #testMatching()}: exact statements matching.</li>
  *  <li> {@link #testApproximateNumericMatching()}: approximate numerical statements matching.</li>
  * </ul>
@@ -348,6 +353,55 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+	
+	/**
+	 * This test add a new statement with a literal as object to the ontology (a new instance of the class Class1 and then query the ontology to check the individual was successfully added, with the right namespace.
+	 */
+	public void testAddStmntWithLiteral() {
+
+		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
+		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		
+		//First test a request before altering the ontology. 
+		String xmlResult =	oro.queryAsXML(
+				"SELECT ?value \n" +
+				"WHERE { \n" +
+				"?instances rdf:type owl:Thing .\n" +
+				"?instances oro:isFemale ?value}\n");
+		assertNotNull("query didn't answered anything!",xmlResult);
+		
+		int next = 0; int count = -1;
+		while (next != -1){
+			next = xmlResult.indexOf("true", next + 1);
+			count++;
+		}
+		assertEquals("The value of isFemale for baboon should be true. It's the only one.", 1, count);
+		
+		//Add a statement
+		try {
+			oro.add("oro:fish oro:isFemale \"true\"^^xsd:boolean");
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+		
+		//Check it was added.
+		xmlResult =	oro.queryAsXML(
+				"SELECT ?value \n" +
+				"WHERE { \n" +
+				"?instances rdf:type owl:Thing .\n" +
+				"?instances oro:isFemale ?value}\n");
+		assertNotNull("query didn't answered anything!",xmlResult);
+		
+		next = 0; count = -1;
+		while (next != -1){
+			next = xmlResult.indexOf("true", next + 1);
+			count++;
+		}
+		assertEquals("The value of isFemale for baboon and fish is now true. We should get two positives.", 2, count);
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
 
 	/**
 	 * This test try to create statements with various types of literals.
@@ -424,87 +478,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
-	
-//public void testRawRemoveAndClear() {
-//		
-//		System.out.println("[UNITTEST] ***** TEST: RAW Remove & Clear *****");
-//		
-//		Model tmp = ModelFactory.createOntologyModel();
-//		ResultSet result = null;
-//		
-//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#cow"), ResourceFactory.createProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
-//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#fish"), tmp.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
-//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#sparrow"), tmp.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), tmp.getResource("http://www.laas.fr/~slemaign/onto#bird"));
-//		tmp.add(tmp.getResource("http://www.laas.fr/~slemaign/onto#bird"), ResourceFactory.createProperty("http://www.w3.org/2000/01/rdf-schema#subClassOf"), tmp.getResource("http://www.laas.fr/~slemaign/onto#animal"));
-//
-//		
-//		String who_is_an_animal = "SELECT ?instances \n" +
-//				"WHERE { \n" +
-//				"?instances <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.laas.fr/~slemaign/onto#animal>}\n";
-//
-//		
-//		try	{
-//			Query myQuery = QueryFactory.create(who_is_an_animal, Syntax.syntaxSPARQL );
-//		
-//			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, tmp);
-//			result = myQueryExecution.execSelect();
-//		}
-//		catch (QueryParseException e) {
-//			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
-//			fail();
-//		}
-//		catch (QueryExecException e) {
-//			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
-//			fail();
-//		}
-//		
-//		FileOutputStream file = null;
-//		try {
-//			file = new FileOutputStream("/home/slemaign/Desktop/tmp.owl");
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//			System.exit(1);
-//		}
-//		tmp.write(file);
-//		
-//		int count = 0;
-//		while (result.hasNext()){
-//			result.nextSolution();
-//			count++;
-//		}
-//		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
-//		
-//		//Let's remove a statement: Birds are no more animals, and thus, the sparrow shouldn't be counted as an animal.
-//		try {
-//			oro.remove("Bird rdfs:subClassOf Animal");
-//		} catch (IllegalStatementException e) {
-//			fail("Error while removing a set of statements!");
-//			e.printStackTrace();
-//		}
-//		
-//		result = oro.query(who_is_an_animal);
-//		
-//		count = 0;
-//		while (result.hasNext()){
-//			System.out.println(result.next());
-//			count++;
-//		}
-//		assertEquals("Four individuals, instances of Animal, should be returned.", 5, count);
-//		
-//		String what_does_the_sparrow_eat = "SELECT ?food \n" +
-//		"WHERE { \n" +
-//		"oro:sparrow oro:eats ?food}\n";
-//
-//		result = oro.query(what_does_the_sparrow_eat);		
-//		count = 0;
-//		while (result.hasNext()){
-//			result.next();
-//			count++;
-//		}
-//		assertEquals("Two objects should be returned.", 2, count);
-//		
-
-//	}
 
 	/**
 	 * This test checks that the Remove and Clear methods work as expected.
@@ -617,56 +590,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
 		
 	
-		
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-
-	
-	/**
-	 * This test add a new statement with a literal as object to the ontology (a new instance of the class Class1 and then query the ontology to check the individual was successfully added, with the right namespace.
-	 */
-	public void testAddStmntWithLiteral() {
-
-		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
-		
-		//First test a request before altering the ontology. 
-		String xmlResult =	oro.queryAsXML(
-				"SELECT ?value \n" +
-				"WHERE { \n" +
-				"?instances rdf:type owl:Thing .\n" +
-				"?instances oro:isFemale ?value}\n");
-		assertNotNull("query didn't answered anything!",xmlResult);
-		
-		int next = 0; int count = -1;
-		while (next != -1){
-			next = xmlResult.indexOf("true", next + 1);
-			count++;
-		}
-		assertEquals("The value of isFemale for baboon should be true. It's the only one.", 1, count);
-		
-		//Add a statement
-		try {
-			oro.add("oro:fish oro:isFemale \"true\"^^xsd:boolean");
-		} catch (IllegalStatementException e) {
-			fail("Error while adding a statement!");
-			e.printStackTrace();
-		}
-		
-		//Check it was added.
-		xmlResult =	oro.queryAsXML(
-				"SELECT ?value \n" +
-				"WHERE { \n" +
-				"?instances rdf:type owl:Thing .\n" +
-				"?instances oro:isFemale ?value}\n");
-		assertNotNull("query didn't answered anything!",xmlResult);
-		
-		next = 0; count = -1;
-		while (next != -1){
-			next = xmlResult.indexOf("true", next + 1);
-			count++;
-		}
-		assertEquals("The value of isFemale for baboon and fish is now true. We should get two positives.", 2, count);
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -875,136 +798,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		assertEquals("Four animals should be returned.", 4, matchingResources.size());
 				
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-	
-	/**
-	 * This test tries to stress the ontology with a lot of statements addition and queries with huge resultsets.
-	 */
-	public void testLoadScalability() {
-
-		System.out.println("[UNITTEST] ***** TEST: Load scalability *****");
-		
-		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
-		
-		long startTime = System.currentTimeMillis();
-		
-		System.out.println("Starting to stress the ontology...");
-
-		
-		Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
-		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
-		   
-		long max = 10000;
-		for (long i = 0 ; i < max ; i++)
-			try {
-				oro.add("individual" + i +" eats flowers");
-			} catch (IllegalStatementException e) {
-				fail("Error while adding a statement " + i);
-				e.printStackTrace();
-			}
-		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
-
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
-
-		try {
-			partialStatements.add(oro.createPartialStatement("?individual eats flowers"));
-		} catch (IllegalStatementException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		startTime = System.currentTimeMillis();
-		
-		Vector<Resource> matchingResources = oro.find("individual", partialStatements);
-		
-		assertEquals(max + " individuals should be returned.", max, matchingResources.size());
-		
-		System.out.println(max + " statements retrieved in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		partialStatements.clear();
-		matchingResources.clear();
-		
-		try {
-			partialStatements.add(oro.createPartialStatement("?animals rdf:type Animal"));
-		} catch (IllegalStatementException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		startTime = System.currentTimeMillis();
-		
-		matchingResources = oro.find("animals", partialStatements);
-		
-		System.out.println(max + " statements retrieved through inference in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		assertEquals((max + 3) + " animals should be returned.", max + 3, matchingResources.size());
-				
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-	
-	/**
-	 * This test tries to stress the ontology with a lot of statements addition and guesses.
-	 */
-	public void testLoadScalability2() {
-
-		System.out.println("[UNITTEST] ***** TEST: Load scalability 2 *****");
-		
-		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
-		
-		long startTime = System.currentTimeMillis();
-		
-		System.out.println("Starting to stress the ontology...");
-
-		
-		Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
-		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
-		   
-		long max = 10000;
-		for (long i = 0 ; i < max ; i++)
-			try {
-				oro.add("individual" + i +" age 10^^xsd:int");
-			} catch (IllegalStatementException e) {
-				fail("Error while adding statement "+i);
-				e.printStackTrace();
-			}
-		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
-
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
-
-		try {
-			partialStatements.add(oro.createPartialStatement("?individual age 12^^xsd:int"));
-		} catch (IllegalStatementException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		startTime = System.currentTimeMillis();
-		
-		Hashtable<Resource, Double> matchingResources = new Hashtable<Resource, Double>();
-		try {
-			matchingResources = oro.guess("individual", partialStatements, 0.5);
-		} catch (UnmatchableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		assertEquals(max + 1 + " individuals should be returned.", max + 1, matchingResources.size());
-		
-		System.out.println(max + " statements guessed in "+ (System.currentTimeMillis() - startTime) + "ms.");
-						
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 

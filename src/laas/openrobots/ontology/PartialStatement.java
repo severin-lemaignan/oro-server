@@ -57,7 +57,7 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
 /** A partial statement is a statement whose at least one element (subject, predicate or object) is unknown.</br>
  * 
- * To be valid, a partial statement must have at least one variable, prepended with a "?". For instance: {@code "?mysterious oro:objProperty2 oro:individual2"}
+ * To be valid, a partial statement must have at least one variable, prepended with a "?". For instance: {@code "?mysterious oro:objProperty oro:individual"}
  *
  */
 public class PartialStatement implements Statement {

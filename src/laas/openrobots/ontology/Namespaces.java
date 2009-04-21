@@ -45,6 +45,11 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 
+/**
+ * This class provides several static method for namespace manipulation ({@linkplain #expand(String) expansion}, {@linkplain #toLightString(RDFNode) contraction}, {@linkplain #prefixes() SPARQL prefixes header}...).
+ * @author slemaign
+ *
+ */
 public class Namespaces {
 	
 	/**
@@ -189,7 +194,8 @@ public class Namespaces {
 	}
 	
 	/**
-	 * Try to replace a complete namespace by its prefix (if known) or remove the namespace if it's the default one. This method does the opposite to {@link #expand(String)}.<br/>
+	 * Convert a resource to its string representation and try to replace the namespace by its prefix (or remove it if it's the default one).<br/>
+	 * It uses {@link #contract(String)} to replace or remove the namespace.<br/>
 	 * If the prefix for the namespace is unknown, complete URI is returned.
 	 * 
 	 * @param res The RDFNode which is to output as a string.
