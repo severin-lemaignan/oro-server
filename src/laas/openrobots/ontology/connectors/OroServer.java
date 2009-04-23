@@ -58,7 +58,7 @@ import yarp.Value;
  * {@code OroServer} has a {@code main} function which expect a configuration file.<br/> 
  * For the server, the following options are currently available:
  * <ul>
- * <li><em>yarp = [enabled|disabled]</em>: set it to <em>enabled</em> to enable YARP bindings.</li>
+ * <li><em>yarp = [enabled|disabled]</em>: <em>enabled</em> activates YARP bindings.</li>
  * </ul>
  * YARP specific options:
  * <ul>
@@ -78,11 +78,14 @@ public class OroServer {
     	
     	String confFile;
     	String yarpPort;
+    	String lastReceiverPort = "";
     	
     	if (args.length < 1 || args.length > 1)
     		confFile = DEFAULT_CONF;
     	else
     		confFile = args[0];
+    	
+    	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
     	
 		System.out.println("*** OroServer ***");
 		System.out.println(" * Using configuration file " + confFile);
@@ -98,16 +101,16 @@ public class OroServer {
     	System.loadLibrary("jyarp");
     	Network.init();
     	
-    	yarpPort = "/" + oro.getParameters().getProperty("yarp_input_port", "oro");
+    	yarpPort = "/" + oro.getParameters().getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
     	
     	System.out.println(" * Starting YARP server on port " + yarpPort);
     	
     	BufferedPortBottle queryPort = new BufferedPortBottle();
-    	queryPort.open(yarpPort);
+    	queryPort.open(yarpPort + "/in");
     	
     	
     	BufferedPortBottle resultPort = new BufferedPortBottle();
-    	resultPort.open(yarpPort + "_out");
+    	resultPort.open(yarpPort + "/out");
     	
     	Bottle query = new Bottle();
     	
@@ -117,9 +120,10 @@ public class OroServer {
 
 		while(true) {
 			
-			System.out.println("Waiting for a new request...");
+			//System.out.println("Waiting for a new request...");
     	    
     	    query = queryPort.read();
+    	    //System.out.println("Incoming bottle " + query.toString());
     	    
     	    
     	       	    
@@ -131,18 +135,24 @@ public class OroServer {
     	    	if (!receiverPort.startsWith("/"))
     	    		receiverPort = "/" + receiverPort;
     	    	
+        	    if (!lastReceiverPort.equals(receiverPort)){ //not the same receiver ! disconnect the old one an connect to the new one.
+        	    	System.out.println(" * Changing client to " + receiverPort);
+        	    	Network.disconnect(yarpPort + "/out", lastReceiverPort);
+        	    	Network.connect(yarpPort + "/out", receiverPort);
+        	    }
+        	    
     	    	String queryName = query.get(1).toString();
     	    	
     	    	Bottle yarpArgs = query.pop().asList();
     	    	
-    	    	System.out.println("Looking for method \"" + queryName + "\" (with " + yarpArgs.size() + " args).");
-    	
-	    		System.out.flush();
-	    			    		
+    	    	boolean methodFound = false;
+    	    	
         	    for (Method m : ontologyMethods){
         	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
         	    	if (m.getName().equalsIgnoreCase(queryName))
         	    	{
+        	    		methodFound = true;
+        	    		
         	    		try {
         	    			
         	    			result.addString("ok");
@@ -166,13 +176,19 @@ public class OroServer {
         	    	}
         	    }
         	    
-        	    System.out.println("sending bottle: " + result);
+        	    if (!methodFound){
+					System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
+					result.clear();
+					result.fromString("error \"method " + queryName + " not implemented by the ontology server.\"");							
+        	    }
         	    
-        	    //Network.connect("/oro_out", receiverPort);
-
+        	    //System.out.println("sending bottle: " + result);
+        	    
+        	    //...Send the answer...
         	    resultPort.write();
         	    
-        	    //Network.disconnect("/oro_out", receiverPort);
+        	    lastReceiverPort = receiverPort;
+        	    	
     	    }
 
     	    //Time.delay(0.25);

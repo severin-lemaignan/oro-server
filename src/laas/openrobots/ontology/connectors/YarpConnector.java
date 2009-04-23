@@ -72,8 +72,9 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * <pre>
  * ([YARP port for answering] [name of the method] ([param1] [param2] [...]))
  * </pre>
+ * Methods are those defined in {@link laas.openrobots.ontology.IOntologyServer}.</br>
  * Parameters are enclosed in a nested bottle (a list), and these parameters can themselves be lists.
- * Currently, these list are always casted to vectors of string.
+ * Currently, these lists are always casted to vectors of string.
  * <li>Answers:</li>
  * <pre>
  * ([ok|error] [result|error msg])
@@ -159,7 +160,7 @@ public class YarpConnector {
 
 	/**
 	 * Adds a new statement to the ontology.
-	 * YARP interface to {@link laas.openrobots.ontology.OpenRobotsOntology#add(String)}. Please follow the link for details.<br/>
+	 * YARP interface to {@link laas.openrobots.ontology.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
 	 * 
 	 * YARP C++ code snippet:
 	 *  
@@ -249,6 +250,23 @@ public class YarpConnector {
 	 * 
 	 * 
 	 */
+	public Bottle remove(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
+		Bottle result = Bottle.getNullBottle();
+		
+		result.clear();
+		
+		checkValidArgs(bottleToArray(args), 1);
+		
+		oro.remove(args.pop().asString().c_str());
+		
+		result.addString("true");
+		return result;
+	}
+	
+	/**
+	 * 
+	 * 
+	 */
 	public Bottle removeMultiple(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
 		Bottle result = Bottle.getNullBottle();
 		
@@ -258,7 +276,7 @@ public class YarpConnector {
 		
 		for (Value v : bottleToArray(args.pop().asList()))
 		{
-				oro.add(v.asString().c_str());
+				oro.remove(v.asString().c_str());
 		}
 		
 		result.addString("true");
@@ -601,6 +619,27 @@ public class YarpConnector {
 		while (results.hasNext()) {
 			result.addString(Namespaces.toLightString(results.nextSolution().getResource(key)));
 		}
+		return result;
+	}
+	
+	/**
+	 * Serialize to in-memory ontology model to a RDF/XML file.<br/>
+	 * YARP interface to
+	 * {@link laas.openrobots.ontology.OpenRobotsOntology#save(String)}. Please
+	 * follow the link for details.<br/>
+	 * 
+	 * @throws MalformedYarpMessageException
+	 * 
+	 * @see laas.openrobots.ontology.OpenRobotsOntology#save(String)
+	 */
+	public Bottle save(Bottle args) throws MalformedYarpMessageException {
+		Bottle result = Bottle.getNullBottle();
+		result.clear();
+
+		checkValidArgs(bottleToArray(args), 1);
+
+		oro.save(args.pop().asString().c_str());
+
 		return result;
 	}
 

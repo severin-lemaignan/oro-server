@@ -39,12 +39,12 @@ public interface IOntologyServer {
 
 	/**
 	 * This static method acts as a Statement factory. It does some pre-processing to convert a string to a valid statement relative to the given ontology.<br/>
-	 * Formatting follow the <a href="http://www.w3.org/TR/rdf-sparql-query/#QSynLiterals">SPARQL syntax</a> :
+	 * Formatting follows roughly the <a href="http://www.w3.org/TR/rdf-sparql-query/#QSynLiterals">SPARQL syntax</a> :
 	 * <ul>
 	 *   <li> Literals follows the {@code "value"^^type} rule for the general case. Simple or double quotes can be used. Cf examples below.</li>
 	 *   <li> Resources can be either isolated ("{@code individual1}"). It will then use the default namespace as defined in the {@linkplain OpenRobotsOntology#OpenRobotsOntology(String) configuration file}.</li>
 	 *   <li> Or prefixed with the namespace prefix ("{@code rdf:type}"),</li>
-	 *   <li> Or complete URIs ("{@code &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt;}"). In this case, the URI must be enclosed between &lt; and &gt;.
+	 *   <li> Or complete URIs ("{@code <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>}"). In this case, the URI must be enclosed between &lt; and &gt;.
 	 * </ul>
 	 * <br/>
 	 * Literals examples:
@@ -54,7 +54,7 @@ public interface IOntologyServer {
 	 *   <li>The double {@code 1.23} can be represented either as {@code 1.23^^xsd:double} or as {@code 1.23}. {@code "1.23"^^xsd:double} is also acceptable.</li>
 	 *   <li>User-defined dataypes can be represented with {@code "xyz"^^<http://example.org/ns/userDatatype>} or {@code "xyz"^^oro:userDatatype}.</li>
 	 * </ul>
-	 * The unit test {@link laas.openrobots.ontology.tests.OpenRobotsOntologyTest#testLiterals()} is an extensive test of various literal possibilities.
+	 * The unit test {@link laas.openrobots.ontology.tests.OpenRobotsOntologyTest#testLiterals()} extensively tests the various literal representation possibilities.
 	 * 
 	 * @param statement a string containing a statement. For example, {@code "oro:individual rdf:type oro:Class1"} or {@code "oro:individual <> oro:Class1"} 
 	 * @return a new Jena statement
@@ -148,8 +148,8 @@ public interface IOntologyServer {
 	/**
 	 * Adds a new statement (assertion) to the ontology from its string representation. Does nothing is the statement already exists.<br/>
 	 * 
-	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype. Cf an example below.</br>
-	 * 
+	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype.</br>
+	 * <br/>
 	 * For instance:
 	 * <pre>
 	 * IOntologyServer myOntology = new OpenRobotsOntology();
@@ -164,9 +164,9 @@ public interface IOntologyServer {
 	 * </ul>
 	 *  
 	 * @param statement The new statement.
+	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 * @see #add(Statement)
 	 * @see #remove(Statement)
-	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 */
 	public abstract void add(String statement) throws IllegalStatementException;
 	

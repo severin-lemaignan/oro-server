@@ -687,6 +687,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 
 	@Override
 	public void clear(PartialStatement partialStmt) {
+		if (verbose) System.out.println(" * Clearing statements matching ["+ partialStmt + "]...");
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		StmtIterator stmtsToRemove = onto.listStatements(selector);
@@ -701,11 +702,13 @@ public class OpenRobotsOntology implements IOntologyServer {
 
 	@Override
 	public void remove(Statement stmt) {
+		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
 		onto.remove(stmt);		
 	}
 	
 	@Override
 	public void remove(String stmt) throws IllegalStatementException {
+		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
 		onto.remove(createStatement(stmt));
 	}
 	
@@ -716,6 +719,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 
 	@Override
 	public void save(String path) {
+		if (verbose) System.out.println(" * Saving ontology to " + path +"...");
 		FileOutputStream file;
 		try {
 			file = new FileOutputStream(path);
@@ -729,6 +733,8 @@ public class OpenRobotsOntology implements IOntologyServer {
 
 	@Override
 	public void checkConsistency() throws InconsistentOntologyException {
+		if (verbose) System.out.println(" * Checking ontology consistency...");
+		
 		ValidityReport report = onto.validate();
 		
 		String cause = "";
@@ -746,6 +752,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 
 	@Override
 	public boolean check(Statement statement) {
+		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
 		
 		//trivial to answer true is the statement has been asserted.
 		if (onto.contains(statement)) return true;

@@ -57,6 +57,7 @@ public class Helpers {
 	 * @param model the model linked to the ontology in which the literal is to be created
 	 * @return a RDFNode holding the literal
 	 * @throws IllegalStatementException
+	 * @see laas.openrobots.ontology.IOntologyServer#createStatement(java.lang.String) Details regarding the syntax of literals. 
 	 * @see #literalToSparqlSyntax(Literal)
 	 */
 	public static RDFNode parseLiteral(final String lex, ModelCom model) throws IllegalStatementException
@@ -69,6 +70,10 @@ public class Helpers {
 			
 			if (lex.contentEquals("true")) return model.createTypedLiteral(true);
 			if (lex.contentEquals("false")) return model.createTypedLiteral(false);
+			
+			//lex is "*" or '*' -> create a string literal
+			if ((lex.startsWith("\"") && lex.endsWith("\"")) || (lex.startsWith("'") && lex.endsWith("'"))) return model.createTypedLiteral(lex.substring(1, lex.length()-1), XSDDatatype.XSDstring);
+			
 			try {
 				Double.parseDouble(lex);
 				if (!lex.contains(".")) //assume it's an integer
@@ -83,7 +88,7 @@ public class Helpers {
 		else				
 		{
 			String lexType[] = lex.split("\\^\\^");
-				if ((lexType[0].startsWith("\"") && lexType[0].endsWith("\"")) || lexType[0].startsWith("'") && lexType[0].endsWith("'")) lexType[0] = lexType[0].substring(1, lexType[0].length()-1); //a not-so-clean way to remove quotes around the literal.
+				if ((lexType[0].startsWith("\"") && lexType[0].endsWith("\"")) || (lexType[0].startsWith("'") && lexType[0].endsWith("'"))) lexType[0] = lexType[0].substring(1, lexType[0].length()-1); //a not-so-clean way to remove quotes around the literal.
 				if (lexType[1].startsWith("<") && lexType[1].endsWith(">")) lexType[1] = lexType[1].substring(1, lexType[1].length()-1); //a not-so-clean way to remove < and > around the datatype.
 				Literal object;
 				try {
