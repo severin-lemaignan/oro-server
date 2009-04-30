@@ -36,13 +36,19 @@
 
 package laas.openrobots.ontology.connectors;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Vector;
 
 import yarp.Bottle;
+import yarp.Network;
 import yarp.Value;
+import yarp.BufferedPortBottle;
 
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Literal;
@@ -52,12 +58,15 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
-import laas.openrobots.ontology.IOntologyServer;
+
+import laas.openrobots.ontology.IConnector;
+import laas.openrobots.ontology.IOntologyBackend;
 import laas.openrobots.ontology.Namespaces;
-import laas.openrobots.ontology.OpenRobotsOntology;
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
+import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
 /**
@@ -72,7 +81,7 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * <pre>
  * ([YARP port for answering] [name of the method] ([param1] [param2] [...]))
  * </pre>
- * Methods are those defined in {@link laas.openrobots.ontology.IOntologyServer}.</br>
+ * Methods are those defined in {@link laas.openrobots.ontology.IOntologyBackend}.</br>
  * Parameters are enclosed in a nested bottle (a list), and these parameters can themselves be lists.
  * Currently, these lists are always casted to vectors of string.
  * <li>Answers:</li>
@@ -85,82 +94,143 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * @author Severin Lemaignan <severin.lemaignan@laas.fr>
  *
  */
-public class YarpConnector {
+public class YarpConnector implements IConnector {
+	
+	private IOntologyBackend oro;
+	private Method[] ontologyMethods;
+	private ArrayList<Value> queryArgs;
+	
+	private String yarpPort;
+	private String lastReceiverPort = "";
+	
+	private BufferedPortBottle queryPort;	
+	private BufferedPortBottle resultPort;
+	
+	private Bottle query;
 
-	static private Value[] bottleToArray(final Bottle bottle) {
-		Value[] result = new Value[bottle.size()];
-
-		for (int i = 0; i < bottle.size(); i++)
-			result[i] = bottle.get(i);
-		// System.out.println(" -> Arg " + i + ": " + result.get(i).toString());
-
-		return result;
-	}
-
-	/**
-	 * Check we have the right number of arguments and no lists with nested
-	 * sub-list.
-	 * 
-	 * @param args
-	 *            the list of arguments to check
-	 * @param expectedArgsNumber
-	 *            the expected number of arguments
-	 * @return true is ok.
-	 * @throws MalformedYarpMessageException
-	 */
-	static private boolean checkValidArgs(final Value[] args,
-			int expectedArgsNumber) throws MalformedYarpMessageException
-	// TODO finish the implementation of a better type checking
-	// static private boolean checkValidArgs(Value[] args, int
-	// expectedArgsNumber, Method method)
-	{
-
-		// Class[] expectedType = method.getParameterTypes();
-
-		for (int i = 0; i < args.length; i++) {
-			// if (!(args[i].isString() && expectedType[i] == String.class))
-			// return false;
-			// if (!(args[i].isDouble() && expectedType[i] == Double.class))
-			// return false;
-			// if (!(args[i].isInt() && expectedType[i] == Integer.class))
-			// return false;
-
-			if (args[i].isList()) // if one of the arg is a nested list, check
-									// there's not sub list in this list ( <=>
-									// only one level of list is allowed)
-			{
-				// if (expectedType[i])
-				for (Value subArg : bottleToArray(args[i].asList())) {
-					if (subArg.isList())
-						throw new MalformedYarpMessageException(
-								"Lists in lists are not permitted in method parameters.");
-				}
-
-			}
-
-		}
-
-		if (args.length != expectedArgsNumber)
-			throw new MalformedYarpMessageException(
-					"Wrong number of parameters (" + expectedArgsNumber
-							+ " were expected, found " + args.length + ").");
-
-		return true;
-	}
-
-	private IOntologyServer oro;
-
-	public YarpConnector(IOntologyServer oro) {
+	public YarpConnector(IOntologyBackend oro, Properties params) {
+		
+		System.loadLibrary("jyarp");
+		
 		this.oro = oro;
+		
+		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
+
+		ontologyMethods = YarpConnector.class.getMethods();
+		
+		queryArgs = new ArrayList<Value>();
+		
+		query = new Bottle();
+	}
+	
+	@Override
+	public void initializeConnector() throws OntologyConnectorException {
+		
+		
+    	Network.init();
+    	
+    	System.out.println(" * Starting YARP server on port " + yarpPort);
+    	
+    	queryPort = new BufferedPortBottle();
+    	queryPort.open(yarpPort + "/in");
+    	
+    	
+    	resultPort = new BufferedPortBottle();
+    	resultPort.open(yarpPort + "/out");
+		
+	}
+	
+	@Override
+	public void run() {
+		//System.out.println("Waiting for a new request...");
+	    
+	    query = queryPort.read();
+	    //System.out.println("Incoming bottle " + query.toString());
+	    
+	    
+	       	    
+	    if (query!=null) {
+	    	Bottle result = resultPort.prepare();
+	    	result.clear();
+	    	
+	    	String receiverPort = query.get(0).toString();
+	    	if (!receiverPort.startsWith("/"))
+	    		receiverPort = "/" + receiverPort;
+	    	
+    	    if (!lastReceiverPort.equals(receiverPort)){ //not the same receiver ! disconnect the old one an connect to the new one.
+    	    	System.out.println(" * Changing client to " + receiverPort);
+    	    	Network.disconnect(yarpPort + "/out", lastReceiverPort);
+    	    	Network.connect(yarpPort + "/out", receiverPort);
+    	    }
+    	    
+	    	String queryName = query.get(1).toString();
+	    	
+	    	Bottle yarpArgs = query.pop().asList();
+	    	
+	    	boolean methodFound = false;
+	    	
+    	    for (Method m : ontologyMethods){
+    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
+    	    	if (m.getName().equalsIgnoreCase(queryName))
+    	    	{
+    	    		methodFound = true;
+    	    		
+    	    		try {
+    	    			
+    	    			result.addString("ok");
+    	    			result.append((Bottle)m.invoke(this, yarpArgs));        	    			
+    	    			
+					} catch (IllegalArgumentException e) {
+						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+						result.clear();
+						result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+						
+					} catch (IllegalAccessException e) {
+						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+						result.clear();
+						result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+						
+					} catch (InvocationTargetException e) {
+						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
+						result.clear();
+						result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");							
+					}
+    	    	}
+    	    }
+    	    
+    	    if (!methodFound){
+				System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
+				result.clear();
+				result.fromString("error \"method " + queryName + " not implemented by the ontology server.\"");							
+    	    }
+    	    
+    	    //System.out.println("sending bottle: " + result);
+    	    
+    	    //...Send the answer...
+    	    resultPort.write();
+    	    
+    	    lastReceiverPort = receiverPort;
+	    }
+		
 	}
 
-	public YarpConnector(String conf) {
-		oro = new OpenRobotsOntology(conf);
+	@Override
+	public void finalizeConnector() throws OntologyConnectorException {
+		
+		System.out.print(" * Closing YARP...");
+		
+		queryPort.close();
+		resultPort.close();
+		Network.fini();
+		
+		System.out.println(" done!");
+		
+		
 	}
 
 	/**
-	 * Adds a new statement to the ontology.
-	 * YARP interface to {@link laas.openrobots.ontology.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
+	 * Adds one or several new statements to the ontology.
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
 	 * 
 	 * YARP C++ code snippet:
 	 *  
@@ -177,44 +247,7 @@ public class YarpConnector {
 	 * 		oro.add("gorilla age 12^^xsd:int");
 	 * 		oro.add("gorilla weight 75.2");
 	 * 
-	 * 		return 0;
-	 * }
-	 * </pre>
-	 * @throws IllegalStatementException 
-	 * @throws MalformedYarpMessageException 
-	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#add(String)
-	 */
-	public Bottle add(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
-		Bottle result = Bottle.getNullBottle();
-		
-		result.clear();
-		
-		checkValidArgs(bottleToArray(args), 1);
-		
-		oro.add(args.pop().asString().c_str());
-		
-
-		
-		result.addString("true");
-		return result;
-	}
-
-	/**
-	 * Adds a set of statements to the ontology.
-	 * Like {@link #add(Bottle)} but for sets of statements.<br/>
-	 * 
-	 * YARP C++ code snippet:
-	 *  
-	 * <pre>
-	 * #include &quot;liboro.h&quot;
-	 * 
-	 * using namespace std;
-	 * using namespace openrobots;
-	 * int main(void) {
-	 * 
-	 *      Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 
+	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
 	 * 		vector<string> stmts;
 	 * 
 	 * 		stmts.push_back("gorilla rdf:type Monkey");
@@ -222,32 +255,37 @@ public class YarpConnector {
 	 * 		stmts.push_back("gorilla weight 75.2");
 	 * 
 	 * 		oro.add(stmts);
-	 *  
+	 * 
 	 * 		return 0;
 	 * }
 	 * </pre>
-	 * @throws MalformedYarpMessageException 
 	 * @throws IllegalStatementException 
+	 * @throws MalformedYarpMessageException 
 	 * 
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)
 	 */
-	public Bottle addMultiple(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
+	public Bottle add(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		
 		result.clear();
 		
-		checkValidArgs(bottleToArray(args), 1);
+		//checkValidArgs(bottleToArray(args), 1);
 		
-		for (Value v : bottleToArray(args.pop().asList()))
+		while (args.size() != 0)
 		{
-				oro.add(v.asString().c_str());
+			oro.add(args.pop().asString().c_str());
 		}
+		
+
 		
 		result.addString("true");
 		return result;
 	}
-	
+
 	/**
-	 * 
+	 * Removes one or several statements from the ontology. Does nothing if the statements don't exist.
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#remove(Statement)}.<br/>
+
 	 * 
 	 */
 	public Bottle remove(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
@@ -255,37 +293,30 @@ public class YarpConnector {
 		
 		result.clear();
 		
-		checkValidArgs(bottleToArray(args), 1);
+		//checkValidArgs(bottleToArray(args), 1);
 		
-		oro.remove(args.pop().asString().c_str());
+		/*Value arg = args.pop();
+		
+		if (arg.isList()) {
+			for (Value v : bottleToArray(args.pop().asList()))
+			{
+					oro.remove(v.asString().c_str());
+			}
+		} else	oro.remove(args.pop().asString().c_str());
+		*/
+		
+		while (args.size() != 0)
+		{
+			oro.remove(args.pop().asString().c_str());
+		}
 		
 		result.addString("true");
 		return result;
 	}
 	
 	/**
-	 * 
-	 * 
-	 */
-	public Bottle removeMultiple(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
-		Bottle result = Bottle.getNullBottle();
-		
-		result.clear();
-		
-		checkValidArgs(bottleToArray(args), 1);
-		
-		for (Value v : bottleToArray(args.pop().asList()))
-		{
-				oro.remove(v.asString().c_str());
-		}
-		
-		result.addString("true");
-		return result;
-	}
-
-	/**
 	 * Tries to identify a resource given a set of partially defined statements plus restrictions about this resource.
-	 * YARP interface to {@link laas.openrobots.ontology.OpenRobotsOntology#find(String, Vector, Vector)}. Please follow the link for details.<br/>
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector, Vector)}. Please follow the link for details.<br/>
 	 * 
 	 * YARP C++ code snippet:
 	 *  
@@ -312,7 +343,7 @@ public class YarpConnector {
 	 * </pre>
 	 * @throws MalformedYarpMessageException 
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#find(String, Vector, Vector)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector, Vector)
 	 */
 	public Bottle filtredFind(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
@@ -358,7 +389,7 @@ public class YarpConnector {
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements about this resource.
-	 * YARP interface to {@link laas.openrobots.ontology.OpenRobotsOntology#find(String, Vector)}. Please follow the link for details.<br/>
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector)}. Please follow the link for details.<br/>
 	 * 
 	 * YARP C++ code snippet:
 	 * 
@@ -382,7 +413,7 @@ public class YarpConnector {
 	 * </pre>
 	 * @throws MalformedYarpMessageException 
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#find(String, Vector)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector)
 	 */
 	public Bottle find(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
@@ -462,7 +493,7 @@ public class YarpConnector {
 	 * Returns the set of asserted and inferred statements whose the given node
 	 * is part of.<br/>
 	 * YARP interface to
-	 * {@link laas.openrobots.ontology.OpenRobotsOntology#getInfos(String)}.
+	 * {@link laas.openrobots.ontology.backends.OpenRobotsOntology#getInfos(String)}.
 	 * Please follow the link for details.<br/>
 	 * 
 	 * YARP C++ code snippet:
@@ -482,7 +513,7 @@ public class YarpConnector {
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#getInfos(String)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#getInfos(String)
 	 */
 	public Bottle getInfos(Bottle args) throws MalformedYarpMessageException {
 
@@ -505,7 +536,7 @@ public class YarpConnector {
 	 * Tries to approximately identify an individual given a set of known
 	 * statements about this resource.<br/>
 	 * YARP interface to
-	 * {@link laas.openrobots.ontology.OpenRobotsOntology#guess(String, Vector, double)}
+	 * {@link laas.openrobots.ontology.backends.OpenRobotsOntology#guess(String, Vector, double)}
 	 * . Please follow the link for details.<br/>
 	 * 
 	 * YARP C++ code snippet:
@@ -531,7 +562,7 @@ public class YarpConnector {
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#guess(String, Vector,
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#guess(String, Vector,
 	 *      double)
 	 */
 	public Bottle guess(Bottle args) throws MalformedYarpMessageException {
@@ -580,7 +611,7 @@ public class YarpConnector {
 	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>
 	 * YARP interface to
-	 * {@link laas.openrobots.ontology.OpenRobotsOntology#query(String)}. Please
+	 * {@link laas.openrobots.ontology.backends.OpenRobotsOntology#query(String)}. Please
 	 * follow the link for details.<br/>
 	 * This method can only have one variable to select. See
 	 * {@link #queryAsXML(Bottle)} to select several variables.<br/>
@@ -602,7 +633,7 @@ public class YarpConnector {
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#query(String)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#query(String)
 	 */
 	public Bottle query(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
@@ -625,12 +656,12 @@ public class YarpConnector {
 	/**
 	 * Serialize to in-memory ontology model to a RDF/XML file.<br/>
 	 * YARP interface to
-	 * {@link laas.openrobots.ontology.OpenRobotsOntology#save(String)}. Please
+	 * {@link laas.openrobots.ontology.backends.OpenRobotsOntology#save(String)}. Please
 	 * follow the link for details.<br/>
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#save(String)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#save(String)
 	 */
 	public Bottle save(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
@@ -647,14 +678,14 @@ public class YarpConnector {
 	 * Returns the complete XML-encoded SPARQL result (works as well with
 	 * several selected variables).<br/>
 	 * YARP interface to
-	 * {@link laas.openrobots.ontology.OpenRobotsOntology#queryAsXML(String)}.
+	 * {@link laas.openrobots.ontology.backends.OpenRobotsOntology#queryAsXML(String)}.
 	 * Please follow the link for details.<br/>
 	 * <br/>
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
 	 * @see #query(Bottle)
-	 * @see laas.openrobots.ontology.OpenRobotsOntology#query(String)
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#query(String)
 	 */
 	public Bottle queryAsXML(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
@@ -682,5 +713,72 @@ public class YarpConnector {
 		result.addString("This is successful. Test = " + args.pop().asString().c_str());
 		return result;
 	}
+
+	@Override
+	public IOntologyBackend getBackend() {
+		return oro;
+	}
+
+	static private Value[] bottleToArray(final Bottle bottle) {
+		Value[] result = new Value[bottle.size()];
+
+		for (int i = 0; i < bottle.size(); i++)
+			result[i] = bottle.get(i);
+		// System.out.println(" -> Arg " + i + ": " + result.get(i).toString());
+
+		return result;
+	}
+	
+	/**
+	 * Check we have the right number of arguments and no lists with nested
+	 * sub-list.
+	 * 
+	 * @param args
+	 *            the list of arguments to check
+	 * @param expectedArgsNumber
+	 *            the expected number of arguments
+	 * @return true is ok.
+	 * @throws MalformedYarpMessageException
+	 */
+	static private boolean checkValidArgs(final Value[] args,
+			int expectedArgsNumber) throws MalformedYarpMessageException
+	// TODO finish the implementation of a better type checking
+	// static private boolean checkValidArgs(Value[] args, int
+	// expectedArgsNumber, Method method)
+	{
+
+		// Class[] expectedType = method.getParameterTypes();
+
+		for (int i = 0; i < args.length; i++) {
+			// if (!(args[i].isString() && expectedType[i] == String.class))
+			// return false;
+			// if (!(args[i].isDouble() && expectedType[i] == Double.class))
+			// return false;
+			// if (!(args[i].isInt() && expectedType[i] == Integer.class))
+			// return false;
+
+			if (args[i].isList()) // if one of the arg is a nested list, check
+									// there's not sub list in this list ( <=>
+									// only one level of list is allowed)
+			{
+				// if (expectedType[i])
+				for (Value subArg : bottleToArray(args[i].asList())) {
+					if (subArg.isList())
+						throw new MalformedYarpMessageException(
+								"Lists in lists are not permitted in method parameters.");
+				}
+
+			}
+
+		}
+
+		if (args.length != expectedArgsNumber)
+			throw new MalformedYarpMessageException(
+					"Wrong number of parameters (" + expectedArgsNumber
+							+ " were expected, found " + args.length + ").");
+
+		return true;
+	}
+
 
 }

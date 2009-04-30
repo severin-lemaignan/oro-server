@@ -34,7 +34,7 @@
  * 
 */
 
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.backends;
 
 
 //Imports
@@ -48,6 +48,10 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
+import laas.openrobots.ontology.Helpers;
+import laas.openrobots.ontology.IOntologyBackend;
+import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.*;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
@@ -76,7 +80,7 @@ import com.hp.hpl.jena.util.FileManager;
  *  
  * @author Severin Lemaignan <i>severin.lemaignan@laas.fr</i>
  */
-public class OpenRobotsOntology implements IOntologyServer {
+public class OpenRobotsOntology implements IOntologyBackend {
 
 	/**
 	 * The default configuration file (set to {@value}).
@@ -119,7 +123,7 @@ public class OpenRobotsOntology implements IOntologyServer {
 	 * <li><em>default_namespace = NAMESPACE</em>: set the default namespace. Don't forget the trailing #!</li>
 	 * <li><em>short_namespaces = [true|false]</em> (default: true): if true, the ontology engine will return resource with prefix instead of full URI, or nothing if the resource is in the default namespace.</li>
 	 * </ul>
-	 * The file may contain other options, related to the server configuration. See {@link laas.openrobots.ontology.connectors.OroServer}. Have a look as well at the config file itself for more details.
+	 * The file may contain other options, related to the server configuration. See {@link laas.openrobots.ontology.OroServer}. Have a look as well at the config file itself for more details.
 	 * 
 	 * @param configFileURI The path and filename of the configuration file.
 	 */

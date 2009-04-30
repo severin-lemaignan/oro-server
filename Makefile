@@ -7,7 +7,7 @@ SRC_DIR = src
 DOC_DIR = doc
 
 BASE_PACKAGE = laas.openrobots.ontology
-ENTRYPOINT = $(BASE_PACKAGE).connectors.OroServer
+ENTRYPOINT = $(BASE_PACKAGE).OroServer
 
 #this variable points to the place where lib/libjyarp.so is expected to be found.
 JAR_BASE = $(OPENROBOTS_BASE)
@@ -32,7 +32,8 @@ WINDOWTITLE = 'ORO: the OpenRobots Ontology - Server documentation'
 HEADER = '<b>ORO: the OpenRobots Ontology</b><br/><font size="-1">Server documentation</font>'
 BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><br><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2009</font>'
 GROUPCORE = "Core Packages" "$(BASE_PACKAGE)*"
-GROUPSERVER  = "Server Packages" "$(BASE_PACKAGE).connectors*"
+GROUPBACKEND  = "Ontology Backend Packages" "$(BASE_PACKAGE).backends*"
+GROUPSERVER  = "Connectors Packages" "$(BASE_PACKAGE).connectors*"
 GROUPTESTS = "Tests Packages" "$(BASE_PACKAGE).tests*"
 ##########################################################
 
@@ -77,6 +78,7 @@ doc:
 	-header $(HEADER) \
 	-bottom $(BOTTOM) \
 	-group $(GROUPCORE) \
+	-group $(GROUPBACKEND) \
 	-group $(GROUPSERVER) \
 	-group $(GROUPTESTS) \
 	-link http://jena.sourceforge.net/javadoc \

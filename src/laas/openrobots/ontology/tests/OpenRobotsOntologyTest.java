@@ -43,9 +43,9 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import junit.framework.TestCase;
-import laas.openrobots.ontology.IOntologyServer;
-import laas.openrobots.ontology.OpenRobotsOntology;
+import laas.openrobots.ontology.IOntologyBackend;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
@@ -105,7 +105,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 ***********************************************************************/
 	
 	public void testSave() {
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		System.out.println(" * Serializing the ontology to disk...");
 		try {
@@ -125,7 +125,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		long startTime = System.currentTimeMillis();
 		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		System.out.println("[UNITTEST] Ontology loaded in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
@@ -175,7 +175,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
 	
 		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 
 		
 		/****************
@@ -232,7 +232,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfos() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 				
 		Model infos;
 
@@ -275,7 +275,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfosDefaultNs() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource using default namespace *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 				
 		Model infos;
 
@@ -308,7 +308,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of a new statement in the ontology *****");
 		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -360,7 +360,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testAddStmntWithLiteral() {
 
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		//First test a request before altering the ontology. 
 		String xmlResult =	oro.queryAsXML(
@@ -409,7 +409,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testLiterals() {
 
 		System.out.println("[UNITTEST] ***** TEST: Statements with literals *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		Statement tmp;
 		
@@ -486,7 +486,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
 		
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		String who_is_an_animal = "SELECT ?instances \n" +
 				"WHERE { \n" +
@@ -602,7 +602,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
 		
 
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 				
 		try {
 			oro.checkConsistency();
@@ -651,7 +651,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testMatching() {
 
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		System.out.println("[UNITTEST] First part: only the resource we are looking for is unknown.");
 		
@@ -711,7 +711,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testApproximateNumericMatching() {
 
 		System.out.println("[UNITTEST] ***** TEST: Approximate numeric matching *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 	
 		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
@@ -767,7 +767,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testInference() {
 
 		System.out.println("[UNITTEST] ***** TEST: Inference testing *****");
-		IOntologyServer oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
 		
 		//Add a statement
 		try {
