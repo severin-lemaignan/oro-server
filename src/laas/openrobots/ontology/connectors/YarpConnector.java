@@ -40,9 +40,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Vector;
 
 import yarp.Bottle;
@@ -59,11 +61,13 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 
-import laas.openrobots.ontology.IConnector;
-import laas.openrobots.ontology.IOntologyBackend;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.events.IEventsProvider;
+import laas.openrobots.ontology.events.IWatcher;
+import laas.openrobots.ontology.events.YarpWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
@@ -72,7 +76,7 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
 /**
  * The {@link OroServer} class is the main entry point for the "outside world" to the ontology server (and if you're using <a href="http://eris.liralab.it/yarp/">YARP</a> as network abstraction layer, {@code OroServer} relies on {@code YarpConnector} to handle your queries and prepare the answers).<br/>
  * <br/>
- * All methods listed here should be implemented by compliant YARP clients. For C++, <a href="https://www.laas.fr/~slemaign/wiki/doku.php?id=liboro">{@code liboro}</a> does the job.<br/>
+ * All methods listed here and annotated with RPCMethod should be implemented by compliant YARP clients. For C++, <a href="https://www.laas.fr/~slemaign/wiki/doku.php?id=liboro">{@code liboro}</a> does the job.<br/>
  * The C++ code samples you'll find actaully rely on {@code liboro}.<br/>
  * 
  * The structure of messages handled by {@code YarpConnector} is based on YARP {@link yarp.Bottle}.
@@ -81,7 +85,7 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * <pre>
  * ([YARP port for answering] [name of the method] ([param1] [param2] [...]))
  * </pre>
- * Methods are those defined in {@link laas.openrobots.ontology.IOntologyBackend}.</br>
+ * Methods are those defined in {@link laas.openrobots.ontology.backends.IOntologyBackend}.</br>
  * Parameters are enclosed in a nested bottle (a list), and these parameters can themselves be lists.
  * Currently, these lists are always casted to vectors of string.
  * <li>Answers:</li>
@@ -94,7 +98,7 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * @author Severin Lemaignan <severin.lemaignan@laas.fr>
  *
  */
-public class YarpConnector implements IConnector {
+public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private IOntologyBackend oro;
 	private Method[] ontologyMethods;
@@ -107,6 +111,8 @@ public class YarpConnector implements IConnector {
 	private BufferedPortBottle resultPort;
 	
 	private Bottle query;
+	
+	private HashSet<IWatcher> yarpWatchers;
 
 	public YarpConnector(IOntologyBackend oro, Properties params) {
 		
@@ -121,6 +127,8 @@ public class YarpConnector implements IConnector {
 		queryArgs = new ArrayList<Value>();
 		
 		query = new Bottle();
+		
+		yarpWatchers = new HashSet<IWatcher>();
 	}
 	
 	@Override
@@ -264,7 +272,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)
 	 */
-	public Bottle add(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
+	@RPCMethod public Bottle add(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		
 		result.clear();
@@ -288,7 +296,7 @@ public class YarpConnector implements IConnector {
 
 	 * 
 	 */
-	public Bottle remove(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
+	@RPCMethod public Bottle remove(Bottle args) throws MalformedYarpMessageException, IllegalStatementException {
 		Bottle result = Bottle.getNullBottle();
 		
 		result.clear();
@@ -345,7 +353,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector, Vector)
 	 */
-	public Bottle filtredFind(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle filtredFind(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -415,7 +423,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector)
 	 */
-	public Bottle find(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle find(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -459,7 +467,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see #getInfos(Bottle)
 	 */
-	public Bottle getHumanReadableInfos(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle getHumanReadableInfos(Bottle args) throws MalformedYarpMessageException {
 
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
@@ -515,7 +523,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#getInfos(String)
 	 */
-	public Bottle getInfos(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle getInfos(Bottle args) throws MalformedYarpMessageException {
 
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
@@ -565,7 +573,7 @@ public class YarpConnector implements IConnector {
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#guess(String, Vector,
 	 *      double)
 	 */
-	public Bottle guess(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle guess(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -635,7 +643,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#query(String)
 	 */
-	public Bottle query(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle query(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -663,7 +671,7 @@ public class YarpConnector implements IConnector {
 	 * 
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#save(String)
 	 */
-	public Bottle save(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle save(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -687,7 +695,7 @@ public class YarpConnector implements IConnector {
 	 * @see #query(Bottle)
 	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#query(String)
 	 */
-	public Bottle queryAsXML(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle queryAsXML(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 
@@ -699,12 +707,65 @@ public class YarpConnector implements IConnector {
 	}
 
 	/**
+	 * Adds one or several new statements to the ontology.
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
+	 * 
+	 * YARP C++ code snippet:
+	 *  
+	 * <pre>
+	 * #include &quot;liboro.h&quot;
+	 * 
+	 * using namespace std;
+	 * using namespace openrobots;
+	 * int main(void) {
+	 * 
+	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 
+	 * 		oro.add("gorilla rdf:type Monkey");
+	 * 		oro.add("gorilla age 12^^xsd:int");
+	 * 		oro.add("gorilla weight 75.2");
+	 * 
+	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
+	 * 		vector<string> stmts;
+	 * 
+	 * 		stmts.push_back("gorilla rdf:type Monkey");
+	 * 		stmts.push_back("gorilla age 12^^xsd:int");
+	 * 		stmts.push_back("gorilla weight 75.2");
+	 * 
+	 * 		oro.add(stmts);
+	 * 
+	 * 		return 0;
+	 * }
+	 * </pre>
+	 * @throws IllegalStatementException 
+	 * @throws MalformedYarpMessageException 
+	 * 
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)
+	 */
+	@RPCMethod public Bottle subscribe(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
+		Bottle result = Bottle.getNullBottle();
+		
+		result.clear();
+		
+		checkValidArgs(bottleToArray(args), 2);
+		
+		String triggerPort = new String(args.pop().asString().c_str());
+		String watchExpression = new String(args.pop().asString().c_str());
+		
+		yarpWatchers.add(new YarpWatcher(watchExpression, triggerPort));
+		
+		result.addString("true");
+		return result;
+	}
+	
+	
+	/**
 	 * A simple test to check if the YARP connector is working.<br/>
 	 * It can be called with a string as argument and it will return the string appended to another one.
 	 *  
 	 * @throws MalformedYarpMessageException
 	 */
-	public Bottle test(Bottle args) throws MalformedYarpMessageException {
+	@RPCMethod public Bottle test(Bottle args) throws MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
 		
@@ -778,6 +839,11 @@ public class YarpConnector implements IConnector {
 							+ " were expected, found " + args.length + ").");
 
 		return true;
+	}
+
+	@Override
+	public Set<IWatcher> getPendingWatchers() {
+		return yarpWatchers;
 	}
 
 

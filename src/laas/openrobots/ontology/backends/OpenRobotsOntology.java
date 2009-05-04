@@ -43,15 +43,17 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
 import laas.openrobots.ontology.Helpers;
-import laas.openrobots.ontology.IOntologyBackend;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.events.IEventsProvider;
+import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.*;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
@@ -88,6 +90,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public static final String DEFAULT_CONFIG_FILE = "./ontorobot.conf";
 	
 	private OntModel onto;
+	
+	private HashSet<IEventsProvider> eventsProviders;
 	
 	private String owlUri;
 	
@@ -300,6 +304,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				System.exit(1);
 			}			
 		}
+		
+		//notify the events subscribers.
+		onModelChange();
 		
 		if (verbose) System.out.println("done.");
 	}
@@ -604,7 +611,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	private void initialize(){
 				
-				
+		this.eventsProviders = new HashSet<IEventsProvider>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
@@ -617,6 +624,26 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 
+	private void onModelChange(){
+		
+		//iterate over the various registered watchers and notify the subscribers when needed.
+		for (IEventsProvider ep : eventsProviders) {
+			for (IWatcher w : ep.getPendingWatchers()) {
+				
+				try	{
+					if (w.getWatchQuery().execAsk()) w.notifySubscriber();
+					
+				}
+				catch (QueryExecException e) {
+					if (verbose) System.err.println("[ERROR] internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+					throw e;
+				}
+				
+			}
+			
+		}
+			
+	}
 	/**
 	 * Loads into memory the ontology which was specified in the constructor.
 	 */
@@ -707,13 +734,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void remove(Statement stmt) {
 		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
-		onto.remove(stmt);		
+		onto.remove(stmt);	
+		
+		//notify the events subscribers.
+		onModelChange();
+
 	}
 	
 	@Override
 	public void remove(String stmt) throws IllegalStatementException {
 		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
-		onto.remove(createStatement(stmt));
+		remove(createStatement(stmt));
 	}
 	
 	@Override
@@ -778,6 +809,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			throw e;
 		}
 
+	}
+
+	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

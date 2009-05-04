@@ -39,9 +39,12 @@ package laas.openrobots.ontology;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.YarpConnector;
+import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 /**
@@ -49,7 +52,7 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
  * It relies on other classes to handle specific network protocols. Currently, only <a href="http://eris.liralab.it/yarp/">YARP</a> is implemented, through {@link YarpConnector}. Others (ROS...) may follow.<br/>
  * <br/>
  * <ul>
- * <li>The main definition of the server interface is here {@link laas.openrobots.ontology.IOntologyBackend}.</li>
+ * <li>The main definition of the server interface is here {@link laas.openrobots.ontology.backends.IOntologyBackend}.</li>
  * <li>If you need details on the YARP API, {@linkplain YarpConnector jump here}.</li>
  * </ul>
  * <br/>
@@ -69,21 +72,21 @@ public class OroServer {
 
 
 	public static final String DEFAULT_CONF = "oro.conf";
-	public static final String VERSION = "0.2.1"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.2.99"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 
 	private volatile boolean keepOn = true;
-	private volatile IConnector currentConnector;
+	private volatile HashSet<IConnector> connectors;
+	private volatile HashSet<IEventsProvider> eventsProviders;
 	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
-			System.out.println(" * Control-C caught. Shutting down..."); 
+			System.out.println(" * Control-C caught. Shutting down now."); 
 
 			keepOn = false; 
 			try {
-				currentConnector.finalizeConnector();
+				for (IConnector c : connectors)	c.finalizeConnector();
 				//Thread.sleep(2000); 
 			} catch (OntologyConnectorException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
 		} 
@@ -93,6 +96,10 @@ public class OroServer {
    	
     	
     	String confFile;
+    	
+    	connectors = new HashSet<IConnector>();
+    	eventsProviders = new HashSet<IEventsProvider>();
+    	
     	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
     	
@@ -104,24 +111,28 @@ public class OroServer {
     	
     	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
     	
-		System.out.println("*** OroServer ***");
+		System.out.println("*** OroServer " + VERSION + " ***");
 		System.out.println(" * Using configuration file " + confFile);
-		
 		
 		//Open and load the ontology. If the configuration file can not be found, it exits.
 		OpenRobotsOntology oro = new OpenRobotsOntology(confFile);
 		
 		//if (oro.getParameters().getProperty("yarp", "") != "enabled") System.out.println("YARP bindings should not be enabled but...well...I like them, so I start them anyway. Sorry.");
-		    	
-    			
-		currentConnector = new YarpConnector(oro, oro.getParameters());
+		YarpConnector yc = new YarpConnector(oro, oro.getParameters());
 		
-		currentConnector.initializeConnector();
+		eventsProviders.add(yc);
+		
+		oro.registerEventsHandlers(eventsProviders);
+    			
+		connectors.add(yc);
+		
+		for (IConnector c : connectors)	c.initializeConnector();
 		
 
 		while(keepOn) {			
         	    	
-    	    currentConnector.run();
+			//!!! TODO !!! Ouhouh! use threads before adding new backends!
+			for (IConnector c : connectors)	c.run();
 
     	}
 		

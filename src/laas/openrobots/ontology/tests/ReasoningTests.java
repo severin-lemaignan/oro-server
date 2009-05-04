@@ -6,8 +6,8 @@ import java.util.Vector;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 import junit.framework.TestCase;
-import laas.openrobots.ontology.IOntologyBackend;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;

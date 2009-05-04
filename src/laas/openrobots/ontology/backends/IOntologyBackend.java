@@ -1,9 +1,14 @@
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.backends;
 
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.OroServer;
+import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.events.IEventsProvider;
+import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
@@ -404,5 +409,12 @@ public interface IOntologyBackend {
 	 * @param path The path and name of the OWL file to save to (for instance {@code ./ontos/saved.owl})
 	 */
 	public abstract void save(String path);
+	
+	/**
+	 * Allows to register several <em>events providers</em> (typically, one by underlying middleware) which in turn provide access to <em>watchers</em>. Watchers expose a <em>watch expression</em> which is a SPARQL <code>ASK</code> query. Every time a change is made on the ontology, the ontology backend which implements this interface is expected to execute this query against the model and notify the watchers (through {@link IWatcher#notifySubscriber()}) if the result is positive.
+	 * @param eventsProviders A set of event providers.
+	 * @see IWatcher, IEventsProvider
+	 */
+	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders);
 
 }

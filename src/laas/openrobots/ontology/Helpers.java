@@ -57,7 +57,7 @@ public class Helpers {
 	 * @param model the model linked to the ontology in which the literal is to be created
 	 * @return a RDFNode holding the literal
 	 * @throws IllegalStatementException
-	 * @see laas.openrobots.ontology.IOntologyBackend#createStatement(java.lang.String) Details regarding the syntax of literals. 
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createStatement(java.lang.String) Details regarding the syntax of literals. 
 	 * @see #literalToSparqlSyntax(Literal)
 	 */
 	public static RDFNode parseLiteral(final String lex, ModelCom model) throws IllegalStatementException

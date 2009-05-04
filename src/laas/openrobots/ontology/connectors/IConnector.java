@@ -1,8 +1,9 @@
 /**
  * 
  */
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.connectors;
 
+import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 /**
