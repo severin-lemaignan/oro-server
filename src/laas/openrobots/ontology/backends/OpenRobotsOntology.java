@@ -43,6 +43,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -101,6 +102,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private boolean verbose;
 	
 	private Properties parameters;
+
+	private HashMap<String, QueryExecution> WatchersCache;
 	
 	/***************************************
 	 *          Constructors               *
@@ -290,7 +293,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public void add(Statement statement)
 	{
-		if (verbose) System.out.print(" * Adding new statement ["+statement+"]...");
+		if (verbose) System.out.print(" * Adding new statement ["+Namespaces.toLightString(statement)+"]...");
 		
 		try {
 			onto.add(statement);
@@ -315,27 +318,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#add(String)
 	 */
 	public void add(String rawStmt) throws IllegalStatementException
-	{
-		if (verbose) System.out.print(" * Adding a new statement ["+rawStmt+"]...");
-			
-		try {
-			onto.add(createStatement(rawStmt));
-		}
-		catch (IllegalStatementException ise)
-		{
-			throw ise;
-		}
-		catch (Exception e)
-		{
-			if (verbose) {
-				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
-				e.printStackTrace();
-				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
-				System.exit(1);
-			}			
-		}
-		
-		if (verbose) System.out.println("done.");
+	{			
+			add(createStatement(rawStmt));
 	}
 	
 	/* (non-Javadoc)
@@ -630,8 +614,36 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (IEventsProvider ep : eventsProviders) {
 			for (IWatcher w : ep.getPendingWatchers()) {
 				
+				//First time we see this watch expression: we convert it to a nice QueryExecution object, read to be executed against the ontology.
+				if (WatchersCache.get(w.getWatchQuery()) == null) {
+					Statement statement;
+					
+					try {
+						statement = createStatement(w.getWatchQuery());
+					} catch (IllegalStatementException e) {
+						if (verbose) System.err.println("[ERROR] Error while parsing the expression to watch for the event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
+						return;
+					}
+						
+					String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
+					
+					try	{
+						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
+						WatchersCache.put(w.getWatchQuery(), QueryExecutionFactory.create(query, onto));
+					}
+					catch (QueryParseException e) {
+						if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
+						return;
+					}
+					
+					
+				}
+				
+				
 				try	{
-					if (w.getWatchQuery().execAsk()) w.notifySubscriber();
+					if (verbose) System.out.println(" * Watching an expression...");
+					
+					if (WatchersCache.get(w.getWatchQuery()).execAsk()) w.notifySubscriber();
 					
 				}
 				catch (QueryExecException e) {
@@ -733,7 +745,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	public void remove(Statement stmt) {
-		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
+		if (verbose) System.out.println(" * Removing statement ["+ Namespaces.toLightString(stmt) + "]...");
 		onto.remove(stmt);	
 		
 		//notify the events subscribers.
@@ -743,7 +755,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	public void remove(String stmt) throws IllegalStatementException {
-		if (verbose) System.out.println(" * Removing statement ["+ stmt + "]...");
 		remove(createStatement(stmt));
 	}
 	

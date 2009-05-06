@@ -98,6 +98,10 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * @author Severin Lemaignan <severin.lemaignan@laas.fr>
  *
  */
+/**
+ * @author slemaign
+ *
+ */
 public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private IOntologyBackend oro;
@@ -149,7 +153,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	}
 	
 	@Override
-	public void run() {
+	public void run() throws MalformedYarpMessageException {
 		//System.out.println("Waiting for a new request...");
 	    
 	    query = queryPort.read();
@@ -163,7 +167,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	
 	    	String receiverPort = query.get(0).toString();
 	    	if (!receiverPort.startsWith("/"))
-	    		receiverPort = "/" + receiverPort;
+	    		throw new MalformedYarpMessageException("Your YARP message should start with the YARP port on which you want to get the result of your query.");
 	    	
     	    if (!lastReceiverPort.equals(receiverPort)){ //not the same receiver ! disconnect the old one an connect to the new one.
     	    	System.out.println(" * Changing client to " + receiverPort);
@@ -706,41 +710,13 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		return result;
 	}
 
-	/**
-	 * Adds one or several new statements to the ontology.
-	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
-	 * 
-	 * YARP C++ code snippet:
-	 *  
-	 * <pre>
-	 * #include &quot;liboro.h&quot;
-	 * 
-	 * using namespace std;
-	 * using namespace openrobots;
-	 * int main(void) {
-	 * 
-	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 
-	 * 		oro.add("gorilla rdf:type Monkey");
-	 * 		oro.add("gorilla age 12^^xsd:int");
-	 * 		oro.add("gorilla weight 75.2");
-	 * 
-	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
-	 * 		vector<string> stmts;
-	 * 
-	 * 		stmts.push_back("gorilla rdf:type Monkey");
-	 * 		stmts.push_back("gorilla age 12^^xsd:int");
-	 * 		stmts.push_back("gorilla weight 75.2");
-	 * 
-	 * 		oro.add(stmts);
-	 * 
-	 * 		return 0;
-	 * }
-	 * </pre>
-	 * @throws IllegalStatementException 
-	 * @throws MalformedYarpMessageException 
-	 * 
-	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)
+	
+	/** Register a new event watcher in the ontology.<br/>
+	 * When you register an event watcher, you provide a pattern (actually, a {@link laas.openrobots.ontology.PartialStatement}). This pattern is matched against the ontology each time the model change, and when some statements match the pattern, the port given as argument is triggered.
+	 * @param args The expected arguments bottle has this prototype: [string, string]. The first string is the (YARP) port to trigger, the second one is a partial statement representing the pattern to watch.
+	 * @throws IllegalStatementException
+	 * @throws MalformedYarpMessageException
+	 * @see laas.openrobots.ontology.events.IEventsProvider
 	 */
 	@RPCMethod public Bottle subscribe(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
 		Bottle result = Bottle.getNullBottle();

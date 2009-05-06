@@ -4,6 +4,7 @@
 package laas.openrobots.ontology.connectors;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 /**
@@ -20,7 +21,8 @@ public interface IConnector {
 	
 	/**
 	 * When called, should wait for one request, answer it and return.
+	 * @throws MalformedYarpMessageException 
 	 */
-	public abstract void run() throws OntologyConnectorException;
+	public abstract void run() throws OntologyConnectorException, MalformedYarpMessageException;
 
 }

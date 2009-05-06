@@ -45,6 +45,7 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.YarpConnector;
 import laas.openrobots.ontology.events.IEventsProvider;
+import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 /**
@@ -72,7 +73,7 @@ public class OroServer {
 
 
 	public static final String DEFAULT_CONF = "oro.conf";
-	public static final String VERSION = "0.2.99"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.3.0"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 
 	private volatile boolean keepOn = true;
 	private volatile HashSet<IConnector> connectors;
@@ -92,7 +93,7 @@ public class OroServer {
 		} 
 	} 
 	
-	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException { 
+	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException, MalformedYarpMessageException { 
    	
     	
     	String confFile;
@@ -132,15 +133,17 @@ public class OroServer {
 		while(keepOn) {			
         	    	
 			//!!! TODO !!! Ouhouh! use threads before adding new backends!
-			for (IConnector c : connectors)	c.run();
+			for (IConnector c : connectors) c.run();
 
+			
+			Thread.sleep(100);
     	}
 		
 		//Finalization occurs in the shutdown hook, above.
 	}
 	
 	
-	public static void main(String[] args) throws OntologyConnectorException, InterruptedException {
+	public static void main(String[] args) throws OntologyConnectorException, InterruptedException, MalformedYarpMessageException {
 		new OroServer().runServer(args);
 	}
 
