@@ -126,7 +126,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
 
-		ontologyMethods = YarpConnector.class.getMethods();
+		ontologyMethods = YarpConnector.class.getMethods(); //TODO filter with @RPCMethod annotation
 		
 		queryArgs = new ArrayList<Value>();
 		
@@ -156,7 +156,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	public void run() throws MalformedYarpMessageException {
 		//System.out.println("Waiting for a new request...");
 	    
-	    query = queryPort.read();
+	    query = queryPort.read(false); //non blocking read.
 	    //System.out.println("Incoming bottle " + query.toString());
 	    
 	    
@@ -180,48 +180,57 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	Bottle yarpArgs = query.pop().asList();
 	    	
 	    	boolean methodFound = false;
-	    	
-    	    for (Method m : ontologyMethods){
-    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
-    	    	if (m.getName().equalsIgnoreCase(queryName))
-    	    	{
-    	    		methodFound = true;
-    	    		
-    	    		try {
-    	    			
-    	    			result.addString("ok");
-    	    			result.append((Bottle)m.invoke(this, yarpArgs));        	    			
-    	    			
-					} catch (IllegalArgumentException e) {
-						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
-						result.clear();
-						result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
-						
-					} catch (IllegalAccessException e) {
-						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
-						result.clear();
-						result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
-						
-					} catch (InvocationTargetException e) {
-						System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
-						result.clear();
-						result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");							
-					}
-    	    	}
-    	    }
-    	    
-    	    if (!methodFound){
-				System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
-				result.clear();
-				result.fromString("error \"method " + queryName + " not implemented by the ontology server.\"");							
-    	    }
-    	    
-    	    //System.out.println("sending bottle: " + result);
-    	    
-    	    //...Send the answer...
-    	    resultPort.write();
-    	    
-    	    lastReceiverPort = receiverPort;
+
+	    	if (queryName.equalsIgnoreCase("close")){
+	    		System.out.println(" * Closing communication with " + lastReceiverPort);
+	    		lastReceiverPort = "";
+	    		Network.disconnect(yarpPort + "/out", lastReceiverPort);	    		
+	    	}
+	    	else
+	    	{
+	    		
+	    	    for (Method m : ontologyMethods){
+	    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
+	    	    	if (m.getName().equalsIgnoreCase(queryName))
+	    	    	{
+	    	    		methodFound = true;
+	    	    		
+	    	    		try {
+	    	    			
+	    	    			result.addString("ok");
+	    	    			result.append((Bottle)m.invoke(this, yarpArgs));        	    			
+	    	    			
+						} catch (IllegalArgumentException e) {
+							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+							result.clear();
+							result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+							
+						} catch (IllegalAccessException e) {
+							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+							result.clear();
+							result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+							
+						} catch (InvocationTargetException e) {
+							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
+							result.clear();
+							result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");							
+						}
+	    	    	}
+	    	    }
+	    	    
+	    	    if (!methodFound){
+					System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
+					result.clear();
+					result.fromString("error \"method " + queryName + " not implemented by the ontology server.\"");							
+	    	    }
+	    	    
+	    	    //System.out.println("sending bottle: " + result);
+	    	    
+	    	    //...Send the answer...
+	    	    resultPort.write();
+	    	    
+	    	    lastReceiverPort = receiverPort;
+		    }
 	    }
 		
 	}
@@ -725,8 +734,11 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		checkValidArgs(bottleToArray(args), 2);
 		
-		String triggerPort = new String(args.pop().asString().c_str());
-		String watchExpression = new String(args.pop().asString().c_str());
+		String triggerPort = new String(args.get(0).asString().c_str());
+		if (triggerPort.indexOf("/") == -1) throw new MalformedYarpMessageException("The first argument in an event subscription bottle must be a valid YARP port.");
+		
+		String watchExpression = new String(args.get(1).asString().c_str());
+		if (watchExpression.indexOf("?") == -1) throw new MalformedYarpMessageException("The second argument in an event subscription bottle must be a valid pattern (ie a valid PartialStatement.");
 		
 		yarpWatchers.add(new YarpWatcher(watchExpression, triggerPort));
 		

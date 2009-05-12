@@ -103,7 +103,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	private Properties parameters;
 
-	private HashMap<String, QueryExecution> WatchersCache;
+	private HashMap<String, Query> watchersCache;
 	
 	/***************************************
 	 *          Constructors               *
@@ -596,6 +596,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private void initialize(){
 				
 		this.eventsProviders = new HashSet<IEventsProvider>();
+		this.watchersCache = new HashMap<String, Query>(); 
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
@@ -609,27 +610,29 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 
 	private void onModelChange(){
+		//System.out.println("Model changed!");
 		
 		//iterate over the various registered watchers and notify the subscribers when needed.
 		for (IEventsProvider ep : eventsProviders) {
 			for (IWatcher w : ep.getPendingWatchers()) {
 				
 				//First time we see this watch expression: we convert it to a nice QueryExecution object, read to be executed against the ontology.
-				if (WatchersCache.get(w.getWatchQuery()) == null) {
-					Statement statement;
+				if (watchersCache.get(w.getWatchQuery()) == null) {
+					PartialStatement statement;
 					
 					try {
-						statement = createStatement(w.getWatchQuery());
+						statement = createPartialStatement(w.getWatchQuery());
 					} catch (IllegalStatementException e) {
 						if (verbose) System.err.println("[ERROR] Error while parsing the expression to watch for the event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
 						return;
 					}
 						
-					String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
-					
+					String resultQuery = "ASK { "+statement.asSparqlRow() +" }";
+										
 					try	{
 						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-						WatchersCache.put(w.getWatchQuery(), QueryExecutionFactory.create(query, onto));
+						watchersCache.put(w.getWatchQuery(),query );
+						if (verbose) System.out.println(" * New watch expression added to cache: " + resultQuery);
 					}
 					catch (QueryParseException e) {
 						if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
@@ -641,10 +644,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 				
 				try	{
-					if (verbose) System.out.println(" * Watching an expression...");
+				
+					if (QueryExecutionFactory.create(watchersCache.get(w.getWatchQuery()), onto).execAsk()){
+						if (verbose) System.out.println(" * Event triggered for pattern " + w.getWatchQuery());
+						
+						switch(w.getTriggeringType()){
+						case ON_TRUE:
+							if (!true) {
+								w.notifySubscriber();
+							}
+				
+						
+					}
 					
-					if (WatchersCache.get(w.getWatchQuery()).execAsk()) w.notifySubscriber();
-					
+				}
 				}
 				catch (QueryExecException e) {
 					if (verbose) System.err.println("[ERROR] internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
@@ -765,7 +778,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	public void save(String path) {
-		if (verbose) System.out.println(" * Saving ontology to " + path +"...");
+		if (verbose) System.out.print(" * Saving ontology to " + path +"...");
 		FileOutputStream file;
 		try {
 			file = new FileOutputStream(path);
@@ -774,6 +787,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return;
 		}
 		onto.write(file);
+		
+		if (verbose) System.out.println("done");
 		
 	}
 
@@ -821,9 +836,32 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 
 	}
+	
+	@Override
+	public boolean check(PartialStatement statement) {
+		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
+						
+		String resultQuery = "ASK { " + statement.asSparqlRow() + " }";
+		
+		try	{
+			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
+		
+			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
+			return myQueryExecution.execAsk();
+		}
+		catch (QueryParseException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+		catch (QueryExecException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+
+	}
 
 	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders) {
-		// TODO Auto-generated method stub
+		this.eventsProviders.addAll(eventsProviders);
 		
 	}
 

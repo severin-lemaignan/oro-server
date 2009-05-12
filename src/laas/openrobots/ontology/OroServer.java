@@ -73,7 +73,7 @@ public class OroServer {
 
 
 	public static final String DEFAULT_CONF = "oro.conf";
-	public static final String VERSION = "0.3.0"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.3.2"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 
 	private volatile boolean keepOn = true;
 	private volatile HashSet<IConnector> connectors;
@@ -136,7 +136,7 @@ public class OroServer {
 			for (IConnector c : connectors) c.run();
 
 			
-			Thread.sleep(100);
+			Thread.sleep(10);
     	}
 		
 		//Finalization occurs in the shutdown hook, above.

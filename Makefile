@@ -40,7 +40,7 @@ GROUPTESTS = "Tests Packages" "$(BASE_PACKAGE).tests*"
 all : oro-server doc
 
 oro-server: oro-jar
-	/bin/echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar' > $(JAR_DIR)/start
+	/bin/echo -e '#!/bin/sh\njava -Djava.library.path=$(OPENROBOTS_BASE)/lib -jar oro-server.jar $$1' > $(JAR_DIR)/start
 	chmod +x $(JAR_DIR)/start
 	echo "If you have the test ontology oro_test.owl, you can now run 'make test' to run the unit tests"
 

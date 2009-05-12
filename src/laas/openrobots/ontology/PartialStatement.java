@@ -116,6 +116,9 @@ public class PartialStatement implements Statement {
 	}
 	
 	/**Formats a partial statement for inclusion in a SPARQL query.</br>
+	 * 
+	 * Unbounded resources of the statement are rendered with "?" as prefixes, other parts are rendered as resources with their full URIs.
+	 * 
 	 * @return the formatted partial statement.
 	 */
 	public String asSparqlRow(){	

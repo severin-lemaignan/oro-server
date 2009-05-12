@@ -1,6 +1,8 @@
 package laas.openrobots.ontology.events;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.connectors.YarpConnector;
+import laas.openrobots.ontology.events.IEventsProvider.TriggeringType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import yarp.Bottle;
 import yarp.BufferedPortBottle;
@@ -17,6 +19,8 @@ public class YarpWatcher implements IWatcher {
 	private String _watchExpression;
 	static private BufferedPortBottle _localTriggerPort;
 	private String _remoteTriggerPortName;
+	private TriggeringType _triggeringType;
+	private boolean _isTriggered;
 	
 	//static initialization
 	static {
@@ -24,8 +28,24 @@ public class YarpWatcher implements IWatcher {
 		_localTriggerPort.open(_localTriggerPortName);
 	}
 	
-	public YarpWatcher(String expressionToWatch, String portToTrigger) //, IOntologyBackend onto) throws IllegalStatementException
-	{		
+	/** Creates a new event watcher with triggering type defaulted to {@code ON_TRUE_ONE_SHOT}
+	 * 
+	 * @param expressionToWatch a pattern (partial statement) defining an expression to watch. See {@link YarpConnector#subscribe(Bottle)}.
+	 * @param portToTrigger a YARP port to notify on incoming events.  See {@link YarpConnector#subscribe(Bottle)}.
+	 * @see IEventsProvider.TriggeringType
+	 */
+	public YarpWatcher(String expressionToWatch, String portToTrigger){
+		this(expressionToWatch, portToTrigger, IEventsProvider.TriggeringType.ON_TRUE_ONE_SHOT);
+	}
+	
+	/** Creates a new event watcher.
+	 * 
+	 * @param expressionToWatch a pattern (partial statement) defining an expression to watch. See {@link YarpConnector#subscribe(Bottle)}.
+	 * @param portToTrigger a YARP port to notify on incoming events.  See {@link YarpConnector#subscribe(Bottle)}.
+	 * @param triggerType the way you want the event to be triggered.
+	 * @see IEventsProvider.TriggeringType
+	 */
+	public YarpWatcher(String expressionToWatch, String portToTrigger, TriggeringType triggerType){		
 		_watchExpression = expressionToWatch;
 		
 		_remoteTriggerPortName = portToTrigger;
@@ -46,6 +66,8 @@ public class YarpWatcher implements IWatcher {
 	 */
 	public void notifySubscriber() {
 		
+		//System.out.println("Event occured! I'm getting notified!");
+			
 		Network.connect(_localTriggerPortName, _remoteTriggerPortName);
 		
 		Bottle notification = _localTriggerPort.prepare();
@@ -58,6 +80,11 @@ public class YarpWatcher implements IWatcher {
 		
 		Network.disconnect(_localTriggerPortName, _remoteTriggerPortName);
 
+	}
+
+	@Override
+	public TriggeringType getTriggeringType() {
+		return _triggeringType;
 	}
 	
 }

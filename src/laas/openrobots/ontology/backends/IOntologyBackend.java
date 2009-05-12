@@ -111,6 +111,20 @@ public interface IOntologyBackend {
 	 * @return true if the statement is asserted in or can be inferred from the ontology
 	 */
 	public abstract boolean check(Statement statement);
+
+	/** Checks if a pattern represented as a partial statement matches at least one asserted of inferred statement.<br/>
+	 * 
+	 * For instance:
+	 * <ul>
+	 * 	<li>A pattern like {@code [?object rdf:type Bottle]} would match all instances of the class {@code Bottle}.</li>
+	 *  <li>{@code [anAgent sees ?something]} would match all objects seen by instance "{@code anAgent}".</li>
+	 * </ul>
+	 * 
+	 * @param partial_statement the pattern to be evaluated
+	 * @return true if the pattern matches at least one asserted or inferred statement of the ontology
+	 * @see #find(String, Vector)
+	 */
+	public abstract boolean check(PartialStatement partial_statement);
 	
 	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>
@@ -416,5 +430,6 @@ public interface IOntologyBackend {
 	 * @see IWatcher, IEventsProvider
 	 */
 	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders);
+
 
 }
