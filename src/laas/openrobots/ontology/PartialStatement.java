@@ -211,31 +211,6 @@ public class PartialStatement implements Statement {
 	}
 
 	@Override
-	public Statement changeObject(float o) {
-		return baseStmt.changeObject(o);
-	}
-
-	@Override
-	public Statement changeObject(boolean o) {
-		return baseStmt.changeObject(o);
-	}
-
-	@Override
-	public Statement changeObject(long o) {
-		return baseStmt.changeObject(o);
-	}
-
-	@Override
-	public Statement changeObject(double o) {
-		return baseStmt.changeObject(o);
-	}
-
-	@Override
-	public Statement changeObject(Object o) {
-		return baseStmt.changeObject(o);
-	}
-
-	@Override
 	public Statement changeObject(String o) {
 		return baseStmt.changeObject(o);
 	}
