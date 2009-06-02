@@ -62,19 +62,19 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 
 import laas.openrobots.ontology.Namespaces;
-import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.events.YarpWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
 /**
- * The {@link OroServer} class is the main entry point for the "outside world" to the ontology server (and if you're using <a href="http://eris.liralab.it/yarp/">YARP</a> as network abstraction layer, {@code OroServer} relies on {@code YarpConnector} to handle your queries and prepare the answers).<br/>
+ * The {@link laas.openrobots.ontology.OroServer} class is the main entry point for the "outside world" to the ontology server (and if you're using <a href="http://eris.liralab.it/yarp/">YARP</a> as network abstraction layer, {@code OroServer} relies on {@code YarpConnector} to handle your queries and prepare the answers).<br/>
  * <br/>
  * All methods listed here and annotated with RPCMethod should be implemented by compliant YARP clients. For C++, <a href="https://www.laas.fr/~slemaign/wiki/doku.php?id=liboro">{@code liboro}</a> does the job.<br/>
  * The C++ code samples you'll find actaully rely on {@code liboro}.<br/>
@@ -332,6 +332,59 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		}
 		
 		result.addString("true");
+		return result;
+	}
+	
+	/**
+	 * Adds one or several new statements to the ontology.
+	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)} (syntax details are provided on the linked page).<br/>
+	 * 
+	 * YARP C++ code snippet:
+	 *  
+	 * <pre>
+	 * #include &quot;liboro.h&quot;
+	 * 
+	 * using namespace std;
+	 * using namespace openrobots;
+	 * int main(void) {
+	 * 
+	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 
+	 * 		oro.add("gorilla rdf:type Monkey");
+	 * 		oro.add("gorilla age 12^^xsd:int");
+	 * 		oro.add("gorilla weight 75.2");
+	 * 
+	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
+	 * 		vector<string> stmts;
+	 * 
+	 * 		stmts.push_back("gorilla rdf:type Monkey");
+	 * 		stmts.push_back("gorilla age 12^^xsd:int");
+	 * 		stmts.push_back("gorilla weight 75.2");
+	 * 
+	 * 		oro.add(stmts);
+	 * 
+	 * 		return 0;
+	 * }
+	 * </pre>
+	 * @throws IllegalStatementException 
+	 * @throws MalformedYarpMessageException 
+	 * 
+	 * @see laas.openrobots.ontology.backends.OpenRobotsOntology#add(String)
+	 */
+	@RPCMethod public Bottle checkConsistency(Bottle args) throws MalformedYarpMessageException {
+		Bottle result = Bottle.getNullBottle();
+		
+		result.clear();
+		
+		checkValidArgs(bottleToArray(args), 0);
+		
+		try {
+			oro.checkConsistency();					
+			result.addString("true");			
+		} catch (InconsistentOntologyException e) {
+			result.addString("false");
+		}
+		
 		return result;
 	}
 	
@@ -728,19 +781,40 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * @see laas.openrobots.ontology.events.IEventsProvider
 	 */
 	@RPCMethod public Bottle subscribe(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
+		
+		Integer triggerNum = 0;
+		
 		Bottle result = Bottle.getNullBottle();
 		
 		result.clear();
 		
-		checkValidArgs(bottleToArray(args), 2);
+		checkValidArgs(bottleToArray(args), 3);
+			
+		String watchExpression = new String(args.get(0).asString().c_str());
+		if (watchExpression.indexOf("?") == -1) throw new MalformedYarpMessageException("The first argument in an event subscription bottle must be a valid pattern (ie a valid PartialStatement.");
 		
-		String triggerPort = new String(args.get(0).asString().c_str());
-		if (triggerPort.indexOf("/") == -1) throw new MalformedYarpMessageException("The first argument in an event subscription bottle must be a valid YARP port.");
+		try {
+			triggerNum = Integer.parseInt(new String(args.get(1).asString().c_str()));
+		} catch (NumberFormatException e) {
+			throw new MalformedYarpMessageException("The second argument in an event subscription bottle must be a valid YARP port.");		
+		}
 		
-		String watchExpression = new String(args.get(1).asString().c_str());
-		if (watchExpression.indexOf("?") == -1) throw new MalformedYarpMessageException("The second argument in an event subscription bottle must be a valid pattern (ie a valid PartialStatement.");
+		TriggeringType triggeringType;
 		
-		yarpWatchers.add(new YarpWatcher(watchExpression, triggerPort));
+		switch (triggerNum) {
+			case 0: triggeringType = TriggeringType.ON_TRUE; break;
+			case 1: triggeringType = TriggeringType.ON_TRUE_ONE_SHOT; break;
+			case 2: triggeringType = TriggeringType.ON_FALSE; break;
+			case 3: triggeringType = TriggeringType.ON_FALSE_ONE_SHOT; break;
+			case 4: triggeringType = TriggeringType.ON_TOGGLE; break;
+			default: throw new MalformedYarpMessageException("Invalid triggering type provided while registering an event.");
+				
+		}
+	
+		String triggerPort = new String(args.get(2).asString().c_str());
+		if (triggerPort.indexOf("/") == -1) throw new MalformedYarpMessageException("The third argument in an event subscription bottle must be a valid YARP port.");
+			
+		yarpWatchers.add(new YarpWatcher(watchExpression, triggeringType, triggerPort));
 		
 		result.addString("true");
 		return result;
@@ -832,6 +906,12 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	@Override
 	public Set<IWatcher> getPendingWatchers() {
 		return yarpWatchers;
+	}
+
+	@Override
+	public void removeWatcher(IWatcher watcher) {
+		yarpWatchers.remove(watcher);
+		
 	}
 
 

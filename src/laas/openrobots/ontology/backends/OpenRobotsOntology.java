@@ -52,6 +52,7 @@ import java.util.Vector;
 
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
@@ -103,7 +104,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	private Properties parameters;
 
-	private HashMap<String, Query> watchersCache;
+	//the watchersCache holds as keys the literal watch pattern and as value a pair of pre-processed query built from the watch pattern and a boolean holding the last known result of the query.
+	private HashMap<String, Pair<Query, Boolean>> watchersCache;
 	
 	/***************************************
 	 *          Constructors               *
@@ -596,7 +598,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private void initialize(){
 				
 		this.eventsProviders = new HashSet<IEventsProvider>();
-		this.watchersCache = new HashMap<String, Query>(); 
+		this.watchersCache = new HashMap<String, Pair<Query, Boolean>>(); 
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
@@ -609,7 +611,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 
-	private void onModelChange(){
+	/** This protected method is called every time the ontology model changes (ie upon addition or removal of statements in the ontology).<br/>
+	 * It is mainly responsible for testing the various watchPatterns as provided by the set of active {@link IWatcher} against the ontology.<br/>
+	 * 
+	 * onModelChange() relies on a caching mechanism of requests to improve performances. It remains however a serious performance bottleneck. 
+	 */
+	protected void onModelChange(){
 		//System.out.println("Model changed!");
 		
 		//iterate over the various registered watchers and notify the subscribers when needed.
@@ -617,13 +624,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			for (IWatcher w : ep.getPendingWatchers()) {
 				
 				//First time we see this watch expression: we convert it to a nice QueryExecution object, read to be executed against the ontology.
-				if (watchersCache.get(w.getWatchQuery()) == null) {
+				if (watchersCache.get(w.getWatchPattern()) == null) {
 					PartialStatement statement;
 					
 					try {
-						statement = createPartialStatement(w.getWatchQuery());
+						statement = createPartialStatement(w.getWatchPattern());
 					} catch (IllegalStatementException e) {
-						if (verbose) System.err.println("[ERROR] Error while parsing the expression to watch for the event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
+						if (verbose) System.err.println("[ERROR] Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
 						return;
 					}
 						
@@ -631,7 +638,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 										
 					try	{
 						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-						watchersCache.put(w.getWatchQuery(),query );
+						watchersCache.put(w.getWatchPattern(), Pair.create(query, false));
 						if (verbose) System.out.println(" * New watch expression added to cache: " + resultQuery);
 					}
 					catch (QueryParseException e) {
@@ -644,20 +651,46 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 				
 				try	{
+					Pair<Query, Boolean> currentQuery = watchersCache.get(w.getWatchPattern());
 				
-					if (QueryExecutionFactory.create(watchersCache.get(w.getWatchQuery()), onto).execAsk()){
-						if (verbose) System.out.println(" * Event triggered for pattern " + w.getWatchQuery());
+					if (QueryExecutionFactory.create(currentQuery.getLeft(), onto).execAsk()){
+						
+						if (verbose) System.out.println(" * Event triggered for pattern " + w.getWatchPattern());
 						
 						switch(w.getTriggeringType()){
 						case ON_TRUE:
-							if (!true) {
+						case ON_TOGGLE:
+							//if the last statut for this query is NOT true, then, trigger the event.
+							if (!currentQuery.getRight()) {
 								w.notifySubscriber();
 							}
-				
+							break;
+						case ON_TRUE_ONE_SHOT:
+							w.notifySubscriber();
+							ep.removeWatcher(w);
+							watchersCache.remove(currentQuery);
+							break;
+						}
+					} else {
+						switch(w.getTriggeringType()){
 						
+						case ON_FALSE:
+						case ON_TOGGLE:
+							//if the last statut for this query is NOT false, then, trigger the event.
+							if (currentQuery.getRight()) {
+								w.notifySubscriber();
+							}
+							break;
+						case ON_FALSE_ONE_SHOT:
+							w.notifySubscriber();
+							ep.removeWatcher(w);
+							watchersCache.remove(currentQuery);
+							break;
+						}
+						
+					
 					}
 					
-				}
 				}
 				catch (QueryExecException e) {
 					if (verbose) System.err.println("[ERROR] internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
@@ -793,7 +826,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 	@Override
-	public void checkConsistency() throws InconsistentOntologyException {
+	public boolean checkConsistency() throws InconsistentOntologyException {
 		if (verbose) System.out.println(" * Checking ontology consistency...");
 		
 		ValidityReport report = onto.validate();
@@ -808,6 +841,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 			throw new InconsistentOntologyException(cause);
 		}
+		
+		return true;
 		
 	}
 

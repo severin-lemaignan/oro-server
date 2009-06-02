@@ -35,7 +35,7 @@ public class YarpWatcher implements IWatcher {
 	 * @see IEventsProvider.TriggeringType
 	 */
 	public YarpWatcher(String expressionToWatch, String portToTrigger){
-		this(expressionToWatch, portToTrigger, IEventsProvider.TriggeringType.ON_TRUE_ONE_SHOT);
+		this(expressionToWatch, IEventsProvider.TriggeringType.ON_TRUE_ONE_SHOT, portToTrigger);
 	}
 	
 	/** Creates a new event watcher.
@@ -45,7 +45,7 @@ public class YarpWatcher implements IWatcher {
 	 * @param triggerType the way you want the event to be triggered.
 	 * @see IEventsProvider.TriggeringType
 	 */
-	public YarpWatcher(String expressionToWatch, String portToTrigger, TriggeringType triggerType){		
+	public YarpWatcher(String expressionToWatch, TriggeringType triggerType, String portToTrigger){		
 		_watchExpression = expressionToWatch;
 		
 		_remoteTriggerPortName = portToTrigger;
@@ -57,7 +57,7 @@ public class YarpWatcher implements IWatcher {
 	 * @see laas.openrobots.ontology.events.IWatcher#getWatchQuery()
 	 */
 	//public QueryExecution getWatchQuery() {
-	public String getWatchQuery() {
+	public String getWatchPattern() {
 		return _watchExpression;
 	}
 	

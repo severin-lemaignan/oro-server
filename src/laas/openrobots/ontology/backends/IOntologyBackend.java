@@ -101,7 +101,7 @@ public interface IOntologyBackend {
 	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
 	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
 	 */
-	public abstract void checkConsistency()
+	public abstract boolean checkConsistency()
 			throws InconsistentOntologyException;
 
 	/**
