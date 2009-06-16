@@ -38,7 +38,6 @@ package laas.openrobots.ontology.connectors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -92,21 +91,18 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  * <pre>
  * ([ok|error] [result|error msg])
  * </pre>
- * Result is a list (a nested bottle) of objects.
+ * When the query succeed, results are returned as a list (a nested bottle) of objects.<br/>
+ * In case of error, the "error msg" is actually made of two strings: the literal (Java) exception that was triggered and a possible informative error message.
  * </ul>
+ * Each method details below how they must be invoked and what result they return.
  * 
  * @author Severin Lemaignan <severin.lemaignan@laas.fr>
- *
- */
-/**
- * @author slemaign
  *
  */
 public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private IOntologyBackend oro;
 	private Method[] ontologyMethods;
-	private ArrayList<Value> queryArgs;
 	
 	private String yarpPort;
 	private String lastReceiverPort = "";
@@ -127,8 +123,6 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
 
 		ontologyMethods = YarpConnector.class.getMethods(); //TODO filter with @RPCMethod annotation
-		
-		queryArgs = new ArrayList<Value>();
 		
 		query = new Bottle();
 		
@@ -198,22 +192,31 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	    		try {
 	    	    			
 	    	    			result.addString("ok");
-	    	    			result.append((Bottle)m.invoke(this, yarpArgs));        	    			
+	    	    			Value rawValue = new Value();
+	    	    			rawValue.fromString("(" + ((Bottle)m.invoke(this, yarpArgs)).toString() + ")");
+	    	    			result.add(rawValue);
+	    	    			
 	    	    			
 						} catch (IllegalArgumentException e) {
 							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
 							result.clear();
-							result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+							result.addString("error");
+							result.addString(e.getClass().getName());
+							result.addString(e.getLocalizedMessage().replace("\"", "'"));
 							
 						} catch (IllegalAccessException e) {
 							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
 							result.clear();
-							result.fromString("error \"" + e.getClass().getName() + ": " + e.getLocalizedMessage() + "\"");
+							result.addString("error");
+							result.addString(e.getClass().getName());
+							result.addString(e.getLocalizedMessage().replace("\"", "'"));	
 							
 						} catch (InvocationTargetException e) {
 							System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
 							result.clear();
-							result.fromString("error \"" + e.getCause().getClass().getName() + ": " + e.getCause().getLocalizedMessage() + "\"");							
+							result.addString("error");
+							result.addString(e.getCause().getClass().getName());
+							result.addString(e.getCause().getLocalizedMessage().replace("\"", "'"));							
 						}
 	    	    	}
 	    	    }
@@ -221,7 +224,9 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	    if (!methodFound){
 					System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
 					result.clear();
-					result.fromString("error \"method " + queryName + " not implemented by the ontology server.\"");							
+					result.addString("error");
+					result.addString("");
+					result.addString("Method " + queryName + " not implemented by the ontology server.");						
 	    	    }
 	    	    
 	    	    //System.out.println("sending bottle: " + result);
@@ -392,26 +397,48 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * Tries to identify a resource given a set of partially defined statements plus restrictions about this resource.
 	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector, Vector)}. Please follow the link for details.<br/>
 	 * 
-	 * YARP C++ code snippet:
+	 * <b>Structure of YARP bottles:</b>
+	 * <ul>
+	 *   <li>Argument:
+	 *   <ul>
+	 *   	<li>name of the unbound variable to be looked for (a sub-bottle containing only one string)</li>
+	 *   	<li>one or several partial statements defining this variable (a sub-bottle containing 1..n strings)</li>
+	 *      <li>one or several so-called \"filters\" (cf example below and the link over) (a sub-bottle containing 1..n strings)</li>
+	 *   </ul></li>
+	 *   <li>Result:
+	 *   <ul>
+	 *      <li>status of the query ("ok" if no error, else "error")</li>
+	 *   	<li>a list of instances foud to match the partial statements and the filters (list <=> sub-bottle)</li>
+	 *   	<li> or, if status=error, 2 strings: the exception name and the exception message.</li>
+	 *   </ul></li>
+	 * </ul>
+	 * 
+	 * <b>C++ code snippet using liboro:</b>
 	 *  
 	 * <pre>
-	 * #include &quot;liboro.h&quot;
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
 	 * 
 	 * using namespace std;
-	 * using namespace openrobots;
+	 * using namespace oro;
 	 * int main(void) {
-	 * 		vector&lt;string&gt; result;
+	 * 		vector&lt;Concept&gt; result;
 	 * 		vector&lt;string&gt; partial_stmts;
 	 * 		vector&lt;string&gt; filters;
 	 * 
-	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
 	 * 
 	 * 		partial_stmts.push_back("?mysterious rdf:type oro:Monkey");
 	 * 		partial_stmts.push_back("?mysterious oro:weight ?value");
 	 * 
 	 * 		filters.push_back("?value >= 50");
 	 * 
-	 * 		oro.filtredFind(&quot;mysterious&quot;, partial_stmts, filters, result);
+	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, filters, result);
+	 * 
+	 * 		//display the result
+	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
+	 * 
 	 * 		return 0;
 	 * }
 	 * </pre>
@@ -428,9 +455,13 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		Vector<String> filters = new Vector<String>();
 		Vector<PartialStatement> partialStmts = new Vector<PartialStatement>();
 
-		Value[] rawFilters = bottleToArray(args.pop().asList());
-		Value[] rawStmts = bottleToArray(args.pop().asList());
-		String varName = args.pop().asString().c_str();
+		//this method uses a "list" structure for YARP bottle: the "args" argument is a bottle made of bottles. 
+		String varName = args.get(0).asList().get(0).asString().c_str(); //miam ! oh la jolie ligne !
+				
+		Value[] rawStmts = bottleToArray(args.get(1).asList());
+		
+		Value[] rawFilters = bottleToArray(args.get(2).asList());
+		
 
 		for (Value v : rawFilters) {
 			filters.add(v.asString().c_str());
@@ -465,23 +496,44 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * Tries to identify a resource given a set of partially defined statements about this resource.
 	 * YARP interface to {@link laas.openrobots.ontology.backends.OpenRobotsOntology#find(String, Vector)}. Please follow the link for details.<br/>
 	 * 
-	 * YARP C++ code snippet:
+	 * <b>Structure of YARP bottles:</b>
+	 * <ul>
+	 *   <li>Argument:
+	 *   <ul>
+	 *   	<li>name of the unbound variable to be looked for (attention: a sub-bottle containing only one string)</li>
+	 *   	<li>one or several partial statements defining this variable (a sub-bottle containing 1..n strings)</li>
+	 *   </ul></li>
+	 *   <li>Result:
+	 *   <ul>
+	 *      <li>status of the query ("ok" if no error, else "error")</li>
+	 *   	<li>a list of instances foud to match the partial statements (list <=> sub-bottle)</li>
+	 *   	<li> or, if status=error, 2 strings: the exception name and the exception message.</li>
+	 *   </ul></li>
+	 * </ul>
+	 * 
+	 * <b>C++ code snippet using liboro:</b>
 	 * 
 	 * <pre>
-	 * #include &quot;liboro.h&quot;
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
 	 * 
 	 * using namespace std;
-	 * using namespace openrobots;
+	 * using namespace oro;
 	 * int main(void) {
-	 * 		vector&lt;string&gt; result;
+	 * 		vector&lt;Concept&gt; result;
 	 * 		vector&lt;string&gt; partial_stmts;
 	 * 
-	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
 	 * 
 	 * 		partial_stmts.push_back("?mysterious oro:eats oro:banana_tree");
 	 * 		partial_stmts.push_back("?mysterious oro:isFemale true^^xsd:boolean");
 	 * 
-	 * 		oro.find(&quot;mysterious&quot;, partial_stmts, result);
+	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, result);
+	 * 
+	 * 		//display the result
+	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
+	 * 
 	 * 		return 0;
 	 * }
 	 * </pre>
@@ -497,8 +549,15 @@ public class YarpConnector implements IConnector, IEventsProvider {
 
 		Vector<PartialStatement> partialStmts = new Vector<PartialStatement>();
 
-		Value[] rawStmts = bottleToArray(args.pop().asList());
-		String varName = args.pop().asString().c_str();
+		//this method uses a "list" structure for YARP bottle: the "args" argument is a bottle made of bottles. 
+		String varName = args.get(0).asList().get(0).asString().c_str(); //miam ! oh la jolie ligne !
+		
+		Bottle stmtsBottle = args.get(1).asList();
+		
+		if (stmtsBottle == null) throw new MalformedYarpMessageException("No partial statements provided to execute the \"find\" request!");
+		
+		Value[] rawStmts = bottleToArray(stmtsBottle);
+		
 
 		for (Value v : rawStmts) {
 			try {
@@ -584,6 +643,12 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * 		return 0;
 	 * }
 	 * </pre>
+	 * 
+	 * Structure of the resulting YARP bottle (when no error):
+	 * <ul>
+	 * 	<li>The response status ("ok"),</li>
+	 *  <li>A list (bottle) of statements on the resource given as argument.</li>
+	 * </ul>
 	 * 
 	 * @throws MalformedYarpMessageException
 	 * 
@@ -690,17 +755,40 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * This method can only have one variable to select. See
 	 * {@link #queryAsXML(Bottle)} to select several variables.<br/>
 	 * 
-	 * YARP C++ code snippet:
+	 * <b>Structure of YARP bottles:</b>
+	 * <ul>
+	 *   <li>Argument:
+	 *   <ul>
+	 *   	<li>name of the variable to be returned (string)</li>
+	 *   	<li>a valid SPARQL query (string)</li>
+	 *   </ul></li>
+	 *   <li>Result:
+	 *   <ul>
+	 *      <li>status of the query ("ok" if no error, else "error")</li>
+	 *   	<li>a list of instances matching this query (list <=> sub-bottle)</li>
+	 *   	<li> or, if status=error, 2 strings: the exception name and the exception message.</li>
+	 *   </ul></li>
+	 * </ul>
+	 * 
+	 * <b>C++ code snippet using liboro:</b>
 	 * 
 	 * <pre>
-	 * #include &quot;liboro.h&quot;
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
 	 * 
 	 * using namespace std;
-	 * using namespace openrobots;
+	 * using namespace oro;
 	 * int main(void) {
 	 * 		vector&lt;string&gt; result;
-	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 		oro.query(&quot;instances&quot;, &quot;SELECT ?instances \n WHERE { \n ?instances rdf:type owl:Thing}\n&quot;, result);
+	 * 
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
+	 * 
+	 * 		oro->query(&quot;instances&quot;, &quot;SELECT ?instances \n WHERE { \n ?instances rdf:type owl:Thing}\n&quot;, result);
+	 * 
+	 * 		//display the result
+	 * 		copy(result.begin(), result.end(), ostream_iterator<string>(cout, "\n"));
+	 * 
 	 * 		return 0;
 	 * }
 	 * </pre>
@@ -781,9 +869,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * @see laas.openrobots.ontology.events.IEventsProvider
 	 */
 	@RPCMethod public Bottle subscribe(Bottle args) throws IllegalStatementException, MalformedYarpMessageException {
-		
-		Integer triggerNum = 0;
-		
+				
 		Bottle result = Bottle.getNullBottle();
 		
 		result.clear();
@@ -793,23 +879,22 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		String watchExpression = new String(args.get(0).asString().c_str());
 		if (watchExpression.indexOf("?") == -1) throw new MalformedYarpMessageException("The first argument in an event subscription bottle must be a valid pattern (ie a valid PartialStatement.");
 		
-		try {
-			triggerNum = Integer.parseInt(new String(args.get(1).asString().c_str()));
-		} catch (NumberFormatException e) {
-			throw new MalformedYarpMessageException("The second argument in an event subscription bottle must be a valid YARP port.");		
+		String triggerType = new String(args.get(1).asString().c_str());
+		
+		TriggeringType triggeringType = null;
+		
+		//iterate over the various type of trigger type and compare them to their string representation as carried by the YARP bottle.
+		for (TriggeringType trigger : TriggeringType.values())
+		{
+			if (triggerType.equalsIgnoreCase(trigger.toString()))
+			{
+				triggeringType = trigger;
+				break;
+			}
 		}
 		
-		TriggeringType triggeringType;
-		
-		switch (triggerNum) {
-			case 0: triggeringType = TriggeringType.ON_TRUE; break;
-			case 1: triggeringType = TriggeringType.ON_TRUE_ONE_SHOT; break;
-			case 2: triggeringType = TriggeringType.ON_FALSE; break;
-			case 3: triggeringType = TriggeringType.ON_FALSE_ONE_SHOT; break;
-			case 4: triggeringType = TriggeringType.ON_TOGGLE; break;
-			default: throw new MalformedYarpMessageException("Invalid triggering type provided while registering an event.");
-				
-		}
+		if (triggeringType == null) throw new MalformedYarpMessageException("The second argument in an event subscription bottle must be a valid trigger type (got "+ triggerType +").");
+
 	
 		String triggerPort = new String(args.get(2).asString().c_str());
 		if (triggerPort.indexOf("/") == -1) throw new MalformedYarpMessageException("The third argument in an event subscription bottle must be a valid YARP port.");

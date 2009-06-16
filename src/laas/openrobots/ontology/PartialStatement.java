@@ -84,10 +84,11 @@ public class PartialStatement implements Statement {
 		Property predicate = null;
 		RDFNode object = null;
 		
-		stmtTokens = partialStatement.trim().split(" ");
+		//TODO: We limit the split to 3 tokens to allow spaces in the object when it is a literal string. A better solution would be to properly detect quotes and count only spaces that are not inside quotes.
+		stmtTokens = partialStatement.trim().split(" ", 3);
 		
 		if (stmtTokens.length != 3)
-					throw new IllegalStatementException("Three tokens are expected in a partial statement, " + stmtTokens.length + " found.");
+					throw new IllegalStatementException("Three tokens are expected in a partial statement, " + stmtTokens.length + " found in " + partialStatement + ".");
 				
 		//checks that at least one token starts with a "?".
 		if (!(stmtTokens[0].startsWith("?") || stmtTokens[1].startsWith("?") || stmtTokens[2].startsWith("?")) ) throw new IllegalStatementException("At least one token should be marked as unbounded (starting with a \"?\").");

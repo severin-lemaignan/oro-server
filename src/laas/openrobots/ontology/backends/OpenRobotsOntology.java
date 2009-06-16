@@ -197,11 +197,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Property predicate;
 		RDFNode object;
 	
-		String tokens_statement[] = statement.trim().split(" ");
+		//TODO: We limit the split to 3 tokens to allow spaces in the object when it is a literal string. A better solution would be to properly detect quotes and count only spaces that are not inside quotes.
+		String tokens_statement[] = statement.trim().split(" ", 3);
 				
 		if (tokens_statement.length != 3)
 		{
-			throw new IllegalStatementException("Three tokens are expected in a statement, " + tokens_statement.length + " found.");
+			throw new IllegalStatementException("Three tokens are expected in a statement, " + tokens_statement.length + " found in " + statement + ".");
 		}
 		
 		//expand the namespaces for subject and predicate.
@@ -246,7 +247,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#query(java.lang.String)
 	 */
-	public ResultSet query(String query)
+	public ResultSet query(String query) throws QueryParseException
 	{
 		
 		//Add the common prefixes.
@@ -262,10 +263,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
-		catch (QueryParseException e) {
-			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
-			return null;
-		}
+		//catch (QueryParseException e) {
+		//	System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
+		//	return null;
+		//}
 		catch (QueryExecException e) {
 			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
 			return null;
@@ -507,8 +508,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		String resultQuery = Namespaces.prefixes();
 		
-//		//we use the SPARQL query type "DESCRIBE" to get a RDF graph with all the links to this resource.
-//		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
+		//we use the SPARQL query type "DESCRIBE" to get a RDF graph with all the links to this resource.
+		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + lex_resource +">";
 		
 		try	{
@@ -623,7 +624,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (IEventsProvider ep : eventsProviders) {
 			for (IWatcher w : ep.getPendingWatchers()) {
 				
-				//First time we see this watch expression: we convert it to a nice QueryExecution object, read to be executed against the ontology.
+				//First time we see this watch expression: we convert it to a nice QueryExecution object, ready to be executed against the ontology.
 				if (watchersCache.get(w.getWatchPattern()) == null) {
 					PartialStatement statement;
 					
@@ -639,7 +640,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					try	{
 						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 						watchersCache.put(w.getWatchPattern(), Pair.create(query, false));
-						if (verbose) System.out.println(" * New watch expression added to cache: " + resultQuery);
+						if (verbose) System.out.println("\n * New watch expression added to cache: " + resultQuery);
 					}
 					catch (QueryParseException e) {
 						if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
@@ -655,7 +656,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 					if (QueryExecutionFactory.create(currentQuery.getLeft(), onto).execAsk()){
 						
-						if (verbose) System.out.println(" * Event triggered for pattern " + w.getWatchPattern());
+						if (verbose) System.out.println("\n * Event triggered for pattern " + w.getWatchPattern());
 						
 						switch(w.getTriggeringType()){
 						case ON_TRUE:

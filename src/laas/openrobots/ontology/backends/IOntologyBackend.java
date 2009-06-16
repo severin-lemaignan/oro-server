@@ -14,6 +14,7 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 
 import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -150,8 +151,9 @@ public interface IOntologyBackend {
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
 	 * @return The result of the query as a Jena ResultSet.
 	 * @see #queryAsXML(String)
+	 * @throws QueryParseException thrown if the argument is not a valid SPARQL query.
 	 */
-	public abstract ResultSet query(String query);
+	public abstract ResultSet query(String query) throws QueryParseException;
 
 	/**
 	 * Like {@link #query(String) query} except it returns a XML-encoded SPARQL result.

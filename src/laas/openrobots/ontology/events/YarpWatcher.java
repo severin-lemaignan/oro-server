@@ -48,6 +48,8 @@ public class YarpWatcher implements IWatcher {
 	public YarpWatcher(String expressionToWatch, TriggeringType triggerType, String portToTrigger){		
 		_watchExpression = expressionToWatch;
 		
+		_triggeringType = triggerType;
+		
 		_remoteTriggerPortName = portToTrigger;
 		
 		System.out.println(" * New event registred. Trigger pattern is " + expressionToWatch);

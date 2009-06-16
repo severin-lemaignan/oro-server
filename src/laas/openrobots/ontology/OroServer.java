@@ -73,7 +73,7 @@ public class OroServer {
 
 
 	public static final String DEFAULT_CONF = "oro.conf";
-	public static final String VERSION = "0.3.2"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.4.1"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 
 	private volatile boolean keepOn = true;
 	private volatile HashSet<IConnector> connectors;
@@ -81,7 +81,7 @@ public class OroServer {
 	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
-			System.out.println(" * Control-C caught. Shutting down now."); 
+			System.out.println(" * Control-C caught. Shutting down..."); 
 
 			keepOn = false; 
 			try {
@@ -90,6 +90,8 @@ public class OroServer {
 			} catch (OntologyConnectorException e) {
 				e.printStackTrace();
 			} 
+			
+			System.out.println(" * Bye bye.");
 		} 
 	} 
 	
