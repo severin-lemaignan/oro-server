@@ -84,7 +84,7 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 public class OroServer {
 
 
-	public static final String DEFAULT_CONF = "oro.conf";
+	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
 	public static final String VERSION = "0.4.2"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
@@ -97,7 +97,7 @@ public class OroServer {
 	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
-			System.out.println(" * Control-C caught. Shutting down..."); 
+			System.out.println(" * Application interrupted. Shutting down..."); 
 
 			keepOn = false; 
 			try {

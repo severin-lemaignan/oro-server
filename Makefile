@@ -55,7 +55,7 @@ install: oro-server
 	$(INSTALL) -d ${PREFIX}/java/oro-server/lib
 	$(INSTALL) oro-server.jar ${PREFIX}/java/oro-server/lib
 	$(INSTALL) -d ${PREFIX}/etc/oro-server
-	$(INSTALL) *.conf ${PREFIX}/etc/oro-server
+	$(INSTALL) etc/oro-server/*.conf ${PREFIX}/etc/oro-server
 	$(INSTALL) oro-server ${PREFIX}/bin
 
 distclean: clean doc-clean
@@ -82,7 +82,8 @@ doc:
 	-link http://jena.sourceforge.net/javadoc \
 	-J-Xmx180m \
 	-stylesheetfile $(SRC_DIR)/javadoc.css \
-	-subpackages $(BASE_PACKAGE)
+	-subpackages $(BASE_PACKAGE) \
+	-encoding utf8
 
 install-doc: doc
 	cd doc && ${CP} -r . ${PREFIX}/share/doc/oro-server
