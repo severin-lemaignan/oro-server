@@ -186,6 +186,8 @@ public class OroServer {
 		SimpleDateFormat formatNew = new SimpleDateFormat("HHHH 'hour(s)' mm 'minute(s)' ss 'second(s)'");
 		formatNew.setTimeZone( TimeZone.getTimeZone( "GMT" ) );
 		
+		stats.put("version", VERSION);
+		
 		try {
 			stats.put("hostname", InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {

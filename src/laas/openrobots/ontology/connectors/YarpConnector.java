@@ -155,10 +155,13 @@ public class YarpConnector implements IConnector, IEventsProvider {
     	System.out.println(" * Starting YARP server on port " + yarpPort);
     	
     	queryPort = new BufferedPortBottle();
-    	queryPort.open(yarpPort + "/in");
-    	
-    	
     	resultPort = new BufferedPortBottle();
+    	
+    	if (!queryPort.open(yarpPort + "/in")) {
+    		System.err.println(" * No YARP server! abandon.");
+    		System.exit(0);
+    	}
+    	
     	resultPort.open(yarpPort + "/out");
 		
 	}
@@ -263,8 +266,8 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		System.out.print(" * Closing YARP...");
 		
-		queryPort.close();
-		resultPort.close();
+		if (!queryPort.isClosed()) queryPort.close();
+		if (!resultPort.isClosed()) resultPort.close();
 		Network.fini();
 		
 		System.out.println(" done!");
@@ -949,6 +952,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		Map<String, String> stats = OroServer.getStats();
 		
+		result.addString(stats.get("version"));
 		result.addString(stats.get("hostname"));
 		result.addString(stats.get("uptime"));
 		result.addString(stats.get("nb_classes"));
