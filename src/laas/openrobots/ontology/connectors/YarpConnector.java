@@ -38,12 +38,19 @@ package laas.openrobots.ontology.connectors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import yarp.Bottle;
@@ -61,6 +68,7 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 
 import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.events.IEventsProvider;
@@ -102,7 +110,7 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
 public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private IOntologyBackend oro;
-	private Method[] ontologyMethods;
+	private Set<Method> ontologyMethods;
 	
 	private String yarpPort;
 	private String lastReceiverPort = "";
@@ -122,7 +130,16 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
 
-		ontologyMethods = YarpConnector.class.getMethods(); //TODO filter with @RPCMethod annotation
+		//first we collect all the method available in this connector class
+		Method[] rawOntologyMethods = YarpConnector.class.getMethods(); 
+		ontologyMethods = new HashSet<Method>();
+		
+		//then we remove the ones which don't have a "RPCMethod" annotation, for obvious security reasons.
+		for (Method m : rawOntologyMethods) {
+			//TODO ...for some reason, the code below doesn't work:method annotation are not read by Java...
+		//	if (m.getAnnotation(RPCMethod.class) != null) ontologyMethods.add(m);
+			ontologyMethods.add(m);
+		}
 		
 		query = new Bottle();
 		
@@ -161,7 +178,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	
 	    	String receiverPort = query.get(0).toString();
 	    	if (!receiverPort.startsWith("/"))
-	    		throw new MalformedYarpMessageException("Your YARP message should start with the YARP port on which you want to get the result of your query.");
+	    		throw new MalformedYarpMessageException("Your YARP message should start with the YARP port (prefixed with /) on which you want to get the result of your query.");
 	    	
     	    if (!lastReceiverPort.equals(receiverPort)){ //not the same receiver ! disconnect the old one an connect to the new one.
     	    	System.out.println(" * Changing client to " + receiverPort);
@@ -232,6 +249,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	    //System.out.println("sending bottle: " + result);
 	    	    
 	    	    //...Send the answer...
+	    	    //System.out.println("Answering to " + receiverPort + " that " + result);
 	    	    resultPort.write();
 	    	    
 	    	    lastReceiverPort = receiverPort;
@@ -905,6 +923,40 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		return result;
 	}
 	
+	
+	/**
+	 * Returns some stats on the server.
+	 * 
+	 * <b>Structure of YARP bottles:</b>
+	 * <ul>
+	 *   <li>Argument: <i>none</i></li>
+	 *   
+	 *   <li>Result:
+	 * 		<ul>
+	 *  		<li>the hostname where the server runs (string)</li>
+	 *  		<li>server uptime (string)</li>
+	 *  		<li>the current amount of classes in the ontology (string)</li>
+	 *  		<li>the current amount of instances in the ontology (string)</li>
+	 *  		<li>the current amount of client connected to the server (string)</li>
+	 * 		</ul></li>
+	 * </ul>
+	 */
+	
+	@RPCMethod public Bottle stats(Bottle args) {
+		
+		Bottle result = Bottle.getNullBottle();
+		result.clear();
+		
+		Map<String, String> stats = OroServer.getStats();
+		
+		result.addString(stats.get("hostname"));
+		result.addString(stats.get("uptime"));
+		result.addString(stats.get("nb_classes"));
+		result.addString(stats.get("nb_instances"));
+		result.addString(stats.get("nb_clients"));
+		return result;
+		
+	}
 	
 	/**
 	 * A simple test to check if the YARP connector is working.<br/>
