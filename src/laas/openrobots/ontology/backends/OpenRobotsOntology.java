@@ -263,10 +263,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
-		//catch (QueryParseException e) {
-		//	System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
-		//	return null;
-		//}
+		catch (QueryParseException e) {
+			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
+			return null;
+		}
 		catch (QueryExecException e) {
 			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
 			return null;

@@ -203,7 +203,9 @@ public class Namespaces {
 	 */
 	public static String toLightString(final RDFNode res)
 	{
-		if (res.isResource()) return contract(((Resource)res).getURI());
+		if (res.isAnon()) return "anonymousNode_" + res.toString();
+		
+		if (res.isResource() && ((Resource)res).getURI() != null) return contract(((Resource)res).getURI());
 		
 		if (res.isLiteral())
 		{

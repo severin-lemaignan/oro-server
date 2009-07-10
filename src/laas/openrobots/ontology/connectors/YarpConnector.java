@@ -38,11 +38,6 @@ package laas.openrobots.ontology.connectors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -50,7 +45,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.Vector;
 
 import yarp.Bottle;
@@ -130,6 +124,8 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
 
+		
+		
 		//first we collect all the method available in this connector class
 		Method[] rawOntologyMethods = YarpConnector.class.getMethods(); 
 		ontologyMethods = new HashSet<Method>();
@@ -157,12 +153,10 @@ public class YarpConnector implements IConnector, IEventsProvider {
     	queryPort = new BufferedPortBottle();
     	resultPort = new BufferedPortBottle();
     	
-    	if (!queryPort.open(yarpPort + "/in")) {
+    	if (!queryPort.open(yarpPort + "/in") || !resultPort.open(yarpPort + "/out")) {
     		System.err.println(" * No YARP server! abandon.");
     		System.exit(0);
     	}
-    	
-    	resultPort.open(yarpPort + "/out");
 		
 	}
 	
@@ -202,7 +196,8 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	}
 	    	else
 	    	{
-	    		
+
+	    		/******* YARP connector methods ********/
 	    	    for (Method m : ontologyMethods){
 	    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
 	    	    	if (m.getName().equalsIgnoreCase(queryName))
@@ -249,7 +244,6 @@ public class YarpConnector implements IConnector, IEventsProvider {
 					result.addString("Method " + queryName + " not implemented by the ontology server.");						
 	    	    }
 	    	    
-	    	    //System.out.println("sending bottle: " + result);
 	    	    
 	    	    //...Send the answer...
 	    	    //System.out.println("Answering to " + receiverPort + " that " + result);
@@ -831,7 +825,9 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		String key = args.pop().asString().c_str();
 
 		while (results.hasNext()) {
-			result.addString(Namespaces.toLightString(results.nextSolution().getResource(key)));
+			RDFNode node = results.nextSolution().getResource(key);
+			if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+				result.addString(Namespaces.toLightString(node));
 		}
 		return result;
 	}
