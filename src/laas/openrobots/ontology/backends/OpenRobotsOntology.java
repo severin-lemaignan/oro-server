@@ -50,10 +50,12 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.*;
@@ -61,6 +63,7 @@ import laas.openrobots.ontology.exceptions.*;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
+import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.query.*;
@@ -72,6 +75,7 @@ import com.hp.hpl.jena.reasoner.ValidityReport;
 import com.hp.hpl.jena.shared.JenaException;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
+import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 
 
 /**
@@ -119,6 +123,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public OpenRobotsOntology(){
 		this.parameters =  getConfiguration(DEFAULT_CONFIG_FILE);
 		initialize();
+		
 	}
 	
 	/**
@@ -139,6 +144,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public OpenRobotsOntology(String configFileURI){
 		this.parameters = getConfiguration(configFileURI);
 		initialize();
+
 	}
 	
 	/**
@@ -243,7 +249,145 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 *           Public methods            *
 	 **************************************/
 	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(Statement)
+	 */
+	public void add(Statement statement)
+	{
+		if (verbose) System.out.print(" * Adding new statement ["+Namespaces.toLightString(statement)+"]...");
+		
+		try {
+			onto.add(statement);
+		}
+		catch (Exception e)
+		{
+			if (verbose) {
+				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
+				e.printStackTrace();
+				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
+				System.exit(1);
+			}			
+		}
+		
+		//notify the events subscribers.
+		onModelChange();
+		
+		if (verbose) System.out.println("done.");
+	}
+	
 
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(String)
+	 */
+	public void add(String rawStmt) throws IllegalStatementException
+	{			
+			add(createStatement(rawStmt));
+	}
+	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.IOntologyServer#add(Vector<String>)
+	 */
+	@RPCMethod(
+			desc="adds one or several statements (triplets S-P-O) to the ontology"
+	)
+	public String add(Vector<String> rawStmts) throws IllegalStatementException
+	{
+		for (String rawStmt : rawStmts) add(rawStmt);
+		return "true";
+	}
+
+	
+	@Override
+	public boolean check(Statement statement) {
+		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
+		
+		//trivial to answer true is the statement has been asserted.
+		if (onto.contains(statement)) return true;
+		
+		String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
+		
+		try	{
+			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
+		
+			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
+			return myQueryExecution.execAsk();
+		}
+		catch (QueryParseException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+		catch (QueryExecException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+
+	}
+	
+	@Override
+	public boolean check(PartialStatement statement) {
+		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
+						
+		String resultQuery = "ASK { " + statement.asSparqlRow() + " }";
+		
+		try	{
+			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
+		
+			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
+			return myQueryExecution.execAsk();
+		}
+		catch (QueryParseException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+		catch (QueryExecException e) {
+			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			throw e;
+		}
+
+	}
+
+	@RPCMethod(
+			desc="checks that one or several statements are asserted or can be inferred from the ontology"
+	)
+	public Boolean check(Vector<String> stmts) throws IllegalStatementException{
+	
+		for (String s : stmts)
+		{
+			if (PartialStatement.isPartialStatement(s))
+				if (!check(createPartialStatement(s))) return false;
+			else
+				if (!check(createStatement(s))) return false;
+		}
+		
+		return true;
+
+	}
+	
+	@Override
+	@RPCMethod(
+			rpc_name="check_consistency",
+			desc="checks that the ontology is semantically consistent"
+	)
+	public Boolean checkConsistency() throws InconsistentOntologyException {
+		if (verbose) System.out.println(" * Checking ontology consistency...");
+		
+		ValidityReport report = onto.validate();
+		
+		String cause = "";
+		
+		if (!report.isValid())
+		{
+			for (Iterator i = report.getReports(); i.hasNext(); ) {
+	            cause += " - " + i.next();
+			}
+
+			throw new InconsistentOntologyException(cause);
+		}
+		
+		return true;
+		
+	}
+	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#query(java.lang.String)
 	 */
@@ -278,10 +422,39 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return this.lastQueryResult;
 		
 	}
+	
+	@RPCMethod(
+			desc="performs one or several SPARQL queries on the ontology"
+	)
+	public String query(Vector<String> params) throws QueryParseException
+	{
+		String result = "";
+		
+		String key = params.remove(0);
+		
+		ResultSet queryResults = null;
+		
+		for (String s : params)
+		{
+			queryResults = query(s);
+			while (queryResults.hasNext()) {
+				RDFNode node = queryResults.nextSolution().getResource(key);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					result += (Namespaces.toLightString(node)) + " ";
+			}
+		}		
+		
+		return result;
+	}
+
 
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#queryAsXML(java.lang.String)
 	 */
+	@RPCMethod(
+			rpc_name = "query_as_xml", 
+			desc = "performs one or several SPARQL queries on the ontology and returns a XML-formatted result set"
+	)
 	public String queryAsXML(String query){
 		
 		ResultSet result = query(query);
@@ -291,47 +464,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return null;
 	}
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(Statement)
-	 */
-	public void add(Statement statement)
-	{
-		if (verbose) System.out.print(" * Adding new statement ["+Namespaces.toLightString(statement)+"]...");
-		
-		try {
-			onto.add(statement);
-		}
-		catch (Exception e)
-		{
-			if (verbose) {
-				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
-				e.printStackTrace();
-				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
-				System.exit(1);
-			}			
-		}
-		
-		//notify the events subscribers.
-		onModelChange();
-		
-		if (verbose) System.out.println("done.");
-	}
 
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(String)
-	 */
-	public void add(String rawStmt) throws IllegalStatementException
-	{			
-			add(createStatement(rawStmt));
-	}
-	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(Vector<String>)
-	 */
-	public void add(Vector<String> rawStmts) throws IllegalStatementException
-	{
-		for (String rawStmt : rawStmts) add(rawStmt);
-	}
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#find(java.lang.String, java.util.Vector, java.util.Vector)
@@ -543,6 +676,27 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public Model getInfos(Resource resource) throws NotFoundException {
 		return getInfos(resource.toString());
+	}
+
+	@RPCMethod(
+			rpc_name = "subclasses_of", 
+			desc = "returns the list of asserted and inferred subclasses of a given class."
+	)
+	public Vector<String> getSubclassesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		OntClass myClass = onto.createClass(Namespaces.addDefault(type));
+		ExtendedIterator<OntClass> it = myClass.listSubClasses();
+		while (it.hasNext())
+		{
+			OntClass tmp = it.next();
+			if (tmp != null){
+				//System.out.println(tmp.getURI());
+				result.add(tmp.getLocalName());
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -826,75 +980,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 
-	@Override
-	public boolean checkConsistency() throws InconsistentOntologyException {
-		if (verbose) System.out.println(" * Checking ontology consistency...");
-		
-		ValidityReport report = onto.validate();
-		
-		String cause = "";
-		
-		if (!report.isValid())
-		{
-			for (Iterator i = report.getReports(); i.hasNext(); ) {
-	            cause += " - " + i.next();
-			}
-
-			throw new InconsistentOntologyException(cause);
-		}
-		
-		return true;
-		
-	}
-
-	@Override
-	public boolean check(Statement statement) {
-		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
-		
-		//trivial to answer true is the statement has been asserted.
-		if (onto.contains(statement)) return true;
-		
-		String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
-		
-		try	{
-			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-		
-			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
-			return myQueryExecution.execAsk();
-		}
-		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
-			throw e;
-		}
-		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
-			throw e;
-		}
-
-	}
-	
-	@Override
-	public boolean check(PartialStatement statement) {
-		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
-						
-		String resultQuery = "ASK { " + statement.asSparqlRow() + " }";
-		
-		try	{
-			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-		
-			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
-			return myQueryExecution.execAsk();
-		}
-		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
-			throw e;
-		}
-		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
-			throw e;
-		}
-
-	}
 
 	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders) {
 		this.eventsProviders.addAll(eventsProviders);

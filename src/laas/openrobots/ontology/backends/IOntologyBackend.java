@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.Namespaces;
-import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
@@ -26,7 +26,7 @@ import com.hp.hpl.jena.shared.NotFoundException;
  * @author slemaign
  *
  */
-public interface IOntologyBackend {
+public interface IOntologyBackend extends IServiceProvider {
 
 	/**
 	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.Property property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
@@ -102,7 +102,7 @@ public interface IOntologyBackend {
 	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
 	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
 	 */
-	public abstract boolean checkConsistency()
+	public abstract Boolean checkConsistency()
 			throws InconsistentOntologyException;
 
 	/**
@@ -189,9 +189,40 @@ public interface IOntologyBackend {
 	 *  <li>{@code "instance1 dataProperty1 true"} (if no namespace is specified, it uses the default one)</li>
 	 * </ul>
 	 *  
+	 * C++ code snippet with {@code liboro} library:
+	 *  
+	 * <pre>
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
+	 * 
+	 * using namespace std;
+	 * using namespace oro;
+	 * int main(void) {
+	 * 
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
+	 * 
+	 * 		onto->add(Statement("gorilla rdf:type Monkey"));
+	 * 		onto->add(Statement("gorilla age 12^^xsd:int"));
+	 * 		onto->add(Statement("gorilla weight 75.2"));
+	 * 
+	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
+	 * 		vector<Statement> stmts;
+	 * 
+	 * 		stmts.push_back("gorilla rdf:type Monkey");
+	 * 		stmts.push_back("gorilla age 12^^xsd:int");
+	 * 		stmts.push_back("gorilla weight 75.2");
+	 * 
+	 * 		onto->add(stmts);
+	 * 
+	 * 		return 0;
+	 * }
+	 * </pre>
+	 * 
 	 * @param statement The new statement.
 	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 * @see #add(Statement)
+	 * @see #add(Vector<String>)
 	 * @see #remove(Statement)
 	 */
 	public abstract void add(String statement) throws IllegalStatementException;
@@ -203,7 +234,7 @@ public interface IOntologyBackend {
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
 	 * @see #add(String) for details.
 	 */
-	public abstract void add(Vector<String> statements) throws IllegalStatementException;
+	public abstract String add(Vector<String> statements) throws IllegalStatementException;
 	
 	/**
 	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.

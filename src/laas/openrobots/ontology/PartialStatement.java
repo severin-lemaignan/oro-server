@@ -140,6 +140,22 @@ public class PartialStatement implements Statement {
 				) + " .\n";
 	}
 	
+	/** Performs basic tests to determine if a statement is a partial statement, ie if the given string contains three tokens and at least one token starting with ?.
+	 * 
+	 * @param lex a string to test
+	 * @return whether the statement is a partial statement or not.
+	 */
+	static public boolean isPartialStatement(String lex)
+	{
+		String stmtTokens[] = lex.trim().split(" ", 3);
+		
+		if (stmtTokens.length != 3) return false;
+		if (!(stmtTokens[0].startsWith("?") || stmtTokens[1].startsWith("?") || stmtTokens[2].startsWith("?")) ) return false;
+		
+		return true;
+		
+	}
+	
 	@Override
 	public String toString(){
 		

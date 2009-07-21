@@ -44,4 +44,8 @@ public class Pair<L, R> {
  
         return hLeft + (57 * hRight);
     }
+    
+    public String toString() {
+    	return "<" + getLeft().toString() + ", " + getRight().toString() + ">";
+    }
 }
