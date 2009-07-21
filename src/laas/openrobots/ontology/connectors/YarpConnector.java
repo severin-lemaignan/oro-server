@@ -39,6 +39,7 @@ package laas.openrobots.ontology.connectors;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -63,7 +64,9 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.OroServer;
+import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
@@ -105,6 +108,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private IOntologyBackend oro;
 	private Set<Method> ontologyMethods;
+	private Map<Pair<String,String>, Pair<Method, Object>> registredServices;
 	
 	private String yarpPort;
 	private String lastReceiverPort = "";
@@ -116,7 +120,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	
 	private HashSet<IWatcher> yarpWatchers;
 
-	public YarpConnector(IOntologyBackend oro, Properties params) {
+	public YarpConnector(IOntologyBackend oro, Properties params, Map<Pair<String,String>,Pair<Method,Object>> registredServices) {
 		
 		System.loadLibrary("jyarp");
 		
@@ -124,6 +128,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		
 		yarpPort = "/" + params.getProperty("yarp_input_port", "oro"); //defaulted to "oro" if no "yarp_input_port" provided.
 
+		this.registredServices = registredServices;
 		
 		
 		//first we collect all the method available in this connector class
@@ -196,19 +201,26 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	}
 	    	else
 	    	{
-
-	    		/******* YARP connector methods ********/
-	    	    for (Method m : ontologyMethods){
-	    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
-	    	    	if (m.getName().equalsIgnoreCase(queryName))
+	    		/******* Externally registred methods ********/
+	    		for (Pair<String,String> name : registredServices.keySet()){
+	    	    	if (name.getLeft().equalsIgnoreCase(queryName))
 	    	    	{
 	    	    		methodFound = true;
 	    	    		
 	    	    		try {
 	    	    			
+	    	    			Method m = registredServices.get(name).getLeft();
+	    	    			Object o = registredServices.get(name).getRight();
+	    	    			
 	    	    			result.addString("ok");
+	    	    			
 	    	    			Value rawValue = new Value();
-	    	    			rawValue.fromString("(" + ((Bottle)m.invoke(this, yarpArgs)).toString() + ")");
+	    	    			
+	    	    			if(m.getParameterTypes().length == 0)
+	    	    				rawValue.fromString("(" + m.invoke(o) + ")");
+	    	    			else
+	    	    				rawValue.fromString("(" + m.invoke(o, bottleToVector(yarpArgs)).toString() + ")");
+	    	    			
 	    	    			result.add(rawValue);
 	    	    			
 	    	    			
@@ -235,6 +247,48 @@ public class YarpConnector implements IConnector, IEventsProvider {
 						}
 	    	    	}
 	    	    }
+	    		
+	    		/******* YARP connector methods ********/
+	    		if (!methodFound)
+	    		{
+		    	    for (Method m : ontologyMethods){
+		    	    	//if (m.isAccessible() && m.getName().equalsIgnoreCase(queryName))
+		    	    	if (m.getName().equalsIgnoreCase(queryName))
+		    	    	{
+		    	    		methodFound = true;
+		    	    		
+		    	    		try {
+		    	    			
+		    	    			result.addString("ok");
+		    	    			Value rawValue = new Value();
+		    	    			rawValue.fromString("(" + ((Bottle)m.invoke(this, yarpArgs)).toString() + ")");
+		    	    			result.add(rawValue);
+		    	    			
+		    	    			
+							} catch (IllegalArgumentException e) {
+								System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+								result.clear();
+								result.addString("error");
+								result.addString(e.getClass().getName());
+								result.addString(e.getLocalizedMessage().replace("\"", "'"));
+								
+							} catch (IllegalAccessException e) {
+								System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+								result.clear();
+								result.addString("error");
+								result.addString(e.getClass().getName());
+								result.addString(e.getLocalizedMessage().replace("\"", "'"));	
+								
+							} catch (InvocationTargetException e) {
+								System.err.println("ERROR while executing the request \"" + queryName + "\": " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
+								result.clear();
+								result.addString("error");
+								result.addString(e.getCause().getClass().getName());
+								result.addString(e.getCause().getLocalizedMessage().replace("\"", "'"));							
+							}
+		    	    	}
+		    	    }
+	    		}
 	    	    
 	    	    if (!methodFound){
 					System.err.println("ERROR while executing the request: method \""+queryName + "\" not implemented by the ontology server.");
@@ -246,7 +300,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	    
 	    	    
 	    	    //...Send the answer...
-	    	    //System.out.println("Answering to " + receiverPort + " that " + result);
+	    	    System.out.println("Answering to " + receiverPort + " that " + result);
 	    	    resultPort.write();
 	    	    
 	    	    lastReceiverPort = receiverPort;
@@ -276,26 +330,28 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * YARP C++ code snippet:
 	 *  
 	 * <pre>
-	 * #include &quot;liboro.h&quot;
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
 	 * 
 	 * using namespace std;
-	 * using namespace openrobots;
+	 * using namespace oro;
 	 * int main(void) {
 	 * 
-	 * 		Oro oro(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
 	 * 
-	 * 		oro.add("gorilla rdf:type Monkey");
-	 * 		oro.add("gorilla age 12^^xsd:int");
-	 * 		oro.add("gorilla weight 75.2");
+	 * 		onto->add(Statement("gorilla rdf:type Monkey"));
+	 * 		onto->add(Statement("gorilla age 12^^xsd:int"));
+	 * 		onto->add(Statement("gorilla weight 75.2"));
 	 * 
 	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
-	 * 		vector<string> stmts;
+	 * 		vector<Statement> stmts;
 	 * 
 	 * 		stmts.push_back("gorilla rdf:type Monkey");
 	 * 		stmts.push_back("gorilla age 12^^xsd:int");
 	 * 		stmts.push_back("gorilla weight 75.2");
 	 * 
-	 * 		oro.add(stmts);
+	 * 		onto->add(stmts);
 	 * 
 	 * 		return 0;
 	 * }
@@ -941,7 +997,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	 * </ul>
 	 */
 	
-	@RPCMethod public Bottle stats(Bottle args) {
+	/*@RPCMethod public Bottle stats(Bottle args) {
 		
 		Bottle result = Bottle.getNullBottle();
 		result.clear();
@@ -956,7 +1012,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		result.addString(stats.get("nb_clients"));
 		return result;
 		
-	}
+	}*/
 	
 	/**
 	 * A simple test to check if the YARP connector is working.<br/>
@@ -974,17 +1030,24 @@ public class YarpConnector implements IConnector, IEventsProvider {
 		return result;
 	}
 
-	@Override
-	public IOntologyBackend getBackend() {
-		return oro;
-	}
-
 	static private Value[] bottleToArray(final Bottle bottle) {
 		Value[] result = new Value[bottle.size()];
 
 		for (int i = 0; i < bottle.size(); i++)
 			result[i] = bottle.get(i);
 		// System.out.println(" -> Arg " + i + ": " + result.get(i).toString());
+
+		return result;
+	}
+	
+	static private Vector<String> bottleToVector(final Bottle bottle) {
+		Vector<String> result = new Vector<String>();
+
+		for (int i = 0; i < bottle.size(); i++)
+		{
+			result.add(bottle.get(i).toString());
+			System.out.println(" -> Arg " + i + ": " + result.get(i));
+		}
 
 		return result;
 	}
@@ -1048,6 +1111,13 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	@Override
 	public void removeWatcher(IWatcher watcher) {
 		yarpWatchers.remove(watcher);
+		
+	}
+
+	@Override
+	public void refreshServiceList(
+			Map<Pair<String, String>, Pair<Method, Object>> registredServices) {
+		this.registredServices = registredServices;
 		
 	}
 
