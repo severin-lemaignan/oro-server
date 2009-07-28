@@ -12,6 +12,7 @@ import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.memory.MemoryProfile;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.query.QueryParseException;
@@ -166,20 +167,22 @@ public interface IOntologyBackend extends IServiceProvider {
 
 	/**
 	 * Adds a new statement (assertion) to the ontology. Does nothing is the statement already exists.<br/>
+	 * A memory profile is associated to the statement: statements associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} are stored and never removed from the ontology while other memory profiles allow the ontology to "forget" about certains facts after a given amount of time.
 	 *   
 	 * @param statement The new statement.
+	 * @param memProfile The memory profile associated to this statement.
 	 */
-	public abstract void add(Statement statement);
+	public abstract void add(Statement statement, MemoryProfile memProfile);
 	
 	/**
-	 * Adds a new statement (assertion) to the ontology from its string representation. Does nothing is the statement already exists.<br/>
+	 * Adds a new statement (assertion) to the ontology from its string representation and associate it to a specific memory profile. <br/>
 	 * 
 	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype.</br>
 	 * <br/>
 	 * For instance:
 	 * <pre>
 	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 * myOntology.add("myIndividual myBooleanPredicate true^^xsd:boolean");
+	 * myOntology.add("myIndividual myBooleanPredicate true^^xsd:boolean", MemoryProfile.SHORTTERM);
 	 * </pre>
 	 * 
 	 * Examples of statements: <br/>
@@ -219,20 +222,47 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * }
 	 * </pre>
 	 * 
+	 * This method does nothing if the statement already exists with the same memory profile. If the same statement is added with a different memory profile, the shortest term memory container has priority.
+	 * 
 	 * @param statement The new statement.
+	 * @param memProfile The memory profile associated with this statement.
+	 * @throws IllegalStatementException
+	 * 
 	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
-	 * @see #add(Statement)
+	 * @see #add(Statement, MemoryProfile)
+	 * @see #add(String)
 	 * @see #add(Vector<String>)
 	 * @see #remove(Statement)
+	 */
+	public abstract void add(String statement, MemoryProfile memProfile) throws IllegalStatementException;	
+	
+	/**
+	 * Like {@link #add(String, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
+
+	 * @param statement The new statement.
+	 * @throws IllegalStatementException
+	 * 
+	 * @see #add(String, MemoryProfile)
 	 */
 	public abstract void add(String statement) throws IllegalStatementException;
 	
 	/**
-	 * Adds a set of statements (assertions) to the ontology from their string representation.<br/>
-	 * If the statements are already present, nothing is done.
+	 * Adds a set of statements (assertions) to the ontology from their string representation in the given memory profile.<br/>
+	 * This method does nothing if the statements already exist with the same memory profile. If the same statements are added with a different memory profile, the shortest term memory container has priority.
 	 * 
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
+	 * @param memProfile the string reprensentation of one of the available {@link MemoryProfile}.
 	 * @see #add(String) for details.
+	 */
+	public abstract String add(Vector<String> statements, String memProfile) throws IllegalStatementException;
+	
+	/**
+	 * Like {@link #add(Vector<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
+
+	 * @param statements A vector of string representing statements to be inserted in the ontology.
+	 * @throws IllegalStatementException
+	 * 
+	 * @see #add(Vector<String>, MemoryProfile)
 	 */
 	public abstract String add(Vector<String> statements) throws IllegalStatementException;
 	
@@ -463,6 +493,5 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see IWatcher, IEventsProvider
 	 */
 	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders);
-
 
 }

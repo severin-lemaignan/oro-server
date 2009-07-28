@@ -47,7 +47,7 @@ public class JsonConnector implements IConnector {
 	}
 
 	/**
-	 * Registers the methods annotated with a RPCMetho annotation in the JSON server.
+	 * Registers the methods annotated with a RPCMethod annotation in the JSON server.
 	 * Several limitations:
 	 * <ul>
 	 * 	<li>The RPC method name as specified in the annotation won't be used. The underlying Java method name is used instead.</li>
@@ -107,7 +107,6 @@ public class JsonConnector implements IConnector {
 	@Override
 	public void run() throws OntologyConnectorException,
 			MalformedYarpMessageException {
-		// TODO Auto-generated method stub
 
 	}
 	

@@ -42,15 +42,17 @@ package laas.openrobots.ontology.backends;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Vector;
 
-import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.Pair;
@@ -59,6 +61,8 @@ import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.*;
+import laas.openrobots.ontology.memory.MemoryManager;
+import laas.openrobots.ontology.memory.MemoryProfile;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
@@ -66,6 +70,7 @@ import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
@@ -73,6 +78,7 @@ import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
 import com.hp.hpl.jena.reasoner.ReasonerException;
 import com.hp.hpl.jena.reasoner.ValidityReport;
 import com.hp.hpl.jena.shared.JenaException;
+import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
@@ -110,6 +116,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	//the watchersCache holds as keys the literal watch pattern and as value a pair of pre-processed query built from the watch pattern and a boolean holding the last known result of the query.
 	private HashMap<String, Pair<Query, Boolean>> watchersCache;
+	
+	private MemoryManager memoryManager;
 	
 	/***************************************
 	 *          Constructors               *
@@ -248,16 +256,48 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/***************************************
 	 *           Public methods            *
 	 **************************************/
-	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(Statement)
-	 */
-	public void add(Statement statement)
+
+	@Override
+	public void add(Statement statement, MemoryProfile memProfile)
 	{
-		if (verbose) System.out.print(" * Adding new statement ["+Namespaces.toLightString(statement)+"]...");
 		
 		try {
-			onto.add(statement);
+			
+			if (memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT) //LONGTERM memory
+			{
+				if (verbose) System.out.print(" * Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]...");
+				
+				onto.enterCriticalSection(Lock.WRITE);
+				onto.add(statement);
+				onto.leaveCriticalSection();
+				
+				//notify the events subscribers.
+				onModelChange();
+			}
+			else
+			{
+				if (verbose) System.out.print(" * Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]...");
+				
+				onto.enterCriticalSection(Lock.WRITE);
+				
+				onto.add(statement);
+				
+				//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
+				String rsName = "rs_" + Math.abs(statement.hashCode()); 
+				
+				onto.createReifiedStatement(Namespaces.addDefault(rsName), statement);
+				
+				Statement metaStmt = createStatement(rsName + " stmtCreatedOn " + onto.createTypedLiteral(Calendar.getInstance()));
+				//Statement metaStmt = oro.createStatement(rsName + " stmtCreatedOn " + toXSDDate(new Date())); //without timezone
+				Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
+				onto.add(metaStmt);
+				onto.add(metaStmt2);
+				onto.leaveCriticalSection();
+				
+				//notify the events subscribers.
+				onModelChange(rsName);
+				
+			}
 		}
 		catch (Exception e)
 		{
@@ -268,27 +308,26 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				System.exit(1);
 			}			
 		}
-		
-		//notify the events subscribers.
-		onModelChange();
-		
+	
 		if (verbose) System.out.println("done.");
 	}
-	
 
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(String)
-	 */
+
+	@Override
 	public void add(String rawStmt) throws IllegalStatementException
 	{			
-			add(createStatement(rawStmt));
+		add(createStatement(rawStmt), MemoryProfile.DEFAULT);
 	}
-	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#add(Vector<String>)
-	 */
+
+	@Override
+	public void add(String rawStmt, MemoryProfile memProfile) throws IllegalStatementException
+	{			
+			add(createStatement(rawStmt), memProfile);
+	}
+
+	@Override
 	@RPCMethod(
-			desc="adds one or several statements (triplets S-P-O) to the ontology"
+			desc="adds one or several statements (triplets S-P-O) to the ontology, in long term memory."
 	)
 	public String add(Vector<String> rawStmts) throws IllegalStatementException
 	{
@@ -296,10 +335,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return "true";
 	}
 
+	@Override
+	@RPCMethod(
+			rpc_name="add_memory",
+			desc="adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile."
+	)
+	public String add(Vector<String> rawStmts, String memProfile) throws IllegalStatementException
+	{
+		for (String rawStmt : rawStmts) add(rawStmt, MemoryProfile.fromString(memProfile));
+		return "true";
+	}
+
 	
 	@Override
 	public boolean check(Statement statement) {
 		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
+		
+		onto.enterCriticalSection(Lock.READ);
 		
 		//trivial to answer true is the statement has been asserted.
 		if (onto.contains(statement)) return true;
@@ -319,6 +371,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		catch (QueryExecException e) {
 			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
 			throw e;
+		}
+		finally {
+			onto.leaveCriticalSection();
 		}
 
 	}
@@ -371,7 +426,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public Boolean checkConsistency() throws InconsistentOntologyException {
 		if (verbose) System.out.println(" * Checking ontology consistency...");
 		
+		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
+		onto.leaveCriticalSection();
 		
 		String cause = "";
 		
@@ -391,7 +448,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#query(java.lang.String)
 	 */
-	public ResultSet query(String query) throws QueryParseException
+	public ResultSet query(String query) throws QueryParseException, QueryExecException
 	{
 		
 		//Add the common prefixes.
@@ -409,11 +466,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		catch (QueryParseException e) {
 			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
-			return null;
+			throw e;
 		}
 		catch (QueryExecException e) {
 			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
-			return null;
+			throw e;
 		}
 		
 		if (verbose) System.out.println("done.");
@@ -426,11 +483,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@RPCMethod(
 			desc="performs one or several SPARQL queries on the ontology"
 	)
-	public String query(Vector<String> params) throws QueryParseException
+	public Set<String> query(Vector<String> params) throws QueryParseException, QueryExecException
 	{
-		String result = "";
+		Set<String> result = new HashSet<String>();
 		
-		String key = params.remove(0);
+		String key = "";
+		
+		//The variable we want to bind.
+		if (params.size() == 1) {
+			String q = params.firstElement();
+			int iQmark = q.indexOf("?");
+			int iSpace = (q.indexOf(" ", iQmark) == -1) ? q.length() : q.indexOf(" ", iQmark);
+			int iReturn = (q.indexOf('\n', iQmark) == -1) ? q.length() : q.indexOf("\n", iQmark);
+			key = q.substring(iQmark+1, Math.min(iSpace, iReturn));
+		}		
+		else key = params.remove(0); //if more than one string is given, we assume that the first param is the variable to bind.
+		
+		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
 		
 		ResultSet queryResults = null;
 		
@@ -440,7 +509,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			while (queryResults.hasNext()) {
 				RDFNode node = queryResults.nextSolution().getResource(key);
 				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
-					result += (Namespaces.toLightString(node)) + " ";
+					result.add(Namespaces.toLightString(node));
 			}
 		}		
 		
@@ -466,9 +535,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#find(java.lang.String, java.util.Vector, java.util.Vector)
-	 */
 	public Vector<Resource> find(String varName,	Vector<PartialStatement> statements, Vector<String> filters) {
 		
 		Vector<Resource> result = new Vector<Resource>();
@@ -632,7 +698,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
 		// This check is only useful to throw an exception...
+		
+		onto.enterCriticalSection(Lock.READ);
 		Resource node = onto.getOntResource(lex_resource);
+		onto.leaveCriticalSection();
+		
 		if (node == null){
 			if (verbose) System.out.println("resource not found!");
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
@@ -645,6 +715,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + lex_resource +">";
 		
+		onto.enterCriticalSection(Lock.READ);
 		try	{
 			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 		
@@ -658,6 +729,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		catch (QueryExecException e) {
 			if (verbose) System.err.println("[ERROR] internal error during query execution while try the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
 			return null;
+		}
+		finally {
+			onto.leaveCriticalSection();
 		}
 		
 		if (verbose) System.out.println("done.");
@@ -677,25 +751,235 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public Model getInfos(Resource resource) throws NotFoundException {
 		return getInfos(resource.toString());
 	}
-
-	@RPCMethod(
-			rpc_name = "subclasses_of", 
-			desc = "returns the list of asserted and inferred subclasses of a given class."
-	)
-	public Vector<String> getSubclassesOf(String type) throws NotFoundException {
+	
+	public Set<OntClass> getSuperclassesOf(OntClass type) throws NotFoundException {
+		return getSuperclassesOf(type, false);
+	}
+	
+	public Set<OntClass> getSuperclassesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
 		
-		Vector<String> result = new Vector<String>();
+		Set<OntClass> result = new HashSet<OntClass>();
 		
-		OntClass myClass = onto.createClass(Namespaces.addDefault(type));
-		ExtendedIterator<OntClass> it = myClass.listSubClasses();
+		if (verbose) System.out.print(" * Looking up for superclasses of " + type.getLocalName() + "...");
+		
+		onto.enterCriticalSection(Lock.READ);
+		ExtendedIterator<OntClass> it = type.listSuperClasses(onlyDirect);
 		while (it.hasNext())
 		{
 			OntClass tmp = it.next();
-			if (tmp != null){
-				//System.out.println(tmp.getURI());
-				result.add(tmp.getLocalName());
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
 			}
 		}
+		onto.leaveCriticalSection();
+		
+		if (verbose) System.out.println("done.");
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "superclasses_of", 
+			desc = "returns the list of asserted and inferred superclasses of a given class."
+	)
+	public Vector<String> getSuperclassesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntClass c : getSuperclassesOf(myClass) )
+				result.add(c.getLocalName());
+
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "nice_superclasses_of", 
+			desc = "returns the labels (or class name is no label is available) of all asserted and inferred superclasses of a given class."
+	)
+	public Vector<String> getNiceSuperclassesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntClass c : getSuperclassesOf(myClass) ) {
+			if (c.getLabel(null) != null) result.add(c.getLabel(null));
+			else result.add(c.getLocalName());
+		}
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "nice_direct_superclasses_of", 
+			desc = "returns the labels (or class name is no label is available) of all asserted and inferred direct superclasses of a given class."
+	)
+	public Vector<String> getNiceDirectSuperclassesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntClass c : getSuperclassesOf(myClass, true) ) {
+			if (c.getLabel(null) != null) result.add(c.getLabel(null));
+			else result.add(c.getLocalName());
+		}
+		
+		return result;
+	}
+	
+	public Set<OntClass> getSubclassesOf(OntClass type) throws NotFoundException {
+		return getSubclassesOf(type, false);
+	}
+	
+	public Set<OntClass> getSubclassesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
+		
+		Set<OntClass> result = new HashSet<OntClass>();
+		
+		if (verbose) System.out.print(" * Looking up for subclasses of " + type.getLocalName() + "...");
+		
+		onto.enterCriticalSection(Lock.READ);
+		
+		ExtendedIterator<OntClass> it = type.listSubClasses(onlyDirect);
+		while (it.hasNext())
+		{
+			OntClass tmp = it.next();
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
+			}
+		}
+		
+		onto.leaveCriticalSection();
+		
+		if (verbose) System.out.println("done.");
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "subclasses_of", 
+			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred subclasses of a given class."
+	)
+	public Map<String, String> getSubclassesOf(String type) throws NotFoundException {
+		
+		Map<String, String> result = new HashMap<String, String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntClass c : getSubclassesOf(myClass) ) {
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
+		}
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "direct_subclasses_of", 
+			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct subclasses of a given class."
+	)
+	public Map<String, String> getDirectSubclassesOf(String type) throws NotFoundException {
+		
+		Map<String, String> result = new HashMap<String, String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntClass c : getSubclassesOf(myClass, true) ) {
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
+		}
+		
+		return result;
+	}
+	
+	public Set<OntResource> getInstancesOf(OntClass type) throws NotFoundException {
+		return getInstancesOf(type, false);
+	}
+	
+	public Set<OntResource> getInstancesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
+		
+		Set<OntResource> result = new HashSet<OntResource>();
+		
+		if (verbose) System.out.print(" * Looking up for instances of " + type.getLocalName() + "...");
+		
+		onto.enterCriticalSection(Lock.READ);
+		
+		ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
+		while (it.hasNext())
+		{
+			OntResource tmp = it.next();
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
+			}
+		}
+		
+		onto.leaveCriticalSection();
+		
+		if (verbose) System.out.println("done.");
+		return result;
+	}
+
+	@RPCMethod(
+			rpc_name = "instances_of", 
+			desc = "returns the list of asserted and inferred instances of a given class."
+	)
+	public Vector<String> getInstancesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntResource c : getInstancesOf(myClass) )
+				result.add(c.getLocalName());
+
+		return result;
+	}
+	
+	@RPCMethod(
+			rpc_name = "nice_instances_of", 
+			desc = "returns the labels (or instance id is no label is available) of all asserted and inferred instances of a given class."
+	)
+	public Vector<String> getNiceInstancesOf(String type) throws NotFoundException {
+		
+		Vector<String> result = new Vector<String>();
+		
+		onto.enterCriticalSection(Lock.READ);
+		OntClass myClass = onto.getOntClass(Namespaces.format(type));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntResource c : getInstancesOf(myClass) ) {
+			if (c.getLabel(null) != null) result.add(c.getLabel(null));
+			else result.add(c.getLocalName());
+		}
+		
 		return result;
 	}
 
@@ -759,19 +1043,24 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
 		Namespaces.setDefault(parameters.getProperty("default_namespace"));
 		
-		
-		
 		this.load();
+		
+		memoryManager = new MemoryManager(onto);
+		memoryManager.start();
 		
 	}
 
-
+	
 	/** This protected method is called every time the ontology model changes (ie upon addition or removal of statements in the ontology).<br/>
 	 * It is mainly responsible for testing the various watchPatterns as provided by the set of active {@link IWatcher} against the ontology.<br/>
 	 * 
-	 * onModelChange() relies on a caching mechanism of requests to improve performances. It remains however a serious performance bottleneck. 
+	 * onModelChange() relies on a caching mechanism of requests to improve performances. It remains however a serious performance bottleneck.
+	 * 
+	 * @param rsName the name of the reified statements whose creation triggered the update. Can be null if it does not apply.
+	 * 
+	 * @see #onModelChange()
 	 */
-	protected void onModelChange(){
+	protected void onModelChange(String rsName){
 		//System.out.println("Model changed!");
 		
 		//iterate over the various registered watchers and notify the subscribers when needed.
@@ -790,7 +1079,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					}
 						
 					String resultQuery = "ASK { "+statement.asSparqlRow() +" }";
-										
+						
 					try	{
 						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 						watchersCache.put(w.getWatchPattern(), Pair.create(query, false));
@@ -804,7 +1093,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 				}
 				
-				
+				onto.enterCriticalSection(Lock.READ);
 				try	{
 					Pair<Query, Boolean> currentQuery = watchersCache.get(w.getWatchPattern());
 				
@@ -851,12 +1140,26 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					if (verbose) System.err.println("[ERROR] internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
 					throw e;
 				}
+				finally {
+					onto.leaveCriticalSection();
+				}
 				
 			}
 			
 		}
+		
+		if (rsName != null)	memoryManager.watch(rsName);
 			
 	}
+	
+	/**
+	 * Simply call {@link #onModelChange(String)} with a  {@code null} string.
+	 */
+	private void onModelChange() {
+		onModelChange(null);		
+	}
+
+	
 	/**
 	 * Loads into memory the ontology which was specified in the constructor.
 	 */
@@ -909,7 +1212,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
+			onto.enterCriticalSection(Lock.WRITE);
 			if (instancesModel != null) onto.add(instancesModel);
+			onto.leaveCriticalSection();
 			
 			if (verbose) {
 				System.out.print(" * Ontology successfully loaded (");
@@ -933,9 +1238,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public void clear(PartialStatement partialStmt) {
 		if (verbose) System.out.println(" * Clearing statements matching ["+ partialStmt + "]...");
 		
+		onto.enterCriticalSection(Lock.WRITE);
+		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		StmtIterator stmtsToRemove = onto.listStatements(selector);
 		onto.remove(stmtsToRemove.toList());
+		
+		onto.leaveCriticalSection();
 		
 	}
 	
@@ -947,7 +1256,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void remove(Statement stmt) {
 		if (verbose) System.out.println(" * Removing statement ["+ Namespaces.toLightString(stmt) + "]...");
+		
+		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
+		onto.leaveCriticalSection();
 		
 		//notify the events subscribers.
 		onModelChange();
@@ -974,7 +1286,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			System.err.println("[ERROR] Error while opening " + path + " to output the ontology. Check it's a valid filename!");
 			return;
 		}
+		onto.enterCriticalSection(Lock.READ);
 		onto.write(file);
+		onto.leaveCriticalSection();
 		
 		if (verbose) System.out.println("done");
 		

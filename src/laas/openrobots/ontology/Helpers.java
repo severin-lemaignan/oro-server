@@ -36,6 +36,12 @@
 
 package laas.openrobots.ontology;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
@@ -123,5 +129,23 @@ public class Helpers {
 		}
 			
 		else return "'" + lit.getLexicalForm() + "'^^<" + lit.getDatatypeURI() + ">";		
+	}
+
+	/**
+	 * Returns a Java Date object from its XML Schema Dataype (XSD) representation in the GMT timezone.
+	 * 
+	 * Note: the reverse operation (Date to XSD) can be achieved by {@code OntModel.createTypedLiteral(Calendar.getInstance())}.
+	 * 
+	 * @param xsdDateTime a XSD formatted date
+	 * @return the corresponding Java Date object.
+	 * @throws ParseException
+	 */
+	public static Date getDateFromXSD(String xsdDateTime) throws ParseException {
+	    SimpleDateFormat ISO8601Local = new SimpleDateFormat(
+	      "yyyy-MM-dd'T'HH:mm:ss");
+	    TimeZone timeZone = TimeZone.getTimeZone("GMT");
+	    ISO8601Local.setTimeZone(timeZone);
+
+		return ISO8601Local.parse(xsdDateTime);
 	}
 }
