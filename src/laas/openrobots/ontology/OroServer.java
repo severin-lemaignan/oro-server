@@ -86,7 +86,7 @@ public class OroServer implements IServiceProvider {
 
 
 	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
-	public static final String VERSION = "0.4.4"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.4.5"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
