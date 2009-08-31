@@ -36,17 +36,22 @@
 
 package laas.openrobots.ontology;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.datatypes.RDFDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
+import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
@@ -147,5 +152,37 @@ public class Helpers {
 	    ISO8601Local.setTimeZone(timeZone);
 
 		return ISO8601Local.parse(xsdDateTime);
+	}
+
+	public static String getLabel(OntResource resource) {
+		return ((resource.getLabel(null) != null) ? resource.getLabel("") : resource.getLocalName());
+	}
+	
+	public static String getId(OntResource resource) {
+		//return Namespaces.contract(resource.getURI());
+		try {
+			return URLEncoder.encode(resource.getURI(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			System.exit(0);
+			return "";
+		}
+
+	}
+	
+	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
+		OpenRobotsOntology.ResourceType type;
+
+		if (resource.isClass())
+			type = OpenRobotsOntology.ResourceType.CLASS;
+		else if (resource.isIndividual())
+			type = OpenRobotsOntology.ResourceType.INSTANCE;
+		else if (resource.isDatatypeProperty())
+			type = OpenRobotsOntology.ResourceType.DATATYPE_PROPERTY;
+		else if (resource.isProperty())
+			type = OpenRobotsOntology.ResourceType.OBJECT_PROPERTY;
+		else type = OpenRobotsOntology.ResourceType.UNDEFINED;
+
+		return type;
 	}
 }
