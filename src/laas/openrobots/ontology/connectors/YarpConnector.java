@@ -217,6 +217,9 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	    			Value rawValue = new Value();
 	    	    			
 	    	    			if(m.getParameterTypes().length == 0)
+	    	    				
+	    	    				//Add here code that handle different return types
+	    	    				
 	    	    				rawValue.fromString("(" + m.invoke(o) + ")");
 	    	    			else
 	    	    				rawValue.fromString("(" + m.invoke(o, bottleToVector(yarpArgs)).toString() + ")");

@@ -39,7 +39,6 @@ package laas.openrobots.ontology.backends;
 
 //Imports
 ///////////////
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Calendar;
@@ -63,6 +62,7 @@ import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.*;
 import laas.openrobots.ontology.memory.MemoryManager;
 import laas.openrobots.ontology.memory.MemoryProfile;
+import laas.openrobots.ontology.types.ResourceDescription;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
@@ -85,27 +85,23 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 
 
 /**
- * The OpenRobotsOntology class is the main container of liboro.<br/>
+ * The OpenRobotsOntology class is the main storage backend for oro-server.<br/>
  * 
- * It maps a Jena {@link com.hp.hpl.jena.ontology.OntModel ontology} and provides helpers for the robotics context.<br/>
- * Amongst other feature, it offers an easy way to {@linkplain #query(String) query} the ontology with standard SPARQL requests, it can try to {@linkplain #find(String, Vector) find} resources matching a set of statements or even find resources which {@linkplain #guess(String, Vector, double) approximately match} a set of statements.<br/><br/>
+ * It maps useful methods for knowledge access in a robotic context to a Jena-baked {@link com.hp.hpl.jena.ontology.OntModel ontology}.<br/>
+ * <br/>
+ * Amongst other feature, it offers an easy way to {@linkplain #query(String) query} the ontology with standard SPARQL requests, it can try to {@linkplain #find(String, Vector) find} resources matching a set of statements or  {@linkplain #checkConsistency() check the consistency} of the knowledge storage.<br/><br/>
  * 
  * Examples covering the various aspects of the API can be found in the {@linkplain laas.openrobots.ontology.tests Unit Tests}.
  *  
  * @author Severin Lemaignan <i>severin.lemaignan@laas.fr</i>
  */
 public class OpenRobotsOntology implements IOntologyBackend {
-
-	/**
-	 * The default configuration file (set to {@value}).
-	 */
-	public static final String DEFAULT_CONFIG_FILE = "./ontorobot.conf";
+	
+	public enum ResourceType {CLASS, INSTANCE, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED}
 	
 	private OntModel onto;
 	
 	private HashSet<IEventsProvider> eventsProviders;
-	
-	private String owlUri;
 	
 	private ResultSet lastQueryResult;
 	private String lastQuery;
@@ -120,19 +116,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private MemoryManager memoryManager;
 	
 	/***************************************
-	 *          Constructors               *
+	 *          Constructor                *
 	 **************************************/
-	
-	/**
-	 * Default constructor. Use the default configuration file.<br/>
-	 * The default configuration file is defined by the {@code DEFAULT_CONFIG_FILE} static field (set to {@value #DEFAULT_CONFIG_FILE}).
-	 * The constructor first opens the ontology, then loads it into memory and eventually bounds it to Jena internal reasonner. Thus, the instanciation of OpenRobotsOntology may take some time (several seconds, depending on the size on the ontology).
-	 */
-	public OpenRobotsOntology(){
-		this.parameters =  getConfiguration(DEFAULT_CONFIG_FILE);
-		initialize();
-		
-	}
 	
 	/**
 	 * Constructor which takes a config file as parameter.<br/>
@@ -147,19 +132,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * </ul>
 	 * The file may contain other options, related to the server configuration. See {@link laas.openrobots.ontology.OroServer}. Have a look as well at the config file itself for more details.
 	 * 
-	 * @param configFileURI The path and filename of the configuration file.
-	 */
-	public OpenRobotsOntology(String configFileURI){
-		this.parameters = getConfiguration(configFileURI);
-		initialize();
-
-	}
-	
-	/**
-	 * Constructor which takes directly a Properties object as parameters.<br/>
-	 * 
-	 * @param parameters The set of parameters.
-	 * @see OpenRobotsOntology#OpenRobotsOntology(String)
+	 * @param parameters The set of parameters, read from the server configuration file.
 	 */
 	public OpenRobotsOntology(Properties parameters){
 		this.parameters = parameters;
@@ -780,11 +753,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@RPCMethod(
 			rpc_name = "superclasses_of", 
-			desc = "returns the list of asserted and inferred superclasses of a given class."
+			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred superclasses of a given class."
 	)
-	public Vector<String> getSuperclassesOf(String type) throws NotFoundException {
+	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException {
 		
-		Vector<String> result = new Vector<String>();
+		Map<String, String> result = new HashMap<String, String>();
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -792,41 +765,21 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSuperclassesOf(myClass) )
-				result.add(c.getLocalName());
-
-		return result;
-	}
-	
-	@RPCMethod(
-			rpc_name = "nice_superclasses_of", 
-			desc = "returns the labels (or class name is no label is available) of all asserted and inferred superclasses of a given class."
-	)
-	public Vector<String> getNiceSuperclassesOf(String type) throws NotFoundException {
-		
-		Vector<String> result = new Vector<String>();
-		
-		onto.enterCriticalSection(Lock.READ);
-		OntClass myClass = onto.getOntClass(Namespaces.format(type));
-		onto.leaveCriticalSection();
-		
-		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
-		
-		for (OntClass c : getSuperclassesOf(myClass) ) {
-			if (c.getLabel(null) != null) result.add(c.getLabel(null));
-			else result.add(c.getLocalName());
+		for (OntClass c : getSuperclassesOf(myClass, false) ) {
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
 		}
 		
 		return result;
 	}
 	
 	@RPCMethod(
-			rpc_name = "nice_direct_superclasses_of", 
-			desc = "returns the labels (or class name is no label is available) of all asserted and inferred direct superclasses of a given class."
+			rpc_name = "direct_superclasses_of", 
+			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct superclasses of a given class."
 	)
-	public Vector<String> getNiceDirectSuperclassesOf(String type) throws NotFoundException {
+	public Map<String, String> getDirectSuperclassesOf(String type) throws NotFoundException {
 		
-		Vector<String> result = new Vector<String>();
+		Map<String, String> result = new HashMap<String, String>();
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -835,12 +788,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : getSuperclassesOf(myClass, true) ) {
-			if (c.getLabel(null) != null) result.add(c.getLabel(null));
-			else result.add(c.getLocalName());
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
 		}
 		
 		return result;
 	}
+	
+
 	
 	public Set<OntClass> getSubclassesOf(OntClass type) throws NotFoundException {
 		return getSubclassesOf(type, false);
@@ -884,7 +839,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSubclassesOf(myClass) ) {
+		for (OntClass c : getSubclassesOf(myClass, false) ) {
 			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
 			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
 		}
@@ -942,12 +897,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 	@RPCMethod(
-			rpc_name = "instances_of", 
-			desc = "returns the list of asserted and inferred instances of a given class."
+			rpc_name = "instances_of",
+			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class."
 	)
-	public Vector<String> getInstancesOf(String type) throws NotFoundException {
+	public Map<String, String> getInstancesOf(String type) throws NotFoundException {
 		
-		Vector<String> result = new Vector<String>();
+		Map<String, String> result = new HashMap<String, String>();
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -955,19 +910,21 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntResource c : getInstancesOf(myClass) )
-				result.add(c.getLocalName());
+		for (OntResource c : getInstancesOf(myClass, false) ) {
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
+		}
 
 		return result;
 	}
 	
 	@RPCMethod(
-			rpc_name = "nice_instances_of", 
-			desc = "returns the labels (or instance id is no label is available) of all asserted and inferred instances of a given class."
+			rpc_name = "direct_instances_of",
+			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class."
 	)
-	public Vector<String> getNiceInstancesOf(String type) throws NotFoundException {
+	public Map<String, String> getDirectInstancesOf(String type) throws NotFoundException {
 		
-		Vector<String> result = new Vector<String>();
+		Map<String, String> result = new HashMap<String, String>();
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -975,14 +932,29 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntResource c : getInstancesOf(myClass) ) {
-			if (c.getLabel(null) != null) result.add(c.getLabel(null));
-			else result.add(c.getLocalName());
+		for (OntResource c : getInstancesOf(myClass, true) ) {
+			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
+			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
 		}
-		
+
 		return result;
 	}
-
+	
+	@RPCMethod(
+			rpc_name = "resource_details", 
+			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
+	)
+	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
+				
+		onto.enterCriticalSection(Lock.READ);
+		OntResource myResource = onto.getOntResource(Namespaces.format(id));
+		onto.leaveCriticalSection();
+		
+		if (myResource == null) throw new NotFoundException("The resource " + id + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		return new ResourceDescription(myResource);
+	}
+	
 	/**
 	 * Returns the current set of parameters.
 	 * 
@@ -996,44 +968,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 *          Private methods            *
 	 **************************************/
 	
-	/**
-	 * Read a configuration file and return to corresponding "Properties" object.
-	 * The configuration file contains the path to the ontology to be loaded and several options regarding the server configuration.
-	 * @param configFileURI The path and filename of the configuration file.
-	 * @return A Java.util.Properties instance containing the application configuration.
-	 */
-	private Properties getConfiguration(String configFileURI){
-		/****************************
-		 *  Parsing of config file  *
-		 ****************************/
-		Properties parameters = new Properties();
-        try
-		{
-        	FileInputStream fstream = new FileInputStream(configFileURI);
-        	parameters.load(fstream);
-			fstream.close();
-			
-			if (!parameters.containsKey("ontology"))
-			{
-				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
-	        	System.exit(1);
-			}
-		}
-        catch (FileNotFoundException fnfe)
-        {
-        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
-        	System.exit(1);
-        }
-        catch (Exception e)
-		{
-			System.err.println("Config file input error. Check config file syntax.");
-			System.exit(1);
-		}
-        
-        return parameters;
-	}
 
-	
 	private void initialize(){
 				
 		this.eventsProviders = new HashSet<IEventsProvider>();

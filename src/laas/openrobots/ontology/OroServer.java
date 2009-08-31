@@ -36,6 +36,8 @@
 
 package laas.openrobots.ontology;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -45,6 +47,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
@@ -56,37 +59,70 @@ import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.memory.MemoryManager;
 
 /**
- * {@code OroServer} is the door of the ontology for network client.</br>
- * It relies on other classes to handle specific network protocols. Currently, only <a href="http://eris.liralab.it/yarp/">YARP</a> is implemented, through {@link YarpConnector}. Others (ROS...) may follow.<br/>
- * <br/>
- * <ul>
- * <li>The main definition of the server interface is here {@link laas.openrobots.ontology.backends.IOntologyBackend}.</li>
- * <li>If you need details on the YARP API, {@linkplain YarpConnector jump here}.</li>
+ * {@code OroServer} is the application entry point. It initializes and starts the various services, connectors and background tasks, as set up in the <code>oro-server</code> configuration file.<br/> 
+ * 
+ * <p>
+ * OroServer does mainly two things:
+ * <ol>
+ * <li>It registers and connects a set of services (presumably related to robotic cognition) to so-called "external connectors" (ie RPC frameworks),</li>
+ * <li>It runs in the background several tasks related to robotic cognition.</li>
+ * </ol>
+ * </p>
+ * 
+ * <p>
+ * Most services are related to access and management of a cognitive <em>storage backend</em>. The main storage backend is an ontology, as implemented in the {@link OpenRobotsOntology} class. This class exposes a set of RPC services (and hence implement the {@link IServiceProvider} interface).<br/>
+ * However, other services can be registred (like {@link #stats()} that returns statistics on the server itself).<br/>
+ * </p>
+ * 
+ * <p>
+ * Connectors are the external interfaces of the server. They all implement the {@link IConnector} interface. They are adaptors to existing middlewares or RPC frameworks.<br/>
+ * The following protocols are currently implemented:
+ * <ul> 
+ * 	<li><a href="http://eris.liralab.it/yarp/">YARP</a> (see {@link YarpConnector})</li>
+ *  <li>JSON-RPC (see {@link JsonConnector})</li>
  * </ul>
+ * Others middlewares are expected to be supported as well in the future. Please contact us (<a href="mailto:robot@laas.fr">robot@laas.fr</a>) if you are interested in getting support for your protocol.
+ * </p>
+ * 
+ *  <p>
+ *  Amongst the tasks that are run in background, we can list:
+ *  <ul>
+ *  	<li>The event manager (see {@link IEventsProvider})</li>
+ *  	<li>The memory manager (see {@link MemoryManager})</li>
+ *  </ul>
+ *  </p>
  * <br/>
  * {@code OroServer} has a {@code main} function which expect a configuration file.<br/> 
  * For the server, the following options are currently available:
  * <ul>
  * <li><em>yarp = [enabled|disabled]</em>: <em>enabled</em> activates YARP bindings.</li>
+ * <li><em>json = [enabled|disabled]</em>: <em>enabled</em> activates JSON-RPC bindings.</li>
  * </ul>
  * YARP specific options:
  * <ul>
  * <li><em>yarp_input_port = PORT (default:oro)</em>: set the name of the YARP port where queries can be sent to the ontology server.</li> 
  * </ul>
+ * JSON specific options:
+ * <ul>
+ * <li><em>json_port = PORT (default:8080)</em>: set the port number the JSON-RPC server is to be started on.</li> 
+ * </ul>
+ * 
  * <i>See {@link laas.openrobots.ontology.backends.OpenRobotsOntology#OpenRobotsOntology(String)} for others options, specific to the ontologies. Have a look at the config file itself for more details.</i>
  *
- */
-/**
  * @author slemaign
  *
  */
 public class OroServer implements IServiceProvider {
 
 
+	/**
+	 * The default configuration file (set to {@value}).
+	 */
 	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
-	public static final String VERSION = "0.4.5"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.4.6"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
@@ -131,6 +167,7 @@ public class OroServer implements IServiceProvider {
    	
     	
     	String confFile;
+    	Properties confParams;
     	
     	connectors = new HashSet<IConnector>();
     	eventsProviders = new HashSet<IEventsProvider>();
@@ -138,13 +175,6 @@ public class OroServer implements IServiceProvider {
     	
     	System.out.println("*** OroServer " + VERSION + " ***");
 		
-				
-		//TODO : iterate over all the service providers		
-		Vector<IServiceProvider> serviceProviders = new Vector<IServiceProvider>();
-		serviceProviders.add(this);
-		
-		addNewServiceProviders(this);
-    	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
     	
     	
@@ -153,29 +183,24 @@ public class OroServer implements IServiceProvider {
     	else
     		confFile = args[0];
     	
-    	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
-    	
+    	confParams = getConfiguration(confFile);
 		System.out.println(" * Using configuration file " + confFile);
 		
+    	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
+
+		/********************************************************************************
+		 *               BACKENDS and SERVICES REGISTRATION                             *
+		 ********************************************************************************/
+
+		//add the services offered by the OroServer class
+		addNewServiceProviders(this);
+		
 		//Open and load the ontology + register ontology services by the server. If the configuration file can not be found, it exits.
-		oro = new OpenRobotsOntology(confFile);
+		oro = new OpenRobotsOntology(confParams);
+		
+		//System.out.println(oro.getResourceDetails("PurposefulAction").getJson());
 		
 		addNewServiceProviders(oro);
-				
-		//if (oro.getParameters().getProperty("yarp", "") != "enabled") System.out.println("YARP bindings should not be enabled but...well...I like them, so I start them anyway. Sorry.");
-
-		//YarpConnector yc = new YarpConnector(oro, oro.getParameters(), registredServices);
-		//eventsProviders.add(yc);
-		//oro.registerEventsHandlers(eventsProviders);
-		//connectors.add(yc);
-		
-		JsonConnector jc = new JsonConnector(registredServices);
-		connectors.add(jc);		
-		
-		
-		
-		for (IConnector c : connectors)	c.initializeConnector();
-		
 		
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
@@ -192,6 +217,28 @@ public class OroServer implements IServiceProvider {
     			System.out.println("");
     	}
 
+		
+		/********************************************************************************
+		 *                       CONNECTORS INITIALIZATION                              *
+		 ********************************************************************************/
+		
+		if (confParams.getProperty("yarp").equalsIgnoreCase("enabled")) {
+			YarpConnector yc = new YarpConnector(oro, oro.getParameters(), registredServices);
+			eventsProviders.add(yc);
+			oro.registerEventsHandlers(eventsProviders);
+			connectors.add(yc);			
+		}
+		
+		if (confParams.getProperty("json").equalsIgnoreCase("enabled")) {
+			JsonConnector jc = new JsonConnector(confParams, registredServices);
+			connectors.add(jc);
+		}
+				
+		for (IConnector c : connectors)	c.initializeConnector();
+
+		/********************************************************************************
+		 *                               MAIN LOOP                                      *
+		 ********************************************************************************/
 
 		while(keepOn) {			
         	    	
@@ -312,6 +359,43 @@ public class OroServer implements IServiceProvider {
 		}*/
 		
 		return registredServices;
+	}
+	
+	/**
+	 * Read a configuration file and return to corresponding "Properties" object.
+	 * The configuration file contains the path to the ontology to be loaded and several options regarding the server configuration.
+	 * @param configFileURI The path and filename of the configuration file.
+	 * @return A Java.util.Properties instance containing the application configuration.
+	 */
+	private Properties getConfiguration(String configFileURI){
+		/****************************
+		 *  Parsing of config file  *
+		 ****************************/
+		Properties parameters = new Properties();
+        try
+		{
+        	FileInputStream fstream = new FileInputStream(configFileURI);
+        	parameters.load(fstream);
+			fstream.close();
+			
+			if (!parameters.containsKey("ontology"))
+			{
+				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
+	        	System.exit(1);
+			}
+		}
+        catch (FileNotFoundException fnfe)
+        {
+        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
+        	System.exit(1);
+        }
+        catch (Exception e)
+		{
+			System.err.println("Config file input error. Check config file syntax.");
+			System.exit(1);
+		}
+        
+        return parameters;
 	}
 
 }

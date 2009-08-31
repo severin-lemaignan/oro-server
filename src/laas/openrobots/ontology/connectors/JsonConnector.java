@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -20,7 +21,6 @@ import org.mortbay.jetty.servlet.ServletHolder;
 
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.RPCMethod;
-import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
@@ -29,9 +29,9 @@ public class JsonConnector implements IConnector {
 	private Server server;
 	private Context root;
 
-	public JsonConnector(HashMap<Pair<String,String>, Pair<Method, Object>> listOfServices){
+	public JsonConnector(Properties params, HashMap<Pair<String,String>, Pair<Method, Object>> listOfServices){
 		
-		server = new Server(8080);
+		server = new Server(Integer.parseInt(params.getProperty("json_port", "8080")));
 		root = new Context(server,"/",Context.SESSIONS);
 		root.addServlet(new ServletHolder(new OroHelloServlet()), "/");
 		
@@ -119,8 +119,8 @@ public class JsonConnector implements IConnector {
 		      response.setContentType("text/html");
 		      response.setStatus(HttpServletResponse.SC_OK);
 		      response.getWriter().println("<h1>ORO web access</h1>");
-		      response.getWriter().println("session="+request.getSession(true).getId() + "<br\\>");
-		      response.getWriter().println("A JSON-RPC access is available from /oro");
+		      //response.getWriter().println("session="+request.getSession(true).getId() + "<br\\>");
+		      response.getWriter().println("A JSON-RPC access is available at "+ request.getLocalAddr() + ":" + request.getLocalPort() + "/oro");
 		  }
 	  }
 

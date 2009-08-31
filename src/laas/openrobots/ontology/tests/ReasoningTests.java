@@ -1,6 +1,9 @@
 package laas.openrobots.ontology.tests;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.Hashtable;
+import java.util.Properties;
 import java.util.Vector;
 
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -21,6 +24,12 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
  */
 public class ReasoningTests extends TestCase {
 	
+	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
+	Properties conf;
+	
+	public ReasoningTests() {
+		conf = getConfiguration(ORO_TEST_CONF);
+	}
 	
 	/**
 	 * This test tries to stress the ontology with a lot of statements addition and queries with huge resultsets.
@@ -30,7 +39,7 @@ public class ReasoningTests extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Load scalability *****");
 		
 		
-		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -101,7 +110,7 @@ public class ReasoningTests extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Load scalability 2 *****");
 		
 		
-		IOntologyBackend oro = new OpenRobotsOntology("oro_test.conf");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -154,7 +163,7 @@ public class ReasoningTests extends TestCase {
 
 	
 	public void testInstanceClassification(){
-		OpenRobotsOntology oro = new OpenRobotsOntology("oro_test.conf");
+		OpenRobotsOntology oro = new OpenRobotsOntology(conf);
 		
 		try {
 			oro.checkConsistency();
@@ -162,6 +171,37 @@ public class ReasoningTests extends TestCase {
 			e.printStackTrace();
 			fail();
 		}
+	}
+	
+	private Properties getConfiguration(String configFileURI){
+		/****************************
+		 *  Parsing of config file  *
+		 ****************************/
+		Properties parameters = new Properties();
+        try
+		{
+        	FileInputStream fstream = new FileInputStream(configFileURI);
+        	parameters.load(fstream);
+			fstream.close();
+			
+			if (!parameters.containsKey("ontology"))
+			{
+				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
+	        	System.exit(1);
+			}
+		}
+        catch (FileNotFoundException fnfe)
+        {
+        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
+        	System.exit(1);
+        }
+        catch (Exception e)
+		{
+			System.err.println("Config file input error. Check config file syntax.");
+			System.exit(1);
+		}
+        
+        return parameters;
 	}
 
 }

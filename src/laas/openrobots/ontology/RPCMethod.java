@@ -3,12 +3,14 @@ package laas.openrobots.ontology;
 import java.lang.annotation.*;
 
 /**
- * This annotation marks all the available methods exposed to remote clients.
- * To actually register your services by the server, you just need to annotate the relevant method with a @RPCMethod annotation and to call the {@link OroServer.addNewServiceProviders} method. This can be done at any time, even during execution. Connectors will be automaticcaly updated with the new services.
- * 
- *  The type of parameters for your service should be either no parameter of a vector of strings, and your method should always return a single string.
+ * This annotation marks all the available methods exposed to remote clients.<br/>
+ * To actually register your services by the server, you just need to annotate the relevant method with a @RPCMethod annotation and to call the {@link OroServer#addNewServiceProviders(IServiceProvider)} method. This can be done at any time, even during execution. Connectors will be automatically updated with the new services.<br/>
+ * <br/>
+ * Currently, a RPC method has a strong constraint on the parameters and return types: the type of parameters must be either no parameter or a vector of strings, and your method should always return a single string.
  * 
  * @author slemaign
+ * @see laas.openrobots.ontology.backends.OpenRobotsOntology OpenRobotsOntology class for numerous example of RPC methods.
+ * @see IServiceProvider
  *
  */
 @Documented

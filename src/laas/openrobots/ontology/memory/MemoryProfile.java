@@ -27,10 +27,10 @@ public enum MemoryProfile {
 	DEFAULT (-1);
 	
 	/**
-	 * The time base is how ling a second lasts in milliseconds.<br/>
+	 * The time base states "how long a second lasts in milliseconds".<br/>
 	 * The default value is obviously 1000, but you can alter this value to accelerate (or slow down) the behaviour of the memory storage.<br/>
 	 * 
-	 * For instance, if you set {@code timeBase = 500}, the actual duration a short term statement is divided by to (ie 5 seconds instead of the default 10 seconds)
+	 * For instance, if you set {@code timeBase = 500}, the actual duration a short term statement is divided by 2 (ie 5 seconds instead of the default 10 seconds)
 	 * 
 	 */
 	public static int timeBase = 1000;

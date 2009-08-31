@@ -36,17 +36,16 @@
 
 package laas.openrobots.ontology.tests;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
-
-import sun.awt.windows.ThemeReader;
 
 import junit.framework.TestCase;
 import laas.openrobots.ontology.Helpers;
@@ -59,21 +58,12 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.memory.MemoryProfile;
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecException;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QueryFactory;
-import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -113,14 +103,20 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
  */
 public class OpenRobotsOntologyTest extends TestCase {
 
+
+	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
+	Properties conf;
+	
+	public OpenRobotsOntologyTest() {
+		conf = getConfiguration(ORO_TEST_CONF);
+	}
+
 	/***********************************************************************
 	 *                          BASIC TESTS                                *
 	 ***********************************************************************/
 	
-	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
-	
 	public void testSave() {
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		System.out.println(" * Serializing the ontology to disk...");
 		try {
@@ -140,7 +136,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		long startTime = System.currentTimeMillis();
 		
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		System.out.println("[UNITTEST] Ontology loaded in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
@@ -190,7 +186,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
 	
 		
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 
 		
 		/****************
@@ -247,7 +243,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfos() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 				
 		Model infos;
 
@@ -290,7 +286,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfosDefaultNs() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource using default namespace *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 				
 		Model infos;
 
@@ -323,7 +319,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of a new statement in the ontology *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -375,7 +371,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testAddStmntWithLiteral() {
 
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		//First test a request before altering the ontology. 
 		String xmlResult =	oro.queryAsXML(
@@ -426,7 +422,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with different memory profile *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		MemoryProfile.timeBase = 100; //we accelerate 10 times the behaviour of the memory container.
 	
@@ -445,9 +441,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		Vector<String> stmts = new Vector<String>();
-		//stmts.add("fish rdf:type Animal");
-		//stmts.add("sparrow rdf:type Bird");
-		//stmts.add("Bird rdfs:subClassOf Animal");
+
 		stmts.add("superman rdf:type Animal");
 		try {
 			oro.add(stmts, "SHORTTERM");
@@ -536,12 +530,50 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This test checks that sub- and superclasses are correctly inferred. 
+	 * @throws InterruptedException 
+	 */
+	public void testSubSuperClasses() throws InterruptedException {
+		
+		System.out.println("[UNITTEST] ***** TEST: Sub- and superclasses *****");
+		
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+	
+		try {
+			oro.add("Insect rdfs:subClassOf Animal");
+			oro.add("Ladybird rdfs:subClassOf Insect");
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+
+		long startTime = System.currentTimeMillis();
+		
+		//for (String k : oro.getInstancesOf("Monkey").keySet()){
+		//	System.out.println(k);
+		//}
+          
+		assertEquals("Three subclasses should be returned (Monkey, Insect and Ladybird.", 3, oro.getSubclassesOf("Animal").size());
+		assertEquals("Two direct subclasses should be returned (Monkey and Insect).", 2, oro.getDirectSubclassesOf("Animal").size());
+		
+		assertEquals("Four superclasses should be returned (Insect, Animal, owl:Thing and rdfs:Resource).", 4, oro.getSuperclassesOf("Ladybird").size());
+		assertEquals("One direct superclass should be returned (Insect).", 1, oro.getDirectSuperclassesOf("Ladybird").size());
+		
+		assertEquals("Three instances of animal should be returned (cow, baboon and gorilla).", 3, oro.getInstancesOf("Animal").size());
+		assertEquals("One direct instance of animal should be returned (cow).", 1, oro.getDirectInstancesOf("Animal").size());
+	
+		long totalTime = (System.currentTimeMillis()-startTime);
+		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 5 + "ms");
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test try to create statements with various types of literals.
 	 */
 	public void testLiterals() {
 
 		System.out.println("[UNITTEST] ***** TEST: Statements with literals *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		Statement tmp;
 		
@@ -627,7 +659,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		String who_is_an_animal = "SELECT ?instances \n" +
 				"WHERE { \n" +
@@ -743,7 +775,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
 		
 
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 				
 		try {
 			oro.checkConsistency();
@@ -792,7 +824,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testMatching() {
 
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		System.out.println("[UNITTEST] First part: only the resource we are looking for is unknown.");
 		
@@ -852,7 +884,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testApproximateNumericMatching() {
 
 		System.out.println("[UNITTEST] ***** TEST: Approximate numeric matching *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 	
 		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
@@ -908,7 +940,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testInference() {
 
 		System.out.println("[UNITTEST] ***** TEST: Inference testing *****");
-		IOntologyBackend oro = new OpenRobotsOntology(ORO_TEST_CONF);
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		//Add a statement
 		try {
@@ -940,6 +972,37 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Four animals should be returned.", 4, matchingResources.size());
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	private Properties getConfiguration(String configFileURI){
+		/****************************
+		 *  Parsing of config file  *
+		 ****************************/
+		Properties parameters = new Properties();
+        try
+		{
+        	FileInputStream fstream = new FileInputStream(configFileURI);
+        	parameters.load(fstream);
+			fstream.close();
+			
+			if (!parameters.containsKey("ontology"))
+			{
+				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
+	        	System.exit(1);
+			}
+		}
+        catch (FileNotFoundException fnfe)
+        {
+        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
+        	System.exit(1);
+        }
+        catch (Exception e)
+		{
+			System.err.println("Config file input error. Check config file syntax.");
+			System.exit(1);
+		}
+        
+        return parameters;
 	}
 
 	
