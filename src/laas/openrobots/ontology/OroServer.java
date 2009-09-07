@@ -223,7 +223,7 @@ public class OroServer implements IServiceProvider {
 		 ********************************************************************************/
 		
 		if (confParams.getProperty("yarp").equalsIgnoreCase("enabled")) {
-			YarpConnector yc = new YarpConnector(oro, oro.getParameters(), registredServices);
+			YarpConnector yc = new YarpConnector(oro, confParams, registredServices);
 			eventsProviders.add(yc);
 			oro.registerEventsHandlers(eventsProviders);
 			connectors.add(yc);			
@@ -276,68 +276,36 @@ public class OroServer implements IServiceProvider {
 			rpc_name = "stats",
 			desc = "returns some statistics on the server"
 	)
-	public static String stats() {
-		String stats = "";
+	public static Map<String, String> stats() {
+		Map<String, String> stats = new HashMap<String, String>();
 		
 		
 		SimpleDateFormat formatNew = new SimpleDateFormat("HHHH 'hour(s)' mm 'minute(s)' ss 'second(s)'");
 		formatNew.setTimeZone( TimeZone.getTimeZone( "GMT" ) );
 		
-		stats += "\"" + VERSION + "\" ";
+		stats.put("version", "\"" + VERSION + "\"");
 		
 		try {
-			stats += InetAddress.getLocalHost().getHostName() + " ";
+			stats.put("host", InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {
-			stats += "unknow ";
+			stats.put("host", "unknow");
 		}
 		
-		stats += "\"" + formatNew.format((new Date()).getTime() - OroServer.SERVER_START_TIME.getTime()) + "\" ";
+		stats.put("uptime", "\"" + formatNew.format((new Date()).getTime() - OroServer.SERVER_START_TIME.getTime()) + "\"");
 		
 		// Nb of classes
 		//stats.put("nb_classes", String.valueOf(oro.getModel().listClasses().toSet().size()));
-		stats += "\"not available\" ";
+		stats.put("nb_classes", "\"not available\"");
 		
 		//Nb of instances
 		//stats.put("nb_instances", String.valueOf(oro.getModel().listIndividuals().toSet().size()));
-		stats += "\"not available\" ";
+		stats.put("nb_instances", "\"not available\"");
 		
 		//Nb of clients
-		stats += "\"not available\" ";
+		stats.put("nb_clients", "\"not available\"");
 		
 		return stats;
 	}
-	/*
-	public static Vector<String> getStats() {
-		Vector<String> stats = new Vector<String>();
-		
-		
-		SimpleDateFormat formatNew = new SimpleDateFormat("HHHH 'hour(s)' mm 'minute(s)' ss 'second(s)'");
-		formatNew.setTimeZone( TimeZone.getTimeZone( "GMT" ) );
-		
-		stats.add(VERSION);
-		
-		try {
-			stats.add(InetAddress.getLocalHost().getHostName());
-		} catch (UnknownHostException e) {
-			stats.add("unknow");
-		}
-		
-		stats.add(formatNew.format((new Date()).getTime() - OroServer.SERVER_START_TIME.getTime()));
-		
-		// Nb of classes
-		//stats.put("nb_classes", String.valueOf(oro.getModel().listClasses().toSet().size()));
-		stats.add("not available");
-		
-		//Nb of instances
-		//stats.put("nb_instances", String.valueOf(oro.getModel().listIndividuals().toSet().size()));
-		stats.add("not available");
-		
-		//Nb of clients
-		stats.add("not available");
-		
-		return stats;
-	}
-	*/
 
 	private Map<Pair<String, String>, Pair<Method, Object>> getDeclaredServices(Object o) {
 		
