@@ -234,7 +234,19 @@ public class OroServer implements IServiceProvider {
 			connectors.add(jc);
 		}
 				
-		for (IConnector c : connectors)	c.initializeConnector();
+		for (IConnector c : connectors)	{
+			try {
+				c.initializeConnector();
+			} catch (OntologyConnectorException e) {
+				System.err.println("[ERROR] Couldn't initialize a connector: " + e.getLocalizedMessage());
+				connectors.remove(c);
+			}
+		}
+		
+		if (connectors.size() == 0) {
+			System.err.println("[FATAL ERROR] None of the connectors could be started! Killing myself now.");
+			System.exit(1);
+		}
 
 		/********************************************************************************
 		 *                               MAIN LOOP                                      *
@@ -319,13 +331,6 @@ public class OroServer implements IServiceProvider {
 				registredServices.put(new Pair<String, String>(name, a.desc()), new Pair<Method, Object>(m, o));
 			}
 		}
-		/*
-		try {
-			registredServices.put("stats", new Pair<Method, Object>(OroServer.class.getMethod("getStats"), this));
-		} catch (NoSuchMethodException e) {
-			System.err.println(" * Internal error! One registred service (" + e.getLocalizedMessage() + ") is not accessible. Skipping it...");
-		}*/
-		
 		return registredServices;
 	}
 	
