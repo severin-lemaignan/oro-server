@@ -92,7 +92,7 @@ public class JsonConnector implements IConnector {
 		 try {
 			  server.start();
 		} catch (Exception e) {
-			throw new OntologyConnectorException("Exception while starting the JSON server!");
+			throw new OntologyConnectorException("Exception while starting the JSON server (" + e.getLocalizedMessage() + ").");
 		}
 
 	}
