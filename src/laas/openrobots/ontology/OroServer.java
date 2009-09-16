@@ -38,7 +38,6 @@ package laas.openrobots.ontology;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -49,7 +48,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
-import java.util.Vector;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
@@ -122,7 +120,7 @@ public class OroServer implements IServiceProvider {
 	 * The default configuration file (set to {@value}).
 	 */
 	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
-	public static final String VERSION = "0.4.6"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.4.7"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
@@ -201,7 +199,7 @@ public class OroServer implements IServiceProvider {
 		//System.out.println(oro.getResourceDetails("PurposefulAction").getJson());
 		
 		addNewServiceProviders(oro);
-		
+				
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
@@ -285,7 +283,6 @@ public class OroServer implements IServiceProvider {
 	 * @return a map containing the statistics (pairs name/value)
 	 */
 	@RPCMethod(
-			rpc_name = "stats",
 			desc = "returns some statistics on the server"
 	)
 	public static Map<String, String> stats() {
@@ -295,7 +292,7 @@ public class OroServer implements IServiceProvider {
 		SimpleDateFormat formatNew = new SimpleDateFormat("HHHH 'hour(s)' mm 'minute(s)' ss 'second(s)'");
 		formatNew.setTimeZone( TimeZone.getTimeZone( "GMT" ) );
 		
-		stats.put("version", "\"" + VERSION + "\"");
+		stats.put("version", VERSION);
 		
 		try {
 			stats.put("host", InetAddress.getLocalHost().getHostName());
@@ -303,18 +300,18 @@ public class OroServer implements IServiceProvider {
 			stats.put("host", "unknow");
 		}
 		
-		stats.put("uptime", "\"" + formatNew.format((new Date()).getTime() - OroServer.SERVER_START_TIME.getTime()) + "\"");
+		stats.put("uptime", formatNew.format((new Date()).getTime() - OroServer.SERVER_START_TIME.getTime()));
 		
 		// Nb of classes
 		//stats.put("nb_classes", String.valueOf(oro.getModel().listClasses().toSet().size()));
-		stats.put("nb_classes", "\"not available\"");
+		stats.put("nb_classes", "not available");
 		
 		//Nb of instances
 		//stats.put("nb_instances", String.valueOf(oro.getModel().listIndividuals().toSet().size()));
-		stats.put("nb_instances", "\"not available\"");
+		stats.put("nb_instances", "not available");
 		
 		//Nb of clients
-		stats.put("nb_clients", "\"not available\"");
+		stats.put("nb_clients", "not available");
 		
 		return stats;
 	}

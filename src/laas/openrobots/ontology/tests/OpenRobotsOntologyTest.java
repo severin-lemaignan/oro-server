@@ -245,7 +245,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 				
-		Model infos;
+		Set<String> infos;
 
 		//Check the behaviour of the method in case of inexistant resource
 		try {
@@ -265,16 +265,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//assertEquals("getInfos method should return 11 statements about baboon.", 11, infos.size());
 		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
 		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
-		
-		
-		// Second test, to check getInfo(Resource) works as well as intended.
-		infos = oro.getInfos(oro.createResource("oro:baboon"));
-		assertNotNull("getInfos didn't answered anything!",infos);
-		//remove this test which depends on the type of reasonner
-		//assertEquals("getInfos method should return 11 statements about baboon.", 11, infos.size());
-		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
-		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
-				
+	
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -288,7 +279,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource using default namespace *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 				
-		Model infos;
+		Set<String> infos;
 
 		//Check the behaviour of the method in case of inexistant resource
 		try {
@@ -324,14 +315,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long startTime = System.currentTimeMillis();
 		
 		try {
-			oro.add("oro:horse rdf:type oro:Animal");
+			oro.add(oro.createStatement("oro:horse rdf:type oro:Animal"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
 		
 		
-		Vector<String> stmts = new Vector<String>();
+		Set<String> stmts = new HashSet<String>();
 		stmts.add("fish rdf:type Animal");
 		stmts.add("sparrow rdf:type Bird");
 		stmts.add("Bird rdfs:subClassOf Animal");
@@ -390,7 +381,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			oro.add("oro:fish oro:isFemale \"true\"^^xsd:boolean");
+			oro.add(oro.createStatement("oro:fish oro:isFemale \"true\"^^xsd:boolean"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -427,20 +418,20 @@ public class OpenRobotsOntologyTest extends TestCase {
 		MemoryProfile.timeBase = 100; //we accelerate 10 times the behaviour of the memory container.
 	
 		try {
-			oro.add("snail rdf:type Animal", MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
 
 		try {
-			oro.add("snail eats grass", MemoryProfile.EPISODIC);
+			oro.add(oro.createStatement("snail eats grass"), MemoryProfile.EPISODIC);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
 		
-		Vector<String> stmts = new Vector<String>();
+		Set<String> stmts = new HashSet<String>();
 
 		stmts.add("superman rdf:type Animal");
 		try {
@@ -539,9 +530,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 	
+		Set<String> stmts = new HashSet<String>();
+		stmts.add("Insect rdfs:subClassOf Animal");
+		stmts.add("Ladybird rdfs:subClassOf Insect");
 		try {
-			oro.add("Insect rdfs:subClassOf Animal");
-			oro.add("Ladybird rdfs:subClassOf Insect");
+			oro.add(stmts);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -666,7 +659,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				"?instances rdf:type oro:Animal}\n";
 		
 		
-		Vector<String> stmts = new Vector<String>();
+		Set<String> stmts = new HashSet<String>();
 		stmts.add("fish rdf:type Animal");
 		stmts.add("sparrow rdf:type Bird");
 		stmts.add("Bird rdfs:subClassOf Animal");
@@ -785,7 +778,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 				
 		try {
-			oro.add("cow rdf:type Plant");
+			oro.add(oro.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
@@ -807,7 +800,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		try {
-			oro.add("cow climbsOn banana_tree");
+			oro.add(oro.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT);
 			oro.checkConsistency();
 			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!");
 		} catch (IllegalStatementException e) {
@@ -826,51 +819,60 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
+		Set<String> matchingResources = null;
+		
 		System.out.println("[UNITTEST] First part: only the resource we are looking for is unknown.");
 		
-		Vector<PartialStatement> statements = new Vector<PartialStatement>();
+		Set<String> partial_statements = new HashSet<String>();
+		partial_statements.add("?mysterious oro:eats oro:banana_tree");
+		partial_statements.add("?mysterious oro:isFemale true^^xsd:boolean");  //Attention: "?mysterious oro:isFemale true" is valid, but "?mysterious oro:isFemale true^^xsd:boolean" is not!
 
 		try {
-			statements.add(oro.createPartialStatement("?mysterious oro:eats oro:banana_tree"));
-			statements.add(oro.createPartialStatement("?mysterious oro:isFemale true^^xsd:boolean")); //Attention: "?mysterious oro:isFemale true" is valid, but "?mysterious oro:isFemale true^^xsd:boolean" is not!
+			matchingResources = oro.find("mysterious", partial_statements);
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 		
-		Vector<Resource> matchingResources = oro.find("mysterious", statements);
+		
 		assertNotNull("find() didn't answered anything!",matchingResources);
 		
-		for ( Resource resource:matchingResources )
+		for ( String resource:matchingResources )
 		{
-			assertTrue("Only baboon should be returned.", resource.getLocalName().contains("baboon"));
+			assertTrue("Only baboon should be returned.", resource.contains("baboon"));
 		}		
 		//TODO Add a test which returns the class of the resource.
 		
 		System.out.println("[UNITTEST] Second part: more complex resource description.");
 		
-		statements.clear();
+		partial_statements.clear();
 		matchingResources.clear();
-		Vector<String> filters = new Vector<String>();
+		Set<String> filters = new HashSet<String>();
 
+		partial_statements.add("?mysterious rdf:type oro:Monkey");
+		partial_statements.add("?mysterious oro:weight ?value");
+
+		filters.add("?value >= 50");
+		
 		try {
-			statements.add(oro.createPartialStatement("?mysterious rdf:type oro:Monkey"));
-			statements.add(oro.createPartialStatement("?mysterious oro:weight ?value"));
+			matchingResources = oro.find("mysterious", partial_statements, filters);
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 		
-		filters.add("?value >= 50");
-		
-		matchingResources = oro.find("mysterious", statements, filters);
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
 		assertTrue("find() should answer 2 resources (baboon and gorilla)", matchingResources.size() == 2);
 		
 		filters.add("?value < 75.8");
 		
-		matchingResources = oro.find("mysterious", statements, filters);
+		try {
+			matchingResources = oro.find("mysterious", partial_statements, filters);
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
 		assertTrue("find() should now answer only 1 resources (baboon)", matchingResources.size() == 1);
@@ -944,7 +946,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			oro.add("sheep eats grass");
+			oro.add(oro.createStatement("sheep eats grass"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -952,21 +954,23 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Check it was added.
 
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
+		Set<String> matchingResources = null;
+		Set<String> partialStatements = new HashSet<String>();
 
+		partialStatements.add("?animals rdf:type Animal");
+		
 		try {
-			partialStatements.add(oro.createPartialStatement("?animals rdf:type Animal"));
+			matchingResources = oro.find("animals", partialStatements);	
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}
+		}		
 		
-		Vector<Resource> matchingResources = oro.find("animals", partialStatements);
 		
-		Iterator<Resource> res = matchingResources.iterator();
+		Iterator<String> res = matchingResources.iterator();
 		while(res.hasNext())
 		{
-			Resource currentRes = res.next();
+			String currentRes = res.next();
 			System.out.println(currentRes);
 		}
 		assertEquals("Four animals should be returned.", 4, matchingResources.size());

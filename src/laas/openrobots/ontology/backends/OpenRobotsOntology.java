@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -65,6 +66,7 @@ import laas.openrobots.ontology.memory.MemoryProfile;
 import laas.openrobots.ontology.types.ResourceDescription;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
+import org.mindswap.pellet.utils.VersionInfo;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.ontology.OntClass;
@@ -77,6 +79,7 @@ import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
 import com.hp.hpl.jena.reasoner.ReasonerException;
 import com.hp.hpl.jena.reasoner.ValidityReport;
+import com.hp.hpl.jena.reasoner.ValidityReport.Report;
 import com.hp.hpl.jena.shared.JenaException;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -285,27 +288,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (verbose) System.out.println("done.");
 	}
 
-
-	@Override
-	public void add(String rawStmt) throws IllegalStatementException
-	{			
-		add(createStatement(rawStmt), MemoryProfile.DEFAULT);
-	}
-
-	@Override
-	public void add(String rawStmt, MemoryProfile memProfile) throws IllegalStatementException
-	{			
-			add(createStatement(rawStmt), memProfile);
-	}
-
 	@Override
 	@RPCMethod(
 			desc="adds one or several statements (triplets S-P-O) to the ontology, in long term memory."
 	)
-	public String add(Vector<String> rawStmts) throws IllegalStatementException
+	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) add(rawStmt);
-		return "true";
+		for (String rawStmt : rawStmts) add(createStatement(rawStmt), MemoryProfile.DEFAULT);
 	}
 
 	@Override
@@ -313,10 +302,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			rpc_name="add_memory",
 			desc="adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile."
 	)
-	public String add(Vector<String> rawStmts, String memProfile) throws IllegalStatementException
+	public void add(Set<String> rawStmts, String memProfile) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) add(rawStmt, MemoryProfile.fromString(memProfile));
-		return "true";
+		for (String rawStmt : rawStmts) add(createStatement(rawStmt), MemoryProfile.fromString(memProfile));
 	}
 
 	
@@ -393,11 +381,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	@RPCMethod(
-			rpc_name="check_consistency",
 			desc="checks that the ontology is semantically consistent"
 	)
 	public Boolean checkConsistency() throws InconsistentOntologyException {
-		if (verbose) System.out.println(" * Checking ontology consistency...");
+		if (verbose) System.out.print(" * Checking ontology consistency...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
@@ -407,13 +394,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (!report.isValid())
 		{
-			for (Iterator i = report.getReports(); i.hasNext(); ) {
+			if (verbose) System.out.println("ontology inconsistent!");
+			for (Iterator<Report> i = report.getReports(); i.hasNext(); ) {
 	            cause += " - " + i.next();
 			}
 
 			throw new InconsistentOntologyException(cause);
 		}
 		
+		if (verbose) System.out.println("no problems.");
 		return true;
 		
 	}
@@ -454,16 +443,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			desc="performs one or several SPARQL queries on the ontology"
+			desc="performs one SPARQL query on the ontology"
 	)
-	public Set<String> query(Vector<String> params) throws QueryParseException, QueryExecException
+	public Set<String> query(String key, String q) throws QueryParseException, QueryExecException
 	{
 		Set<String> result = new HashSet<String>();
-		
-		String key = "";
+
+		//String key = "";
 		
 		//The variable we want to bind.
-		if (params.size() == 1) {
+		/*if (params.size() == 1) {
 			String q = params.firstElement();
 			int iQmark = q.indexOf("?");
 			int iSpace = (q.indexOf(" ", iQmark) == -1) ? q.length() : q.indexOf(" ", iQmark);
@@ -471,20 +460,18 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			key = q.substring(iQmark+1, Math.min(iSpace, iReturn));
 		}		
 		else key = params.remove(0); //if more than one string is given, we assume that the first param is the variable to bind.
-		
+		*/
 		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
 		
 		ResultSet queryResults = null;
 		
-		for (String s : params)
-		{
-			queryResults = query(s);
-			while (queryResults.hasNext()) {
-				RDFNode node = queryResults.nextSolution().getResource(key);
-				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
-					result.add(Namespaces.toLightString(node));
-			}
-		}		
+		queryResults = query(q);
+		while (queryResults.hasNext()) {
+			RDFNode node = queryResults.nextSolution().getResource(key);
+			if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+				result.add(Namespaces.toLightString(node));
+		}
+				
 		
 		return result;
 	}
@@ -507,17 +494,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 
-	
-	public Vector<Resource> find(String varName,	Vector<PartialStatement> statements, Vector<String> filters) {
+	@RPCMethod(
+			desc="tries to identify a resource given a set of partially defined statements plus restrictions about this resource."
+	)	
+	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException {
 		
-		Vector<Resource> result = new Vector<Resource>();
-		Iterator<PartialStatement> stmts = statements.iterator();
+		Set<String> result = new HashSet<String>();
+		Iterator<String> stmts = statements.iterator();
 		
 		String query = "SELECT ?" + varName + "\n" +
 		"WHERE {\n";
 		while (stmts.hasNext())
 		{
-			PartialStatement stmt = stmts.next();
+			PartialStatement stmt = createPartialStatement(stmts.next());
 			query += stmt.asSparqlRow();
 		}
 		
@@ -540,7 +529,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		while (rawResult.hasNext())
 		{
 			QuerySolution row = rawResult.nextSolution();
-			result.add(row.getResource(varName));
+			result.add(Namespaces.toLightString(row.getResource(varName)));
 		}
 		
 		return result;
@@ -549,7 +538,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#find(java.lang.String, java.util.Vector)
 	 */
-	public Vector<Resource> find(String varName, Vector<PartialStatement> statements) {
+	@RPCMethod(
+			desc="tries to identify a resource given a set of partially defined statements about this resource."
+	)	
+	public Set<String> find(String varName, Set<String> statements) throws IllegalStatementException {
 		return find(varName, statements, null);
 	}
 	
@@ -658,10 +650,58 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return matchQuality;
 	}
 
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#getInfos(java.lang.String)
+	@RPCMethod( 
+			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the \"usages\" of a resource."
+	)
+	public Set<String> getInfos(String lex_resource) throws NotFoundException {
+		
+		Set<String> result = new HashSet<String>();
+		
+		Model infos = getSubmodel(lex_resource);
+
+		StmtIterator stmts = infos.listStatements();
+
+		while (stmts.hasNext()) {
+			Statement stmt = stmts.nextStatement();
+			RDFNode obj = stmt.getObject();
+			String objString;
+
+			if (obj.isResource())
+				objString = ((Resource) obj.as(Resource.class)).getLocalName();
+			else if (obj.isLiteral())
+				objString = ((Literal) obj.as(Literal.class)).getLexicalForm();
+			else
+				objString = obj.toString();
+
+			result.add(stmt.getPredicate().getLocalName()
+					+ " OF " + stmt.getSubject().getLocalName() + " IS "
+					+ objString);
+		}
+		return result;
+		
+	}
+
+	/**
+	 * Returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.<br/>
+	 * Usage example:<br/>
+	 * <pre>
+	 * IOntologyServer myOntology = new OpenRobotsOntology();
+	 * Model results = myOntology.getInfos("ns:individual1");
+	 * 
+	 * NodeIterator types = results.listObjectsOfProperty(myOntology.createProperty("rdf:type"));
+	 *
+	 * for ( ; types.hasNext() ; )
+	 * {
+	 *	System.out.println(types.nextNode().toString());
+	 * }
+	 * </pre>
+	 * This example would print all the types (classes) of the instance {@code ns:individual1}.
+	 * 
+	 * @param lex_resource the lexical form of an existing resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
 	 */
-	public Model getInfos(String lex_resource) throws NotFoundException {
+	private Model getSubmodel(String lex_resource) throws NotFoundException {
 		
 		Model resultModel;
 		
@@ -718,11 +758,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return resultModel;
 	}
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.IOntologyServer#getInfos(com.hp.hpl.jena.rdf.model.Resource)
+	/**
+	 * Like {@link #getSubmodel(String)} but using a Jena {@link com.hp.hpl.jena.rdf.model.Resource resource} instead of a string as input.
+	 * 
+	 * @param resource A Jena resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(String)
 	 */
-	public Model getInfos(Resource resource) throws NotFoundException {
-		return getInfos(resource.toString());
+	private Model getSubmodel(Resource resource) throws NotFoundException {
+		return getSubmodel(resource.toString());
 	}
 	
 	public Set<OntClass> getSuperclassesOf(OntClass type) throws NotFoundException {
@@ -941,18 +986,28 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "resource_details", 
-			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
+			rpc_name = "resource_details_i10n", 
+			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.). The second parameter specify the desired language (following RFC4646)."
 	)
-	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
+	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
 				
 		onto.enterCriticalSection(Lock.READ);
+		//TODO: check if the resource exists!!!
 		OntResource myResource = onto.getOntResource(Namespaces.format(id));
 		onto.leaveCriticalSection();
 		
 		if (myResource == null) throw new NotFoundException("The resource " + id + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		return new ResourceDescription(myResource);
+		return new ResourceDescription(myResource, language_code);
+	}
+	
+	@RPCMethod(
+			rpc_name = "resource_details", 
+			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
+	)
+	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
+				
+		return getResourceDetails(id, "en");
 	}
 	
 	/**
@@ -1109,7 +1164,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//select the inference model and reasonner from the "reasonner" parameter specified in the configuration file.
 		if ( onto_model_reasonner_name.equalsIgnoreCase("pellet")){
 			onto_model_reasonner = PelletReasonerFactory.THE_SPEC;
-			onto_model_reasonner_name = "Pellet reasonner";
+			onto_model_reasonner_name = "Pellet " + VersionInfo.getInstance().getVersionString() + " reasonner";
 		}
 		else if(onto_model_reasonner_name.equalsIgnoreCase("jena_internal_rdfs")){
 			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RDFS_INF;
@@ -1207,11 +1262,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@Override
-	public void remove(Vector<String> stmts) throws IllegalStatementException {
+	@RPCMethod(
+			desc="removes one or several statements (triplets S-P-O) from the ontology."
+	)
+	public void remove(List<String> stmts) throws IllegalStatementException {
 		for (String stmt : stmts) remove(stmt);		
 	}
 
 	@Override
+	@RPCMethod(
+			desc="exports the current ontology model to an OWL file."
+	)
 	public void save(String path) {
 		if (verbose) System.out.print(" * Saving ontology to " + path +"...");
 		FileOutputStream file;
@@ -1230,7 +1291,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 
-	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders) {
+	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders) {
 		this.eventsProviders.addAll(eventsProviders);
 		
 	}

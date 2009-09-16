@@ -2,8 +2,10 @@ package laas.openrobots.ontology.tests;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Vector;
 
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -15,6 +17,7 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.memory.MemoryProfile;
 
 
 /**
@@ -53,7 +56,7 @@ public class ReasoningTests extends TestCase {
 		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				oro.add("individual" + i +" eats flowers");
+				oro.add(oro.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding a statement " + i);
 				e.printStackTrace();
@@ -64,18 +67,21 @@ public class ReasoningTests extends TestCase {
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
 		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
 
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
+		Set<String> partialStatements = new HashSet<String>();
+		partialStatements.add("?individual eats flowers");
 
+		Set<String> matchingResources = null;
+		
+		startTime = System.currentTimeMillis();
 		try {
-			partialStatements.add(oro.createPartialStatement("?individual eats flowers"));
+			matchingResources = oro.find("individual", partialStatements);			
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 		
-		startTime = System.currentTimeMillis();
+
 		
-		Vector<Resource> matchingResources = oro.find("individual", partialStatements);
 		
 		assertEquals(max + " individuals should be returned.", max, matchingResources.size());
 		
@@ -84,16 +90,17 @@ public class ReasoningTests extends TestCase {
 		partialStatements.clear();
 		matchingResources.clear();
 		
+		partialStatements.add("?animals rdf:type Animal");
+		
+		startTime = System.currentTimeMillis();
+		
 		try {
-			partialStatements.add(oro.createPartialStatement("?animals rdf:type Animal"));
+			matchingResources = oro.find("animals", partialStatements);			
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		
-		startTime = System.currentTimeMillis();
-		
-		matchingResources = oro.find("animals", partialStatements);
+
 		
 		System.out.println(max + " statements retrieved through inference in "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
@@ -124,7 +131,7 @@ public class ReasoningTests extends TestCase {
 		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				oro.add("individual" + i +" age 10^^xsd:int");
+				oro.add(oro.createStatement("individual" + i +" age 10^^xsd:int"), MemoryProfile.DEFAULT);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding statement "+i);
 				e.printStackTrace();

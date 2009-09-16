@@ -1,7 +1,9 @@
 package laas.openrobots.ontology.backends;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -18,7 +20,6 @@ import laas.openrobots.ontology.memory.MemoryProfile;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -178,7 +179,8 @@ public interface IOntologyBackend extends IServiceProvider{
 	public abstract void add(Statement statement, MemoryProfile memProfile);
 	
 	/**
-	 * Adds a new statement (assertion) to the ontology from its string representation and associate it to a specific memory profile. <br/>
+	 * 	 * Adds a set of statements (assertions) to the ontology from their string representation in the given memory profile.<br/>
+	 * This method does nothing if the statements already exist with the same memory profile. If the same statements are added with a different memory profile, the shortest term memory container has priority.
 	 * 
 	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype.</br>
 	 * <br/>
@@ -233,31 +235,9 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * 
 	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
 	 * @see #add(Statement, MemoryProfile)
-	 * @see #add(String)
-	 * @see #add(Vector<String>)
 	 * @see #remove(Statement)
 	 */
-	public abstract void add(String statement, MemoryProfile memProfile) throws IllegalStatementException;	
-	
-	/**
-	 * Like {@link #add(String, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
-
-	 * @param statement The new statement.
-	 * @throws IllegalStatementException
-	 * 
-	 * @see #add(String, MemoryProfile)
-	 */
-	public abstract void add(String statement) throws IllegalStatementException;
-	
-	/**
-	 * Adds a set of statements (assertions) to the ontology from their string representation in the given memory profile.<br/>
-	 * This method does nothing if the statements already exist with the same memory profile. If the same statements are added with a different memory profile, the shortest term memory container has priority.
-	 * 
-	 * @param statements A vector of string representing statements to be inserted in the ontology.
-	 * @param memProfile the string reprensentation of one of the available {@link MemoryProfile}.
-	 * @see #add(String) for details.
-	 */
-	public abstract String add(Vector<String> statements, String memProfile) throws IllegalStatementException;
+	public abstract void add(Set<String> statements, String memProfile) throws IllegalStatementException;
 	
 	/**
 	 * Like {@link #add(Vector<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
@@ -267,7 +247,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * 
 	 * @see #add(Vector<String>, MemoryProfile)
 	 */
-	public abstract String add(Vector<String> statements) throws IllegalStatementException;
+	public abstract void add(Set<String> statements) throws IllegalStatementException;
 	
 	/**
 	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.
@@ -294,7 +274,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see #add(Vector)
 	 * @see #remove(String)
 	 */
-	public abstract void remove(Vector<String> stmts) throws IllegalStatementException;
+	public abstract void remove(List<String> stmts) throws IllegalStatementException;
 	
 	/**
 	 * Tries to identify a resource given a set of partially defined statements (plus optional restrictions) about this resource.<br/>
@@ -303,17 +283,13 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * <pre>
 	 * IOntologyServer myOntology = new OpenRobotsOntology();
 	 *
-	 * Vector<Statement> knowledge = new Vector<Statement>();
-	 *	try {
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:isEdibleBy ns:monkey"));
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:color "yellow"^^ns:color"));
-	 *	} catch (IllegalStatementException e) {
-	 *		e.printStackTrace();
-	 *	}
+	 * Set<String> knowledge = new Set<String>();
+	 * knowledge.add("?mysterious_object ns:isEdibleBy ns:monkey");
+	 * knowledge.add("?mysterious_object ns:color "yellow"^^ns:color");
 	 *
-	 * Vector<Resource> results = myOntology.find("mysterious_object", knowledge);
-	 * for (Resource res:results)
-	 * 		System.out.println(res.getLocalName());
+	 * Set<String> results = myOntology.find("mysterious_object", knowledge);
+	 * for (String res:results)
+	 * 		System.out.println(res);
 	 * </pre>
 	 * Supposing your ontology defines the right properties and instances, you can expect this example to output something like {@code ns:banana}.<br/>
 	 * <br/>
@@ -321,48 +297,102 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * <pre>
 	 * IOntologyServer myOntology = new OpenRobotsOntology();
 	 *
-	 * Vector<Statement> knowledge = new Vector<Statement>();
-	 * Vector<String> filters = new Vector<String>();
+	 * Set<String> knowledge = new Set<String>();
+	 * Set<String> filters = new Set<String>();
 	 * 
-	 *	try {
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:isEdibleBy ns:monkey"));
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:color "yellow"^^ns:color"));
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:size ?size));
-	 *	} catch (IllegalStatementException e) {
-	 *		e.printStackTrace();
-	 *	}
+	 * knowledge.add("?mysterious_object ns:isEdibleBy ns:monkey");
+	 * knowledge.add("?mysterious_object ns:color "yellow"^^ns:color");
+	 * knowledge.add("?mysterious_object ns:size ?size);
 	 *
 	 * filters.add("?size >= 200.0");
 	 * filters.add("?size < 250.0");
 	 *
-	 * Vector<Resource> results = myOntology.find("mysterious_object", knowledge, filters);
-	 * for (Resource res:results)
-	 * 		System.out.println(res.getLocalName());
+	 * Set<String> results = myOntology.find("mysterious_object", knowledge, filters);
+	 * for (String res:results)
+	 * 		System.out.println(res);
 	 * </pre>
 	 * This example would output all the {@code ns:banana}s whose size is comprised between 200 and 250mm (assuming mm is the unit you are using...).
+	 * <br/>
+	 * C++ code snippet using liboro:  
+	 * <pre>
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
+	 * 
+	 * using namespace std;
+	 * using namespace oro;
+	 * int main(void) {
+	 * 		set&lt;Concept&gt; result;
+	 * 		set&lt;string&gt; partial_stmts;
+	 * 		set&lt;string&gt; filters;
+	 * 
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
+	 * 
+	 * 		partial_stmts.insert("?mysterious rdf:type oro:Monkey");
+	 * 		partial_stmts.insert("?mysterious oro:weight ?value");
+	 * 
+	 * 		filters.insert("?value >= 50");
+	 * 
+	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, filters, result);
+	 * 
+	 * 		//display the result
+	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
+	 * 
+	 * 		return 0;
+	 * }
+	 * </pre>
 	 * 
 	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
+	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
+	 * @throws IllegalStatementException 
 	 * @see #guess(String, Vector, double)
 	 * @see PartialStatement
 	 */
-	public abstract Vector<Resource> find(String varName,
-			Vector<PartialStatement> statements, Vector<String> filters);
+	public abstract Set<String> find(String varName,
+			Set<String> partial_statements, Set<String> filters) throws IllegalStatementException;
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements about this resource.<br/>
 	 * 
 	 * This is a simpler form for {@link #find(String, Vector, Vector)}, without filters.
 	 * 
+	 * <br/>
+	 * C++ code snippet using liboro: 
+	 * <pre>
+	 * #include &quot;oro.h&quot;
+	 * #include &quot;yarp_connector.h&quot;
+	 * 
+	 * using namespace std;
+	 * using namespace oro;
+	 * int main(void) {
+	 * 		set&lt;Concept&gt; result;
+	 * 		set&lt;string&gt; partial_stmts;
+	 * 
+	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		Ontology* onto = Ontology::createWithConnector(connector);
+	 * 
+	 * 		partial_stmts.insert("?mysterious oro:eats oro:banana_tree");
+	 * 		partial_stmts.insert("?mysterious oro:isFemale true^^xsd:boolean");
+	 * 
+	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, result);
+	 * 
+	 * 		//display the result
+	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
+	 * 
+	 * 		return 0;
+	 * }
+	 * </pre>
+	 * 
 	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
+	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
+	 * @throws IllegalStatementException 
 	 * @see #find(String, Vector, Vector)
 	 */
-	public abstract Vector<Resource> find(String varName,
-			Vector<PartialStatement> statements);
+	public abstract Set<String> find(String varName,
+			Set<String> partial_statements) throws IllegalStatementException;
 
 	/**
 	 * Tries to approximately identify an individual given a set of known statements about this resource.<br/>
@@ -439,18 +469,9 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @return a RDF model containing all the statements related the the given resource.
 	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
 	 */
-	public abstract Model getInfos(String lex_resource)
+	public abstract Set<String> getInfos(String lex_resource)
 			throws NotFoundException;
 
-	/**
-	 * Like {@link #getInfos(String)} but using a Jena {@link com.hp.hpl.jena.rdf.model.Resource resource} instead of a string as input.
-	 * 
-	 * @param resource A Jena resource.
-	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
-	 * @see #getInfos(String)
-	 */
-	public abstract Model getInfos(Resource resource) throws NotFoundException;
 
 	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException;
 	public Map<String, String> getDirectSuperclassesOf(String type) throws NotFoundException;
@@ -503,6 +524,6 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @param eventsProviders A set of event providers.
 	 * @see IWatcher, IEventsProvider
 	 */
-	public void registerEventsHandlers(HashSet<IEventsProvider> eventsProviders);
+	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders);
 
 }

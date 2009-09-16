@@ -154,8 +154,10 @@ public class Helpers {
 		return ISO8601Local.parse(xsdDateTime);
 	}
 
-	public static String getLabel(OntResource resource) {
-		return ((resource.getLabel(null) != null) ? resource.getLabel("") : resource.getLocalName());
+	public static String getLabel(OntResource resource, String languageCode) {
+		return ((resource.getLabel(languageCode) == null) ? 
+					((resource.getLabel(null) == null) ? resource.getLocalName() : resource.getLabel(null)) : 
+					resource.getLabel(languageCode)); 
 	}
 	
 	public static String getId(OntResource resource) {
@@ -173,16 +175,25 @@ public class Helpers {
 	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
 		OpenRobotsOntology.ResourceType type;
 
-		if (resource.isClass())
-			type = OpenRobotsOntology.ResourceType.CLASS;
-		else if (resource.isIndividual())
-			type = OpenRobotsOntology.ResourceType.INSTANCE;
-		else if (resource.isDatatypeProperty())
-			type = OpenRobotsOntology.ResourceType.DATATYPE_PROPERTY;
-		else if (resource.isProperty())
-			type = OpenRobotsOntology.ResourceType.OBJECT_PROPERTY;
-		else type = OpenRobotsOntology.ResourceType.UNDEFINED;
-
+		
+		try {
+			
+			if (resource.isClass())
+				type = OpenRobotsOntology.ResourceType.CLASS;
+			else if (resource.isIndividual())
+				type = OpenRobotsOntology.ResourceType.INSTANCE;
+			else if (resource.isDatatypeProperty())
+				type = OpenRobotsOntology.ResourceType.DATATYPE_PROPERTY;
+			else if (resource.isProperty())
+				type = OpenRobotsOntology.ResourceType.OBJECT_PROPERTY;
+			else
+				type = OpenRobotsOntology.ResourceType.UNDEFINED;
+			
+		} catch (NoSuchFieldError nsfe) {
+			System.err.println("Couln't determine the type of " + resource + "! Issue with the reasonner?");
+			type = OpenRobotsOntology.ResourceType.UNDEFINED;
+		}
+		
 		return type;
 	}
 }
