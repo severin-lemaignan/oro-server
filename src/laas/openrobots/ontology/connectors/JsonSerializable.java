@@ -1,4 +1,4 @@
-package laas.openrobots.ontology.types;
+package laas.openrobots.ontology.connectors;
 
 public interface JsonSerializable {
 	public String getJson();

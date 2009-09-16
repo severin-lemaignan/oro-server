@@ -1,24 +1,45 @@
 package laas.openrobots.ontology.types;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
+
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.connectors.JsonSerializable;
 
 import com.hp.hpl.jena.ontology.Individual;
-import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-import com.hp.hpl.jena.util.iterator.Map1;
-import com.hp.hpl.jena.util.iterator.NiceIterator;
+import com.hp.hpl.jena.util.iterator.Filter;
+
 
 public class ResourceDescription implements JsonSerializable {
 
+	private final String propertiesToRemove[] = {	"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
+													"http://www.w3.org/2002/07/owl#sameAs", 
+													"http://www.w3.org/2002/07/owl#differentFrom",
+													"http://www.w3.org/2000/01/rdf-schema#label"};
+	
+	private final String resourcesToRemove[] = {	"http://www.w3.org/2002/07/owl#Nothing"};
+    
+	private String languageCode = "en"; //default language for labels set to English
 	private OntResource resource;
 			
 	public ResourceDescription(OntResource resource){
 		this.resource = resource;
+	}
+	
+	public ResourceDescription(OntResource resource, String languageCode){
+		this.resource = resource;
+		this.languageCode = languageCode;
 	}
 	
 	@Override
@@ -28,7 +49,7 @@ public class ResourceDescription implements JsonSerializable {
 		
 		String result = "{\n";
 		
-			result += "\"name\":\"" + Helpers.getLabel(resource) + "\",\n";
+			result += "\"name\":\"" + Helpers.getLabel(resource, languageCode) + "\",\n";
 			result += "\"id\":\"" + Helpers.getId(resource) + "\",\n";
 			result += "\"type\":\"" + type.toString().toLowerCase() + "\",\n";
 			
@@ -72,30 +93,19 @@ public class ResourceDescription implements JsonSerializable {
 				result +="{\n";
 				
 					//(direct) super classes
-					result += "\"name\":\"Class\",\n";
-					result += "\"id\":\"class\",\n";
+					result += "\"name\":\"Classes\",\n";
+					result += "\"id\":\"classes\",\n";
 					result += "\"values\":[";
 					result += listOntResource(resource.asIndividual().listOntClasses(true));
 					result += "\n]\n";
 					
-				result +="},{\n";
+				result +="},";
 					
-					//link with other resources
-					result += "\"name\":\"Links\",\n";
-					result += "\"id\":\"links\",\n";
-					result += "\"values\":[";
-					
-					//Retrieve the list of statements involving this individual, and extract the objects.
-					/*ExtendedIterator<RDFNode> otherIndividuals = resource.listProperties().mapWith( new Map1<Statement, RDFNode>() {
-																		                        public RDFNode map1( Statement s ) {
-																		                            return s.getObject();
-																		                        }}
-																		                      );			
-					*/
-					result += listLinks(resource.listProperties());
-					result += "\n]\n";
-					
-				result +="}\n";
+				//link with other resources
+				result += listLinks(resource.listProperties());
+				
+				result = result.substring(0, result.length() -1); //remove the last comma
+
 			}
 			
 			
@@ -112,41 +122,102 @@ public class ResourceDescription implements JsonSerializable {
 		while (it.hasNext())
 		{
 			OntResource tmp = it.next();
-			result += "\n{\"name\":\"" + Helpers.getLabel(tmp) + "\", ";
-			result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
 			
-			if (it.hasNext()) result += ",";
+			if (!tmp.isAnon()) {
+				result += "\n{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
+				result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
+				if (it.hasNext()) result += ",";
+			}			
+			
 		}
 		
 		return result;
 	}
 	
-	private String listLinks(ExtendedIterator<Statement> it) {
-		String result = "";
+	/**
+	 * This method scans all the given statements and build a list of present predicate with their associated objects. This list is then output as a JSON string.
+	 * @param rawStmtList
+	 * @return a JSON string describing, for each property, all the linked resources.
+	 */
+	private String listLinks(ExtendedIterator<Statement> rawStmtList) {
+		String linkValues = "", result = "";
 		
-		while (it.hasNext())
+		Map<Property, Set<RDFNode>> propertiesList = new HashMap<Property, Set<RDFNode>>();
+		
+		//Clean a bit the list of statements.
+
+	
+		ExtendedIterator<Statement> stmtList = rawStmtList.filterKeep(new Filter<Statement>() {
+													            public boolean accept(Statement stmt) {
+													                Property p = stmt.getPredicate();
+													                RDFNode o = stmt.getObject();
+													                
+													                for (String pToRemove : propertiesToRemove) {
+													                	if (p.getURI().equalsIgnoreCase(pToRemove))
+													                			return false;
+													                }
+													                	
+													                if (o.isURIResource()) {
+													                	for (String rToRemove : resourcesToRemove) {
+														                	if (o.as(Resource.class).getURI().equalsIgnoreCase(rToRemove))
+														                			return false;
+													                	}
+													                }
+													                
+													                return true;
+													            }
+												         });
+            
+		//lists all the properties for a given subject and add, for each property, the corresponding objects.
+		while (stmtList.hasNext())
 		{
-			Statement tmp = it.next();
-			if (tmp.getObject().canAs(Individual.class)) {
-				Individual obj = tmp.getObject().as(Individual.class);
-				result += "\n{\"name\":\"" + Helpers.getLabel(obj) + "\", ";
-				result += "\"id\":\"" + Helpers.getId(obj) + "\", ";
-				result += "\"link\":\"" + tmp.getPredicate().getLocalName() + "\"}";
-				
-				if (it.hasNext()) result += ",";
-			}
-			else if(tmp.getObject().isLiteral()) {
-				result += "\n{\"name\":\"literal\", ";
-				result += "\"value\":\"" + tmp.getObject().toString() + "\", ";
-				result += "\"id\":\"" + tmp.getObject().toString() + "\", ";
-				result += "\"link\":\"" + tmp.getPredicate().getLocalName() + "\"}";
-				
-				if (it.hasNext()) result += ",";
-			}
+						
+			Statement tmp = stmtList.next();
 			
-			// do nothing for anonymous objects.
+			if(!propertiesList.containsKey(tmp.getPredicate()))
+				propertiesList.put(tmp.getPredicate(), new HashSet<RDFNode>());
+			
+			propertiesList.get(tmp.getPredicate()).add(tmp.getObject());
 		}
 		
+		Iterator<Entry<Property, Set<RDFNode>>> links = propertiesList.entrySet().iterator();
+	    
+		while (links.hasNext()) {
+	        Entry<Property, Set<RDFNode>> pairs = links.next();
+	        
+	        linkValues = "";
+	        for (RDFNode n : pairs.getValue())
+			{
+			
+				if (n.canAs(Individual.class)) {
+					Individual obj = n.as(Individual.class);
+					linkValues += "\n{\"name\":\"" + Helpers.getLabel(obj, languageCode) + "\", ";
+					linkValues += "\"id\":\"" + Helpers.getId(obj) + "\"}";
+					
+					linkValues += ",";
+				}
+				else if(n.isLiteral()) {
+					linkValues += "\n{\"name\":\"" + n.toString() + "\", ";
+					linkValues += "\"id\":\"literal\"}";
+					
+					linkValues += ",";
+				}
+			}
+			
+	        //linkValues is empty if all the objects are anonymous.
+	        if (!linkValues.isEmpty()) {
+		        
+		        result += "{\n\"name\":\"" + pairs.getKey().getLocalName() + "\",\n";
+				result += "\"id\":\"properties\",\n";
+				result += "\"values\":[";
+				
+				result += linkValues.substring(0, linkValues.length() -1); //remove the last comma				
+				
+				result += "\n]\n},";
+	        }
+
+		}
+				
 		return result;
 	}
 }
