@@ -69,6 +69,9 @@ import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
+import com.hp.hpl.jena.ontology.DatatypeProperty;
+import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.ObjectProperty;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
@@ -115,6 +118,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	//the watchersCache holds as keys the literal watch pattern and as value a pair of pre-processed query built from the watch pattern and a boolean holding the last known result of the query.
 	private HashMap<String, Pair<Query, Boolean>> watchersCache;
+	
+	private Map<String, String> labelsMap;
 	
 	private MemoryManager memoryManager;
 	
@@ -274,6 +279,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				onModelChange(rsName);
 				
 			}
+			
+			//TODO: move that somewhere else.
+			if (Namespaces.toLightString(statement.getPredicate()).equalsIgnoreCase("rdfs:label"))
+				labelsMap.put(statement.getObject().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(statement.getSubject()));
+			
 		}
 		catch (Exception e)
 		{
@@ -1000,7 +1010,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		return new ResourceDescription(myResource, language_code);
 	}
-	
+		
 	@RPCMethod(
 			rpc_name = "resource_details", 
 			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
@@ -1008,6 +1018,18 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
 				
 		return getResourceDetails(id, "en");
+	}
+
+
+	@RPCMethod(
+			desc = "returns the id of the concept whose label match the given parameter."
+	)
+	public String lookupLabel(String label) throws NotFoundException {
+				
+		if (labelsMap.containsKey(label.toLowerCase()))
+			return labelsMap.get(label.toLowerCase());
+		else throw new NotFoundException("The label \""+ label + "\" does not exist in the ontology.");
+		
 	}
 	
 	/**
@@ -1027,13 +1049,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private void initialize(){
 				
 		this.eventsProviders = new HashSet<IEventsProvider>();
-		this.watchersCache = new HashMap<String, Pair<Query, Boolean>>(); 
+		this.watchersCache = new HashMap<String, Pair<Query, Boolean>>();
+		this.labelsMap = new HashMap<String, String>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
 		Namespaces.setDefault(parameters.getProperty("default_namespace"));
 		
 		this.load();
+		
+		this.buildLabelList();
 		
 		memoryManager = new MemoryManager(onto);
 		memoryManager.start();
@@ -1228,14 +1253,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public void clear(PartialStatement partialStmt) {
 		if (verbose) System.out.println(" * Clearing statements matching ["+ partialStmt + "]...");
 		
-		onto.enterCriticalSection(Lock.WRITE);
-		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
-		StmtIterator stmtsToRemove = onto.listStatements(selector);
-		onto.remove(stmtsToRemove.toList());
 		
+		onto.enterCriticalSection(Lock.READ);
+		StmtIterator stmtsToRemove = onto.listStatements(selector);		
 		onto.leaveCriticalSection();
 		
+		for (Statement s : stmtsToRemove.toList())
+			remove(s);		
 	}
 	
 	@Override
@@ -1246,6 +1271,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void remove(Statement stmt) {
 		if (verbose) System.out.println(" * Removing statement ["+ Namespaces.toLightString(stmt) + "]...");
+		
+		//TODO: move that somewhere else.
+		if (Namespaces.toLightString(stmt.getPredicate()).equalsIgnoreCase("rdfs:label"))
+			labelsMap.remove(stmt.getObject().as(Literal.class).getLexicalForm().toLowerCase());
 		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
@@ -1296,6 +1325,55 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 
+	private void buildLabelList() {
+		{
+			ExtendedIterator<Individual> resources = onto.listIndividuals();
+			while(resources.hasNext()) {
+				Individual res = resources.next();
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				while(labels.hasNext()) {
+					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+				}
+				
+			}
+		}
+		
+		{
+			ExtendedIterator<OntClass> resources = onto.listClasses();
+			while(resources.hasNext()) {
+				OntClass res = resources.next();
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				while(labels.hasNext()) {
+					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+				}
+				
+			}
+		}
+		
+		{
+			ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
+			while(resources.hasNext()) {
+				ObjectProperty res = resources.next();
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				while(labels.hasNext()) {
+					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+				}
+				
+			}
+		}
+		
+		{
+			ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
+			while(resources.hasNext()) {
+				DatatypeProperty res = resources.next();
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				while(labels.hasNext()) {
+					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+				}
+				
+			}
+		}
+	}
 
 
 

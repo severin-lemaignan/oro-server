@@ -471,6 +471,16 @@ public interface IOntologyBackend extends IServiceProvider{
 	 */
 	public abstract Set<String> getInfos(String lex_resource)
 			throws NotFoundException;
+	
+	/**
+	 * Returns the id of the concept whose label match the given parameter. If several concepts match, an randomly choosen one is returned.
+	 * 
+	 * @param label the label to look for.
+	 * @return the id of the concept whose label matchs the parameter.
+	 * @throws NotFoundException
+	 */
+	public abstract String lookupLabel(String label)
+			throws NotFoundException;
 
 
 	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException;

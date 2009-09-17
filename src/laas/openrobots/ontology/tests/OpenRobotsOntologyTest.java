@@ -59,7 +59,6 @@ import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.memory.MemoryProfile;
 
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
@@ -521,6 +520,52 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This test checks that concept can be retrieved by their labels. 
+	 * @throws InterruptedException 
+	 */
+	public void testLabelLookup() throws InterruptedException {
+		
+		System.out.println("[UNITTEST] ***** TEST: Label lookup *****");
+		
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+	
+		Set<String> stmts = new HashSet<String>();
+		stmts.add("gorilla rdfs:label \"king kong\"");
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+
+		long startTime = System.currentTimeMillis();
+        
+		try {
+			oro.lookupLabel("princess Daisy");
+			fail("No label \"princess Daisy\" exists in the ontology.");
+		} catch (NotFoundException e) {}
+		
+		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookupLabel("BabouIn"));
+		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookupLabel("Baboon monkey"));
+		assertEquals("The \"gorilla\" instance should be retieved.", "gorilla", oro.lookupLabel("king kong"));
+		
+		try {
+			oro.clear("gorilla ?a ?b");
+		} catch (IllegalStatementException e1) {
+			e1.printStackTrace();
+		}
+		
+		try {
+			oro.lookupLabel("king kong");
+			fail("No label \"king kong\" should exist anymore in the ontology.");
+		} catch (NotFoundException e) {}
+	
+		long totalTime = (System.currentTimeMillis()-startTime);
+		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 5 + "ms");
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test checks that sub- and superclasses are correctly inferred. 
 	 * @throws InterruptedException 
 	 */
@@ -863,7 +908,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
-		assertTrue("find() should answer 2 resources (baboon and gorilla)", matchingResources.size() == 2);
+		assertEquals("find() should answer 2 resources (baboon and gorilla)", 2, matchingResources.size());
 		
 		filters.add("?value < 75.8");
 		
