@@ -868,7 +868,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		while (it.hasNext())
 		{
 			OntClass tmp = it.next();
-			if (tmp != null && !tmp.isAnon()){
+			if (tmp != null && !tmp.isAnon() && !tmp.getURI().equals("http://www.w3.org/2002/07/owl#Nothing") ){
 				result.add(tmp);
 			}
 		}

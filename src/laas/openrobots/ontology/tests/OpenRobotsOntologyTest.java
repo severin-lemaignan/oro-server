@@ -191,6 +191,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		/****************
 		 *  First query *
 		 ****************/
+		/* This test is not valid since classes are actually instances of owl:Thing as well (as Pellet implements).
 		long intermediateTime = System.currentTimeMillis();
 		
 		ResultSet result =	oro.query(
@@ -207,7 +208,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			String name = result.nextSolution().getResource("instances").getLocalName();
 			assertTrue("Only individuals should be returned. Got " + name, name.contains("apple") ||name.contains("cow") || name.contains("banana_tree") || name.contains("gorilla") || name.contains("baboon"));
 		}
-		//
+		*/
 		
 		/*****************
 		 *  Second query *
@@ -260,10 +261,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfos didn't answered anything!",infos);
-		//remove this test which depends on the type of reasonner
-		//assertEquals("getInfos method should return 11 statements about baboon.", 11, infos.size());
-		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("oro:baboon rdf:type oro:Animal")));
-		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon oro:isFemale \"true\"^^xsd:boolean")));
+		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains("type OF baboon IS Animal"));
+		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("isFemale OF baboon IS true")));
 	
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -591,10 +590,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//	System.out.println(k);
 		//}
           
-		assertEquals("Three subclasses should be returned (Monkey, Insect and Ladybird.", 3, oro.getSubclassesOf("Animal").size());
+		assertEquals("Three subclasses should be returned (Monkey, Insect and Ladybird).", 3, oro.getSubclassesOf("Animal").size());
 		assertEquals("Two direct subclasses should be returned (Monkey and Insect).", 2, oro.getDirectSubclassesOf("Animal").size());
 		
-		assertEquals("Four superclasses should be returned (Insect, Animal, owl:Thing and rdfs:Resource).", 4, oro.getSuperclassesOf("Ladybird").size());
+		assertTrue("These superclasses should be returned (Insect, Animal, owl:Thing (and possibly rdfs:Resource, depending on the reasonner).", (3 <= oro.getSuperclassesOf("Ladybird").size()) && (4 >= oro.getSuperclassesOf("Ladybird").size()));
 		assertEquals("One direct superclass should be returned (Insect).", 1, oro.getDirectSuperclassesOf("Ladybird").size());
 		
 		assertEquals("Three instances of animal should be returned (cow, baboon and gorilla).", 3, oro.getInstancesOf("Animal").size());
@@ -897,7 +896,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		partial_statements.add("?mysterious rdf:type oro:Monkey");
 		partial_statements.add("?mysterious oro:weight ?value");
 
-		filters.add("?value >= 50");
+		filters.add("?value >= 48");
 		
 		try {
 			matchingResources = oro.find("mysterious", partial_statements, filters);
@@ -920,7 +919,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
-		assertTrue("find() should now answer only 1 resources (baboon)", matchingResources.size() == 1);
+		assertEquals("find() should now answer only 1 resources (baboon)", 1, matchingResources.size());
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
