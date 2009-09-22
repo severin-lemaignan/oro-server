@@ -10,6 +10,7 @@ import java.util.Vector;
 import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -473,13 +474,14 @@ public interface IOntologyBackend extends IServiceProvider{
 			throws NotFoundException;
 	
 	/**
-	 * Returns the id of the concept whose label match the given parameter. If several concepts match, an randomly choosen one is returned.
+	 * Returns the id and type (INSTANCE, CLASS, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of the concept whose label or id match the given parameter. If several concepts match, an randomly choosen one is returned.
 	 * 
 	 * @param label the label to look for.
 	 * @return the id of the concept whose label matchs the parameter.
 	 * @throws NotFoundException
+	 * @see {@link ResourceType}
 	 */
-	public abstract String lookupLabel(String label)
+	public abstract List<String> lookup(String id)
 			throws NotFoundException;
 
 

@@ -1,5 +1,7 @@
 package laas.openrobots.ontology;
 
+import java.util.List;
+
 
 public class Pair<L, R> {
  

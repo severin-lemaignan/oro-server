@@ -53,6 +53,7 @@ import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
@@ -522,7 +523,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * This test checks that concept can be retrieved by their labels. 
 	 * @throws InterruptedException 
 	 */
-	public void testLabelLookup() throws InterruptedException {
+	public void testLookup() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Label lookup *****");
 		
@@ -540,13 +541,16 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long startTime = System.currentTimeMillis();
         
 		try {
-			oro.lookupLabel("princess Daisy");
+			oro.lookup("princess Daisy");
 			fail("No label \"princess Daisy\" exists in the ontology.");
 		} catch (NotFoundException e) {}
 		
-		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookupLabel("BabouIn"));
-		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookupLabel("Baboon monkey"));
-		assertEquals("The \"gorilla\" instance should be retieved.", "gorilla", oro.lookupLabel("king kong"));
+		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookup("BabouIn").get(0));
+		assertEquals("The \"baboon\" type should be INSTANCE.", ResourceType.INSTANCE.toString(), oro.lookup("BabouIn").get(1));
+		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookup("Baboon monkey").get(0));
+		assertEquals("The \"gorilla\" instance should be retieved.", "gorilla", oro.lookup("king kong").get(0));
+		
+		assertEquals("\"Monkey\" should be a CLASS.", ResourceType.CLASS.toString(), oro.lookup("Monkey").get(1));
 		
 		try {
 			oro.clear("gorilla ?a ?b");
@@ -555,7 +559,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		try {
-			oro.lookupLabel("king kong");
+			oro.lookup("king kong");
 			fail("No label \"king kong\" should exist anymore in the ontology.");
 		} catch (NotFoundException e) {}
 	

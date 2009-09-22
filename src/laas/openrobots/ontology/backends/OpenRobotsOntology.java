@@ -41,6 +41,7 @@ package laas.openrobots.ontology.backends;
 ///////////////
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -112,6 +113,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private ResultSet lastQueryResult;
 	private String lastQuery;
 	
+	
 	private boolean verbose;
 	
 	private Properties parameters;
@@ -119,7 +121,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	//the watchersCache holds as keys the literal watch pattern and as value a pair of pre-processed query built from the watch pattern and a boolean holding the last known result of the query.
 	private HashMap<String, Pair<Query, Boolean>> watchersCache;
 	
-	private Map<String, String> labelsMap;
+	private Map<String, Pair<String, ResourceType> > lookupTable;
+	private boolean modelChanged = true;
+	private boolean forceLookupTableUpdate = false; //useful to systematically rebuild the lookup table when a statement has been removed.
 	
 	private MemoryManager memoryManager;
 	
@@ -280,9 +284,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 			}
 			
+			/* The label maps is now updated when needed (ie, when a concept lookup is done but not found, we rebuilt the map.
 			//TODO: move that somewhere else.
 			if (Namespaces.toLightString(statement.getPredicate()).equalsIgnoreCase("rdfs:label"))
-				labelsMap.put(statement.getObject().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(statement.getSubject()));
+				labelsMap.put(statement.getObject().as(Literal.class).getLexicalForm().toLowerCase(), 
+						//new Pair<String, ResourceType>(Namespaces.toLightString(statement.getSubject()), Helpers.getType(statement.getSubject())));
+						new Pair<String, ResourceType>(Namespaces.toLightString(statement.getSubject()), ResourceType.UNDEFINED)); //TODO !! Must figure out how to get the right type
+						
+			*/
 			
 		}
 		catch (Exception e)
@@ -1022,13 +1031,30 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 
 	@RPCMethod(
-			desc = "returns the id of the concept whose label match the given parameter."
+			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
 	)
-	public String lookupLabel(String label) throws NotFoundException {
+	public List<String> lookup(String id) throws NotFoundException {
+		
+		if (forceLookupTableUpdate) rebuildLookupTable(); //if statements have been remove, we must force a rebuilt of the lookup table else a former concept taht doesn't exist anymore could be returned.
 				
-		if (labelsMap.containsKey(label.toLowerCase()))
-			return labelsMap.get(label.toLowerCase());
-		else throw new NotFoundException("The label \""+ label + "\" does not exist in the ontology.");
+		List<String> result = new ArrayList<String>();
+		
+		if (lookupTable.containsKey(id.toLowerCase())) {
+			result.add(lookupTable.get(id.toLowerCase()).getLeft());
+			result.add(lookupTable.get(id.toLowerCase()).getRight().toString());
+		}
+		else {
+			
+			//we try to rebuild the lookup table, in case some changes occured since the last lookup.
+			rebuildLookupTable();
+			if (lookupTable.containsKey(id.toLowerCase())) {
+				result.add(lookupTable.get(id.toLowerCase()).getLeft());
+				result.add(lookupTable.get(id.toLowerCase()).getRight().toString());
+			}
+			else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
+		}
+		
+		return result;
 		
 	}
 	
@@ -1050,7 +1076,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 		this.eventsProviders = new HashSet<IEventsProvider>();
 		this.watchersCache = new HashMap<String, Pair<Query, Boolean>>();
-		this.labelsMap = new HashMap<String, String>();
+		this.lookupTable = new HashMap<String, Pair<String, ResourceType>>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
@@ -1058,7 +1084,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		this.load();
 		
-		this.buildLabelList();
+		this.rebuildLookupTable();
 		
 		memoryManager = new MemoryManager(onto);
 		memoryManager.start();
@@ -1077,6 +1103,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	protected void onModelChange(String rsName){
 		//System.out.println("Model changed!");
+		
+		modelChanged = true;
 		
 		//iterate over the various registered watchers and notify the subscribers when needed.
 		for (IEventsProvider ep : eventsProviders) {
@@ -1274,11 +1302,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		//TODO: move that somewhere else.
 		if (Namespaces.toLightString(stmt.getPredicate()).equalsIgnoreCase("rdfs:label"))
-			labelsMap.remove(stmt.getObject().as(Literal.class).getLexicalForm().toLowerCase());
+			lookupTable.remove(stmt.getObject().as(Literal.class).getLexicalForm().toLowerCase());
 		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
 		onto.leaveCriticalSection();
+		
+		//force the rebuilt of the lookup table at the next lookup.
+		forceLookupTableUpdate = true;
 		
 		//notify the events subscribers.
 		onModelChange();
@@ -1325,52 +1356,97 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 
-	private void buildLabelList() {
+	/**
+	 * Rebuild the map that binds all the concepts to their labels and type (instance, class, property...). This map is used for fast lookup of concept, and rebuild only when (the model has changed AND an lookup failed) OR (a concept has been removed AND a lookup is starting).
+	 * 
+	 *  @see {@link #lookup(String)}
+	 */
+	private void rebuildLookupTable() {
 		{
-			ExtendedIterator<Individual> resources = onto.listIndividuals();
-			while(resources.hasNext()) {
-				Individual res = resources.next();
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				while(labels.hasNext()) {
-					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
-				}
+			
+			if (modelChanged) {
 				
+				modelChanged = false;
+				forceLookupTableUpdate = false;				
+				lookupTable.clear();
+				
+				ExtendedIterator<Individual> resources = onto.listIndividuals();
+				while(resources.hasNext()) {
+					Individual res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							
+							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(),
+											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
+						}
+					else lookupTable.put(	res.getLocalName().toLowerCase(),
+							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
+					
+				}
 			}
-		}
-		
-		{
-			ExtendedIterator<OntClass> resources = onto.listClasses();
-			while(resources.hasNext()) {
-				OntClass res = resources.next();
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				while(labels.hasNext()) {
-					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+			
+			{
+				ExtendedIterator<OntClass> resources = onto.listClasses();
+				while(resources.hasNext()) {
+					OntClass res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(),
+											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.CLASS));
+						}
+					else lookupTable.put(	res.getLocalName().toLowerCase(),
+							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.CLASS));
+					
 				}
-				
 			}
-		}
-		
-		{
-			ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
-			while(resources.hasNext()) {
-				ObjectProperty res = resources.next();
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				while(labels.hasNext()) {
-					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+			
+			{
+				ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
+				while(resources.hasNext()) {
+					ObjectProperty res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(), 
+											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY));
+						}
+					else lookupTable.put(	res.getLocalName().toLowerCase(),
+							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY));
+					
 				}
-				
 			}
-		}
-		
-		{
-			ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
-			while(resources.hasNext()) {
-				DatatypeProperty res = resources.next();
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				while(labels.hasNext()) {
-					labelsMap.put(labels.next().as(Literal.class).getLexicalForm().toLowerCase(), Namespaces.toLightString(res));
+			
+			{
+				ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
+				while(resources.hasNext()) {
+					DatatypeProperty res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							lookupTable.put(  labels.next().as(Literal.class).getLexicalForm().toLowerCase(), 
+											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY));
+						}
+					else lookupTable.put(	res.getLocalName().toLowerCase(),
+							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY));
 				}
-				
 			}
 		}
 	}
