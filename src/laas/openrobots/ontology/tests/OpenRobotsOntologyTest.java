@@ -103,12 +103,15 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
  */
 public class OpenRobotsOntologyTest extends TestCase {
 
-
-	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
+	final String ORO_TEST_CONF = "oro_test.conf";
 	Properties conf;
 	
 	public OpenRobotsOntologyTest() {
-		conf = getConfiguration(ORO_TEST_CONF);
+		String confFile = System.getProperty("ORO_TEST_CONF");
+		if (confFile == null)
+			confFile = ORO_TEST_CONF;
+		
+		conf = getConfiguration(confFile);
 	}
 
 	/***********************************************************************
@@ -263,7 +266,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 
 		assertNotNull("getInfos didn't answered anything!",infos);
 		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains("type OF baboon IS Animal"));
-		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("isFemale OF baboon IS true")));
+		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains("isFemale OF baboon IS true"));
 	
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -296,8 +299,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertNotNull("getInfosDefaultNs didn't answered anything!",infos);
 		//remove this test which depends on the type of reasonner
 		//assertEquals("getInfosDefaultNs method should return 10 statements about baboon.", 11, infos.size());
-		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains(oro.createStatement("baboon rdf:type Animal")));
-		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains(oro.createStatement("oro:baboon isFemale \"true\"^^xsd:boolean")));
+		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains("type OF baboon IS Animal"));
+		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains("isFemale OF baboon IS true"));
 			
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -495,16 +498,18 @@ public class OpenRobotsOntologyTest extends TestCase {
             }
         }
  
-           
-		assertEquals("Four recently added statements should be returned.", 2, rs_stmts.size());
-		
-		assertEquals("Three short term statements should be returned.", 1, rs_short_term.size());
-
        	oro.getModel().leaveCriticalSection();
+       	
+		assertEquals("Two recently added statements should be returned.", 2, rs_stmts.size());
+		
+		assertEquals("One short term statements should be returned.", 1, rs_short_term.size());
 	
 		oro.save("./before_cleaning.owl");
 		
-		Thread.sleep(MemoryProfile.SHORTTERM.duration() + 100);
+		
+		System.out.print(" * Waiting a bit (" + (MemoryProfile.SHORTTERM.duration() + 500) + "ms)...");
+		Thread.sleep(MemoryProfile.SHORTTERM.duration() + 500);
+		
 		
 		oro.save("./after_cleaning.owl");
 

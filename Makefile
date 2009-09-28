@@ -95,5 +95,5 @@ doc-clean:
 	$(CLEAN) $(DOC_DIR)
 
 test: oro-server
-	$(JAVA) -classpath $(CLASSPATH):$(JAR_DIR)/$<.jar junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
+	$(JAVA) -classpath $(CLASSPATH):${PREFIX}/java/oro-server/lib/$<.jar -DORO_TEST_CONF=${PREFIX}/etc/oro-server/oro_test.conf junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
 
