@@ -52,6 +52,7 @@ import java.util.TimeZone;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.JsonConnector;
+import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.connectors.YarpConnector;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
@@ -219,7 +220,7 @@ public class OroServer implements IServiceProvider {
 		/********************************************************************************
 		 *                       CONNECTORS INITIALIZATION                              *
 		 ********************************************************************************/
-		
+		/*
 		if (confParams.getProperty("yarp").equalsIgnoreCase("enabled")) {
 			YarpConnector yc = new YarpConnector(oro, confParams, registredServices);
 			eventsProviders.add(yc);
@@ -231,7 +232,11 @@ public class OroServer implements IServiceProvider {
 			JsonConnector jc = new JsonConnector(confParams, registredServices);
 			connectors.add(jc);
 		}
-				
+		*/		
+    	
+    	SocketConnector sc = new SocketConnector(confParams, registredServices);
+		connectors.add(sc);
+		
 		for (IConnector c : connectors)	{
 			try {
 				c.initializeConnector();
@@ -253,7 +258,7 @@ public class OroServer implements IServiceProvider {
 		while(keepOn) {			
         	    	
 			//!!! TODO !!! Ouhouh! use threads before adding new backends!
-			for (IConnector c : connectors) c.run();
+			//for (IConnector c : connectors) c.run();
 
 			
 			Thread.sleep(10);

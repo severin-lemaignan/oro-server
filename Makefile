@@ -52,7 +52,7 @@ oro-jar: oro-build
 
 oro-build :
 	$(INSTALL) -d $(BUILD_DIR)
-	$(JAVAC) -classpath $(CLASSPATH) -d $(BUILD_DIR) `find -name "*.java"`
+	$(JAVAC) -DCompileOption.PELLET_ENABLED=false -classpath $(CLASSPATH) -d $(BUILD_DIR) `find -name "*.java"`
 
 install: oro-server
 	$(INSTALL) -d ${PREFIX}/java/oro-server/lib
