@@ -4,6 +4,7 @@
 package laas.openrobots.ontology.memory;
 
 /**
+ * Note: be careful of using only uppercase profile names (because of fromString method).
  * @author slemaign
  *
  */
@@ -54,7 +55,7 @@ public enum MemoryProfile {
 	 */
 	public static MemoryProfile fromString(String literalMemProfile) {
 		try {
-			return Enum.valueOf(MemoryProfile.class, literalMemProfile);
+			return Enum.valueOf(MemoryProfile.class, literalMemProfile.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
 			return DEFAULT;
 		}
