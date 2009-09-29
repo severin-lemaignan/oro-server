@@ -318,7 +318,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	@RPCMethod(
-			rpc_name="add_memory",
 			desc="adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile."
 	)
 	public void add(Set<String> rawStmts, String memProfile) throws IllegalStatementException
