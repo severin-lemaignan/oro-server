@@ -28,6 +28,9 @@ public class MemoryManager extends Thread {
 	Property p_memoryProfile;
 	
 	public MemoryManager(OntModel model) {
+		
+		setName("Memory Manager"); //name the thread
+		
 		onto = model;
 		watchedStmt = new HashSet<String>();
 		
