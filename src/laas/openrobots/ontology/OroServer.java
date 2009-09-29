@@ -45,9 +45,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
@@ -304,6 +306,36 @@ public class OroServer implements IServiceProvider {
 		stats.put("nb_clients", "not available");
 		
 		return stats;
+	}
+	
+	@RPCMethod(
+			desc = "returns the list of available methods with their short description."
+	)
+	public Map<String, String> help() {
+		
+		
+		Map<String, String> help = new HashMap<String, String>();
+		
+		Iterator<Entry<Pair<String, String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
+	    while (it.hasNext()) {
+	    	
+	    	Entry<Pair<String, String>, Pair<Method, Object>> pairs = it.next();
+	    	
+	    	
+	    	//build the list of expected parameters
+	    	String params = "(";
+	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    		params += param.getSimpleName() + ", ";
+	    	
+	    	if (!params.equals("("))
+	    		params = params.substring(0, params.length() - 2);
+	    	
+	    	params += ")";
+	    	
+	        help.put(pairs.getKey().getLeft() + params, pairs.getKey().getRight());
+	    }
+		
+		return help;
 	}
 
 	private Map<Pair<String, String>, Pair<Method, Object>> getDeclaredServices(Object o) {
