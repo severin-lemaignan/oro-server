@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
-import laas.openrobots.ontology.connectors.JsonSerializable;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntResource;
@@ -21,7 +20,7 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 import com.hp.hpl.jena.util.iterator.Filter;
 
 
-public class ResourceDescription implements JsonSerializable {
+public class ResourceDescription {
 
 	private final String propertiesToRemove[] = {	"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
 													"http://www.w3.org/2002/07/owl#sameAs", 
@@ -41,8 +40,7 @@ public class ResourceDescription implements JsonSerializable {
 		this.resource = resource;
 		this.languageCode = languageCode;
 	}
-	
-	@Override
+
 	public String getJson() {
 		
 		ResourceType type = Helpers.getType(resource);

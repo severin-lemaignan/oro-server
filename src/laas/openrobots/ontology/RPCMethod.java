@@ -2,9 +2,6 @@ package laas.openrobots.ontology;
 
 import java.lang.annotation.*;
 
-import laas.openrobots.ontology.connectors.JsonSerializable;
-import laas.openrobots.ontology.connectors.YarpSerializable;
-
 /**
  * This annotation marks all the available methods exposed to remote clients.<br/>
  * To actually register your services by the server, you just need to annotate the relevant method with a @RPCMethod annotation and to call the {@link OroServer#addNewServiceProviders(IServiceProvider)} method. This can be done at any time, even during execution. Connectors will be automatically updated with the new services.<br/>

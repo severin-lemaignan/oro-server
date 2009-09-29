@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import laas.openrobots.ontology.Pair;
-import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 public class SocketConnector implements IConnector, Runnable {

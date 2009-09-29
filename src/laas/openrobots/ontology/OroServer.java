@@ -51,11 +51,8 @@ import java.util.TimeZone;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
-import laas.openrobots.ontology.connectors.JsonConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
-import laas.openrobots.ontology.connectors.YarpConnector;
 import laas.openrobots.ontology.events.IEventsProvider;
-import laas.openrobots.ontology.exceptions.MalformedYarpMessageException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.memory.MemoryManager;
@@ -162,7 +159,7 @@ public class OroServer implements IServiceProvider {
 			for (IConnector c : connectors)	c.refreshServiceList(registredServices);
 	}
 	
-	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException, MalformedYarpMessageException, OntologyServerException { 
+	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException, OntologyServerException { 
    	
     	
     	String confFile;
@@ -220,23 +217,11 @@ public class OroServer implements IServiceProvider {
 		/********************************************************************************
 		 *                       CONNECTORS INITIALIZATION                              *
 		 ********************************************************************************/
-		/*
-		if (confParams.getProperty("yarp").equalsIgnoreCase("enabled")) {
-			YarpConnector yc = new YarpConnector(oro, confParams, registredServices);
-			eventsProviders.add(yc);
-			oro.registerEventsHandlers(eventsProviders);
-			connectors.add(yc);			
-		}
-		
-		if (confParams.getProperty("json").equalsIgnoreCase("enabled")) {
-			JsonConnector jc = new JsonConnector(confParams, registredServices);
-			connectors.add(jc);
-		}
-		*/		
     	
+    	// Currently, only one connector, the socket connector (others bridges like YARP or JSON are now out of the oro-server code base)
     	SocketConnector sc = new SocketConnector(confParams, registredServices);
 		connectors.add(sc);
-		
+
 		for (IConnector c : connectors)	{
 			try {
 				c.initializeConnector();
@@ -268,7 +253,7 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	
-	public static void main(String[] args) throws OntologyConnectorException, InterruptedException, MalformedYarpMessageException, OntologyServerException {
+	public static void main(String[] args) throws OntologyConnectorException, InterruptedException, OntologyServerException {
 		new OroServer().runServer(args);
 	}
 	
