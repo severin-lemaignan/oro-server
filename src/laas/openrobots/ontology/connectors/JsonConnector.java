@@ -105,8 +105,7 @@ public class JsonConnector implements IConnector {
 	}
 
 	@Override
-	public void run() throws OntologyConnectorException,
-			MalformedYarpMessageException {
+	public void run() {
 
 	}
 	

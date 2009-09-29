@@ -169,7 +169,7 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	}
 	
 	@Override
-	public void run() throws MalformedYarpMessageException {
+	public void run() {
 		//System.out.println("Waiting for a new request...");
 	    
 	    query = queryPort.read(false); //non blocking read.
@@ -183,7 +183,8 @@ public class YarpConnector implements IConnector, IEventsProvider {
 	    	
 	    	String receiverPort = query.get(0).toString();
 	    	if (!receiverPort.startsWith("/"))
-	    		throw new MalformedYarpMessageException("Your YARP message should start with the YARP port (prefixed with /) on which you want to get the result of your query.");
+	    		//throw new MalformedYarpMessageException("Your YARP message should start with the YARP port (prefixed with /) on which you want to get the result of your query.");
+	    		System.exit(-1);
 	    	
     	    if (!lastReceiverPort.equals(receiverPort)){ //not the same receiver ! disconnect the old one an connect to the new one.
     	    	System.out.println(" * Changing client to " + receiverPort);
