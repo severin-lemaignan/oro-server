@@ -1259,7 +1259,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto.leaveCriticalSection();
 			
 			if (verbose) {
-				System.out.print(" * Ontology successfully loaded (");
+				Helpers.printInGreen(" * Ontology successfully loaded");
+				System.out.print(" (");
 				if (instancesModel != null) System.out.print("domain instances loaded and merged. ");
 				System.out.println(onto_model_reasonner_name + " initialized).");
 			}

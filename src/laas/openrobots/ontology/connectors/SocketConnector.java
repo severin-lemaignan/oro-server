@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
@@ -403,7 +404,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    }
 	    
 	    
-	    System.out.println(" * Server started on port " + port);
+	    Helpers.printlnInGreen(" * Server started on port " + port);
 	    
 	    while(keepOn){
 	      ClientWorker w;

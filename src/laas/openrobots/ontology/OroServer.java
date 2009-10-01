@@ -171,8 +171,13 @@ public class OroServer implements IServiceProvider {
     	eventsProviders = new HashSet<IEventsProvider>();
     	registredServices = new HashMap<Pair<String,String>, Pair<Method, Object>>();
     	
-    	System.out.println("*** OroServer " + VERSION + " ***");
-		
+    	Helpers.printlnInBlue("--------------------------------------\n" +
+    						"-                                    -\n" +			
+    						"-          OroServer " + VERSION + "           -\n" +
+    						"-                                    -\n" +
+    						"-         " + (char)27 + "[0m(c)LAAS-CNRS 2009"+ (char)27 +"[34m          -\n" +
+							"--------------------------------------");
+    	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
     	
     	
@@ -204,10 +209,10 @@ public class OroServer implements IServiceProvider {
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
 			
-		System.out.println(" * Following services are registred:");
+		Helpers.printlnInPurple(" * Following services are registred:");
     	for (Pair<String,String> m : registredServices.keySet())
     	{
-    		System.out.print("\t- " + m.getLeft());
+    		Helpers.printInPurple("\t- " + m.getLeft());
     		//if present, display the description as well
     		if (m.getRight() != "")
     			System.out.println(" -> " + m.getRight());
