@@ -24,7 +24,11 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 public class SocketConnector implements IConnector, Runnable {
 
-	int port = 4444;
+	/** Maximum time (in millisecond) the server should keep alive a socket when inactive. 
+	 */
+	final int KEEP_ALIVE_SOCKET_DURATION = 5000;
+	
+	int port;
 	ServerSocket server = null;
 	
 	HashMap<Pair<String, String>, Pair<Method, Object>> registredServices;
@@ -50,10 +54,13 @@ public class SocketConnector implements IConnector, Runnable {
 		  	return name;
 		  }
 		  
-		  public void run(){
+		  public void run() {
 
 		    BufferedReader in = null;
 		    PrintWriter out = null;
+		    
+		    long timeLastActivity = System.currentTimeMillis();
+		    
 		    try{
 		      in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 		      out = new PrintWriter(client.getOutputStream(), true);
@@ -63,26 +70,47 @@ public class SocketConnector implements IConnector, Runnable {
 		    }
 
 		    while(keepOn && keepOnThisWorker){
-		      try{
-		    	 
+		    	    	 
 		    	ArrayList<String> request = new ArrayList<String>();
-		    	String line;
+		    	String line = null;
 		    	while (true) {
-		    		line = in.readLine().trim();
-		    		if (line.equalsIgnoreCase("#end#"))
-		    			break;
-		    		else request.add(line);
+		    		
+		    		try {
+						Thread.sleep(20);
+					} catch (InterruptedException e) {}
+					
+					if (System.currentTimeMillis() - timeLastActivity > KEEP_ALIVE_SOCKET_DURATION) {
+						System.err.println(" * Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + "ms. Please use the \"close\" method in your clients to close properly the socket.");
+						keepOnThisWorker = false;
+						break;
+		    		}
+				
+					try{
+			    		line = in.readLine(); //answers null if the stream doesn't contain a "\n"
+			        } catch (IOException e) {
+						System.err.println("Read failed on one of the openned socket.");
+						keepOnThisWorker = false;
+					}
+		        
+		    		if (line != null) {
+			    		line = line.trim();
+			    		
+			    		if (line.equalsIgnoreCase("#end#")) {
+			    			timeLastActivity = System.currentTimeMillis();
+			    			break;
+			    		}
+			    		
+			    		else request.add(line);
+		    		}
 		    	}
 		    	
 		        //Send data back to client
+		        if (request.size() != 0) {
+		        	String res = handleRequest(request);
 		        
-		        String res = handleRequest(request);
-		        
-		         out.println(res);
-		       } catch (IOException e) {
-		         System.out.println("Read failed");
-		         System.exit(-1);
-		       }
+		        	out.println(res);
+		        }
+
 		    }
 		  }
 		  
@@ -93,14 +121,8 @@ public class SocketConnector implements IConnector, Runnable {
 			  String result = "error\n\n";
 			  String queryName = request.get(0);
 			  
-			  
-			  System.out.println(" * Got a request: ");
-			  for (String s : request)
-			         System.out.println(s);
-
-
 	    	if (queryName.equalsIgnoreCase("close")){
-	    		System.out.println(" * Closing a communication with a client");
+	    		System.out.println(" * Closing communication with client " + getName());
 	    		
 	    		keepOnThisWorker = false;
 	    		
