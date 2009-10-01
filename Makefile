@@ -60,6 +60,9 @@ install: oro-server
 distclean: clean doc-clean
 	$(CLEAN) oro-server
 	$(CLEAN) oro-server.jar
+	$(CLEAN) *.log
+	$(CLEAN) *.owl
+	$(CLEAN) *.tar.gz
 
 clean :
 	$(CLEAN) $(BUILD_DIR)
