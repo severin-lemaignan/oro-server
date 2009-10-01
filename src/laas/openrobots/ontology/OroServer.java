@@ -243,10 +243,6 @@ public class OroServer implements IServiceProvider {
 		 ********************************************************************************/
 
 		while(keepOn) {			
-        	    	
-			//!!! TODO !!! Ouhouh! use threads before adding new backends!
-			//for (IConnector c : connectors) c.run();
-
 			
 			Thread.sleep(10);
     	}
