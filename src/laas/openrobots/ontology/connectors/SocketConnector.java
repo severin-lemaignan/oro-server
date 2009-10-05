@@ -25,9 +25,11 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
 public class SocketConnector implements IConnector, Runnable {
 
-	/** Maximum time (in millisecond) the server should keep alive a socket when inactive. 
+	/** Maximum time (in seconds) the server should keep alive a socket when inactive.
+	 * 
+	 * This value may be configured by the option keep_alive_socket_duration in the server configuration file.
 	 */
-	final int KEEP_ALIVE_SOCKET_DURATION = 5000;
+	int KEEP_ALIVE_SOCKET_DURATION;
 	
 	int port;
 	ServerSocket server = null;
@@ -80,7 +82,7 @@ public class SocketConnector implements IConnector, Runnable {
 						Thread.sleep(20);
 					} catch (InterruptedException e) {}
 					
-					if (System.currentTimeMillis() - timeLastActivity > KEEP_ALIVE_SOCKET_DURATION) {
+					if (System.currentTimeMillis() - timeLastActivity > (KEEP_ALIVE_SOCKET_DURATION * 1000)) {
 						System.err.println(" * Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + "ms. Please use the \"close\" method in your clients to close properly the socket.");
 						keepOnThisWorker = false;
 						break;
@@ -360,6 +362,7 @@ public class SocketConnector implements IConnector, Runnable {
 			HashMap<Pair<String, String>, Pair<Method, Object>> registredServices) {
 		
 		port = Integer.parseInt(params.getProperty("port", "6969")); //defaulted to port 6969 if no port provided in the configuration file.
+		KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(params.getProperty("keep_alive_socket_duration", "60")); //defaulted to 1 min if no duration is provided in the configuration file.
 		
 		this.registredServices = registredServices;
 	}
