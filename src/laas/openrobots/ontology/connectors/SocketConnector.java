@@ -93,6 +93,7 @@ public class SocketConnector implements IConnector, Runnable {
 			        } catch (IOException e) {
 						System.err.println("Read failed on one of the opened socket.");
 						keepOnThisWorker = false;
+						break;
 					}
 		        
 		    		if (line != null) {
@@ -138,8 +139,8 @@ public class SocketConnector implements IConnector, Runnable {
 	    			
 	    			Method m = registredServices.get(name).getLeft();
 	    			Object o = registredServices.get(name).getRight();
-	    			
-	    	    	if (name.getLeft().equalsIgnoreCase(queryName) &&
+
+	    			if (name.getLeft().equalsIgnoreCase(queryName) &&
 	    	    			(
     	    				(request.size() == 1) ? 
     	    						m.getParameterTypes().length == 0 :
