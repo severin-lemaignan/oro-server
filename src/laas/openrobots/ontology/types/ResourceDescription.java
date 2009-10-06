@@ -1,5 +1,6 @@
 package laas.openrobots.ontology.types;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,7 +21,7 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 import com.hp.hpl.jena.util.iterator.Filter;
 
 
-public class ResourceDescription {
+public class ResourceDescription implements Serializable {
 
 	private final String propertiesToRemove[] = {	"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
 													"http://www.w3.org/2002/07/owl#sameAs", 
@@ -41,7 +42,7 @@ public class ResourceDescription {
 		this.languageCode = languageCode;
 	}
 
-	public String getJson() {
+	public String toString() {
 		
 		ResourceType type = Helpers.getType(resource);
 		
