@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
 
@@ -310,7 +311,7 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	@RPCMethod(
-			desc = "returns the list of available methods with their short description."
+			desc = "returns the list of available methods with their signatures and short descriptions."
 	)
 	public Map<String, String> help() {
 		
@@ -336,6 +337,23 @@ public class OroServer implements IServiceProvider {
 	        help.put(pairs.getKey().getLeft() + params, pairs.getKey().getRight());
 	    }
 		
+		return help;
+	}
+	
+	@RPCMethod(
+			desc = "returns a raw list of available methods."
+	)
+	public Set<String> listMethods() {
+		
+		
+		Set<String> help = new HashSet<String>();
+		
+		Iterator<Entry<Pair<String, String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
+	    while (it.hasNext()) {
+	    	Entry<Pair<String, String>, Pair<Method, Object>> pairs = it.next();
+	    	//build the list of expected parameters 	
+	        help.add(pairs.getKey().getLeft());
+	    }
 		return help;
 	}
 
