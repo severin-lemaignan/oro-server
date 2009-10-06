@@ -815,7 +815,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "superclasses_of", 
 			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred superclasses of a given class."
 	)
 	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException {
@@ -837,7 +836,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "direct_superclasses_of", 
 			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct superclasses of a given class."
 	)
 	public Map<String, String> getDirectSuperclassesOf(String type) throws NotFoundException {
@@ -889,7 +887,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "subclasses_of", 
 			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred subclasses of a given class."
 	)
 	public Map<String, String> getSubclassesOf(String type) throws NotFoundException {
@@ -911,7 +908,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "direct_subclasses_of", 
 			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct subclasses of a given class."
 	)
 	public Map<String, String> getDirectSubclassesOf(String type) throws NotFoundException {
@@ -960,7 +956,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 	@RPCMethod(
-			rpc_name = "instances_of",
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class."
 	)
 	public Map<String, String> getInstancesOf(String type) throws NotFoundException {
@@ -982,7 +977,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "direct_instances_of",
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class."
 	)
 	public Map<String, String> getDirectInstancesOf(String type) throws NotFoundException {
@@ -1004,7 +998,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@RPCMethod(
-			rpc_name = "resource_details_i10n", 
 			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.). The second parameter specify the desired language (following RFC4646)."
 	)
 	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
@@ -1020,7 +1013,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 		
 	@RPCMethod(
-			rpc_name = "resource_details", 
 			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
 	)
 	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
