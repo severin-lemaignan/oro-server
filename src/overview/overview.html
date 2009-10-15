@@ -1,11 +1,24 @@
 <html>
 <body>
-<em>oro-server</em> is a Java-based server for RDF/OWL ontologies remote access. It can load RDF/OWL ontologies and allow RPC access to the ontology. RPC framework is provided by external middleware. Currently only YARP and JSON-RPC are supported, but the server has been designed with modularity in mind and it should be fairly easy to add new ones.<br/>
+<em>oro-server</em> is a Java-based knowledge base for cognitive robotic applications. It is developped at the LAAS-CNRS by S&eacute;verin Lemaignan (severin.lemaignan@laas.fr)<br/>
+
+<h2>oro-server features</h2>
+
+<em>oro-server</em> relies on RDF/OWL ontologies to represent an store knowledge and runs several active processes that offer reasonning facilities, support bio-inspired memory models, implement concepts of "cognitive events" and pro-active "curiosity", offer mechanisms to handle cognitive conflicts (ie inconsistent chuncks of knowledge), etc.
+<br/><br/>
+<center><img style="height:300px;" src="cognitive_kernel.png" alt="Overview of the cognitive kernel features" /></center>
+<br/><br/>
+The main communication channel with <em>oro-server</em> is a simple socket interface. However several bridges and wrapper to higher-level framework are available (including a C++ object-oriented abstraction, a YARP connector, a JSON connector). New ones can be easily created on request.<br/>
+
+<h2>Where to go?</h2>
+<ul>
+<li>If you just want to use the server, a good source of examples is the <em>{@link laas.openrobots.ontology.tests.OpenRobotsOntologyTest OpenRobotsOntologyTest}</em> class which contains about 15 unit tests, covering most of the API.</li>
+<li>The socket communication protocol is documented here: {@link laas.openrobots.ontology.connectors.SocketConnector}</li>
+<li>If you're interested in the server internal's, {@link laas.openrobots.ontology.OroServer} is the main entry point to the software.</li>
+</ul>
+
 <br/>
 
-The {@link laas.openrobots.ontology.OroServer} is the main entry point to the software. Please check the documentation there.<br/>
-<br/>
-A good source of examples (both in Java and with the YARP connector) is the <em>{@link laas.openrobots.ontology.tests.OpenRobotsOntologyTest OpenRobotsOntologyTest}</em> class which contains about 15 unit tests, covering most of the API.<br/>
 
 </body>
 </html>
