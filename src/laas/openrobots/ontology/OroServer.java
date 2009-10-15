@@ -66,24 +66,15 @@ import laas.openrobots.ontology.memory.MemoryManager;
  * <p>
  * OroServer does mainly two things:
  * <ol>
- * <li>It registers and connects a set of services (presumably related to robotic cognition) to so-called "external connectors" (ie RPC frameworks),</li>
+ * <li>It registers and connects a set of services (presumably related to robotic cognition) to a socket interface,</li>
  * <li>It runs in the background several tasks related to robotic cognition.</li>
  * </ol>
  * </p>
  * 
+ * <h2>Features</h2>
  * <p>
  * Most services are related to access and management of a cognitive <em>storage backend</em>. The main storage backend is an ontology, as implemented in the {@link OpenRobotsOntology} class. This class exposes a set of RPC services (and hence implement the {@link IServiceProvider} interface).<br/>
  * However, other services can be registred (like {@link #stats()} that returns statistics on the server itself).<br/>
- * </p>
- * 
- * <p>
- * Connectors are the external interfaces of the server. They all implement the {@link IConnector} interface. They are adaptors to existing middlewares or RPC frameworks.<br/>
- * The following protocols are currently implemented:
- * <ul> 
- * 	<li><a href="http://eris.liralab.it/yarp/">YARP</a> (see {@link YarpConnector})</li>
- *  <li>JSON-RPC (see {@link JsonConnector})</li>
- * </ul>
- * Others middlewares are expected to be supported as well in the future. Please contact us (<a href="mailto:robot@laas.fr">robot@laas.fr</a>) if you are interested in getting support for your protocol.
  * </p>
  * 
  *  <p>
@@ -92,24 +83,24 @@ import laas.openrobots.ontology.memory.MemoryManager;
  *  	<li>The event manager (see {@link IEventsProvider})</li>
  *  	<li>The memory manager (see {@link MemoryManager})</li>
  *  </ul>
+ *  Others are under developpement, including a "curiosity" module, a cognitive conflict detection and resolution module.
  *  </p>
- * <br/>
+ *  
+ * <h2> Getting access to the server</h2>
+ * <p>
+ * The communication with the server relies on standard TCP/IP sockets. The ASCII protocole we use is documented here: {@link SocketConnector}.
+ * </p>
+ * 
+ * <h2> Configuration </h2>
+ * <p>
  * {@code OroServer} has a {@code main} function which expect a configuration file.<br/> 
  * For the server, the following options are currently available:
  * <ul>
- * <li><em>yarp = [enabled|disabled]</em>: <em>enabled</em> activates YARP bindings.</li>
- * <li><em>json = [enabled|disabled]</em>: <em>enabled</em> activates JSON-RPC bindings.</li>
+ * <li><em>port = [port number over 4000]</em>: the port on which the server should starts and listen.</li>
  * </ul>
- * YARP specific options:
- * <ul>
- * <li><em>yarp_input_port = PORT (default:oro)</em>: set the name of the YARP port where queries can be sent to the ontology server.</li> 
- * </ul>
- * JSON specific options:
- * <ul>
- * <li><em>json_port = PORT (default:8080)</em>: set the port number the JSON-RPC server is to be started on.</li> 
- * </ul>
+ * </p>
  * 
- * <i>See {@link laas.openrobots.ontology.backends.OpenRobotsOntology#OpenRobotsOntology(String)} for others options, specific to the ontologies. Have a look at the config file itself for more details.</i>
+ * <i>See {@link OpenRobotsOntology#OpenRobotsOntology(Properties)} for others options, specific to the ontologies. Have a look at the config file itself for more details.</i>
  *
  * @author slemaign
  *
@@ -309,11 +300,42 @@ public class OroServer implements IServiceProvider {
 		
 		return stats;
 	}
+
+	@RPCMethod(
+			desc = "returns a human-friendly list of available methods with their signatures and short descriptions."
+	)
+	public String help() {
+		
+		
+		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below the list of available remote services in the knowledge base:\n";
+		
+		Iterator<Entry<Pair<String, String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
+	    while (it.hasNext()) {
+	    	
+	    	Entry<Pair<String, String>, Pair<Method, Object>> pairs = it.next();
+	    	
+	    	
+	    	//build the list of expected parameters
+	    	String params = "(";
+	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    		params += param.getSimpleName() + ", ";
+	    	
+	    	if (!params.equals("("))
+	    		params = params.substring(0, params.length() - 2);
+	    	
+	    	params += ")";
+	    	
+	        help += "\t- " + (char)27 + "[35m" + pairs.getKey().getLeft() + params + (char)27 + "[0m: " + pairs.getKey().getRight() + "\n";
+	    }
+		
+	    help += "\nTo execute a command, you must enter its name (case insensitive), followed by one parameter per line. To finish, type " + SocketConnector.MESSAGE_TERMINATOR + " and 'return'. The server should answer.\n";
+		return help;
+	}
 	
 	@RPCMethod(
-			desc = "returns the list of available methods with their signatures and short descriptions."
+			desc = "returns the list of available methods with their signatures and short descriptions as a map."
 	)
-	public Map<String, String> help() {
+	public Map<String, String> listMethods() {
 		
 		
 		Map<String, String> help = new HashMap<String, String>();
@@ -343,7 +365,7 @@ public class OroServer implements IServiceProvider {
 	@RPCMethod(
 			desc = "returns a raw list of available methods."
 	)
-	public Set<String> listMethods() {
+	public Set<String> listSimpleMethods() {
 		
 		
 		Set<String> help = new HashSet<String>();

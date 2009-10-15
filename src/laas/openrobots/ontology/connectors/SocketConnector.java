@@ -23,6 +23,85 @@ import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
+/** Implements a socket interface to oro-server.<br/>
+ * <br/>
+ * The protocol is ASCII-based (ie, you can connect to the server with <em>telnet<em> to test everything).<br/>
+ * <br/>
+ * 
+ * <h2>Requests</h2>
+ * The general structure of a request to the server is:
+ * <pre>
+ * method_name
+ * [parameter1]
+ * [parameter2]
+ * [...]
+ * #end#
+ * </pre>
+ * 
+ * <em>parameters<em> can be either:
+ * <ul>
+ * <li>strings (quotes are not necessary, and are removed if present),</li>
+ * <li>integers (strings made only of numbers),</li>
+ * <li>floats (strings made of numbers with a dot somewhere),</li>
+ * <li>booleans (strings equal to <em>true</em> or <em>false</em>, case insensitive),</li>
+ * <li>(ordered) lists or (unordered) sets of strings, with this structure: <em>[val1, val2, ..., valn]</em>. If strings contain commas, they must be (single or doubled) quoted.</li>
+ * <li>map of (key, value) pairs of strings, with this structure: <em>{key1:val1, key2:val2, ...]</em>. If strings (be keys or values) contain commas, they must be (single or doubled) quoted.</li>
+ * </ul>
+ * Please note that collections of collections are not supported.<br/>
+ * 
+ * <br/>
+ * 
+ * <h2>Responses</h2>
+ * The server response has this structure if the request succeeded:
+ * <pre>
+ * ok
+ * [return_value]
+ * #end#
+ * </pre>
+ * <br/>
+ * And this structure in case of failure:
+ * <pre>
+ * error
+ * [name of the exception, if available]
+ * [human-readable error message - that *may* spend over several lines]
+ * #end#
+ * </pre>
+ * 
+ * <h2>Some examples</h2>
+ * You can test this example by directly connecting to the server with a tool like <em>telnet</em>.<br/>
+ * <br/>
+ * 
+ * <h3>Retrieving a human-friendly list of available methods on the server</h3>
+ * <pre>
+ * > help
+ * </pre>
+ * 
+ * <h3>Retrieving a machine-friendly list of available methods on the server</h3>
+ * <pre>
+ * > listMethods
+ * > #end#
+ * </pre>
+ * 
+ * <h3>Adding facts to the knowledge base</h3>
+ * <pre>
+ * > add
+ * > [human rdf:type Human, human rdfs:label Ramses, myself sees Ramses]
+ * > #end#
+ * </pre>
+ *
+ * <h3>Retrieving facts</h3>
+ * This command should return the list of humans the robot currently sees.
+ * <pre>
+ * > find
+ * > [?humans rdf:type Human, myself sees ?humans]
+ * > #end#
+ * </pre>
+ * 
+ *
+ * @since 0.6.0
+ * @author slemaign
+ *
+ */
 public class SocketConnector implements IConnector, Runnable {
 
 	/** Maximum time (in seconds) the server should keep alive a socket when inactive.
@@ -30,6 +109,8 @@ public class SocketConnector implements IConnector, Runnable {
 	 * This value may be configured by the option keep_alive_socket_duration in the server configuration file.
 	 */
 	int KEEP_ALIVE_SOCKET_DURATION;
+	
+	public static final String MESSAGE_TERMINATOR = "#end#";
 	
 	int port;
 	ServerSocket server = null;
@@ -99,10 +180,17 @@ public class SocketConnector implements IConnector, Runnable {
 		    		if (line != null) {
 			    		line = line.trim();
 			    		
-			    		if (line.equalsIgnoreCase("#end#")) {
+			    		if (line.equalsIgnoreCase(MESSAGE_TERMINATOR)) {
 			    			timeLastActivity = System.currentTimeMillis();
 			    			break;
 			    		}
+			    		
+			    		if (line.equalsIgnoreCase("help")) { //Special case for the command "help": we don't require to enter the message terminaison string.
+			    			request.add(line);
+			    			timeLastActivity = System.currentTimeMillis();
+			    			break;
+			    		}
+			    		
 			    		
 			    		else request.add(line);
 		    		}
@@ -256,7 +344,7 @@ public class SocketConnector implements IConnector, Runnable {
 							"Method " + queryName + " (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.";						
 	    	    }
 	    		
-	    		return result + "\n#end#";
+	    		return result + "\n" + MESSAGE_TERMINATOR;
 	    	}
 		  }
 	    	
@@ -372,7 +460,7 @@ public class SocketConnector implements IConnector, Runnable {
 				//not typed because of Method::invoke requirements <- that's what I call a bad excuse
 				
 					if (type == String.class)
-						return val;
+						return cleanValue(val);
 							
 					if (type == Integer.class)
 						return Integer.parseInt(val);
@@ -419,7 +507,7 @@ public class SocketConnector implements IConnector, Runnable {
 					//if the string looks like a set and a set of a list is indeed expected...
 					else if (isValidSet && Set.class.isAssignableFrom(type)){
 						Set<String> result = new HashSet<String>();
-						for (String s : val.split(","))
+						for (String s : tokenize(val))
 							result.add(cleanValue(s));
 						return result;
 					}					
