@@ -112,7 +112,7 @@ public class OroServer implements IServiceProvider {
 	 * The default configuration file (set to {@value}).
 	 */
 	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
-	public static final String VERSION = "0.6.1"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.6.2"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
