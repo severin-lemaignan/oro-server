@@ -50,6 +50,7 @@ import java.util.Vector;
 import junit.framework.TestCase;
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
@@ -111,7 +112,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		if (confFile == null)
 			confFile = ORO_TEST_CONF;
 		
-		conf = getConfiguration(confFile);
+		conf = OroServer.getConfiguration(confFile);
 	}
 
 	/***********************************************************************
@@ -1041,37 +1042,5 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
-	
-	private Properties getConfiguration(String configFileURI){
-		/****************************
-		 *  Parsing of config file  *
-		 ****************************/
-		Properties parameters = new Properties();
-        try
-		{
-        	FileInputStream fstream = new FileInputStream(configFileURI);
-        	parameters.load(fstream);
-			fstream.close();
-			
-			if (!parameters.containsKey("ontology"))
-			{
-				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
-	        	System.exit(1);
-			}
-		}
-        catch (FileNotFoundException fnfe)
-        {
-        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
-        	System.exit(1);
-        }
-        catch (Exception e)
-		{
-			System.err.println("Config file input error. Check config file syntax.");
-			System.exit(1);
-		}
-        
-        return parameters;
-	}
-
 	
 }

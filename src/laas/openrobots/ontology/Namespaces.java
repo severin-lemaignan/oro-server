@@ -73,7 +73,7 @@ public class Namespaces {
 	/**
 	 * The LAAS OpenRobots ontology namespace ({@value})
 	 */
-	public static final String oro_ns = "http://www.laas.fr/~slemaign/onto/openrobots.owl#";
+	public static final String oro_ns = "http://www.laas.fr/~slemaign/onto/openrobots#";
 	
 	/**
 	 * The default namespace. This static field is set up at runtime from the configuration file.

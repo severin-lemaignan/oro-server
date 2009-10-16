@@ -399,7 +399,7 @@ public class OroServer implements IServiceProvider {
 	 * @param configFileURI The path and filename of the configuration file.
 	 * @return A Java.util.Properties instance containing the application configuration.
 	 */
-	private Properties getConfiguration(String configFileURI){
+	public static Properties getConfiguration(String configFileURI){
 		/****************************
 		 *  Parsing of config file  *
 		 ****************************/
