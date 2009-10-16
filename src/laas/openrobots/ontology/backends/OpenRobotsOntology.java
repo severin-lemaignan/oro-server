@@ -104,7 +104,7 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
  */
 public class OpenRobotsOntology implements IOntologyBackend {
 	
-	public enum ResourceType {CLASS, INSTANCE, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED}
+	public static enum ResourceType {CLASS, INSTANCE, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED}
 	
 	private OntModel onto;
 	
@@ -154,25 +154,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/***************************************
 	 *       Accessors and helpers         *
 	 **************************************/
-	
-	/**
-	 * Returns the result of the last successful query.
-	 * @return The last successful query result or a {@code null} object if not query has been successfully executed yet.
-	 */
-	public ResultSet lastResult()
-	{
-		return lastQueryResult;
-	}
-	
-	/**
-	 * Returns the contain of the last query.
-	 * @return The last performed query or an empty string if the ontology has not been queried yet.
-	 */
-	public String lastQuery()
-	{
-		return lastQuery;
-	}
-	
+		
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#createProperty(java.lang.String)
 	 */
@@ -1199,8 +1181,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	private void load() {
 
-		String owlUri = parameters.getProperty("ontology");
-		String owlInstanceUri = parameters.getProperty("instances");
+		String oroCommonSenseUri = parameters.getProperty("oro_common_sense");
+		String oroRobotInstanceUri = parameters.getProperty("oro_robot_instance");
+		String oroScenarioUri = parameters.getProperty("oro_scenario");
 		
 		OntModelSpec onto_model_reasonner;
 		String onto_model_reasonner_name = parameters.getProperty("reasonner", "jena_internal_owl_rule");
@@ -1225,19 +1208,26 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			Model instancesModel = null;
 					
 			try {
-				mainModel = FileManager.get().loadModel(owlUri);
-				if (verbose) System.out.print(" * Ontology initialized with "+ owlUri +".");
+				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
+				if (verbose) System.out.print(" * Common sense ontology initialized with "+ oroCommonSenseUri +".\n");
 				
-				if (owlInstanceUri != null) 
+				if (oroRobotInstanceUri != null) 
 					{
-					instancesModel = FileManager.get().loadModel(owlInstanceUri);
-					if (verbose) System.out.println(" Instances loaded from " + owlInstanceUri + ".");
+					instancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
+					if (verbose) System.out.println(" * Robot-specific ontology loaded from " + oroRobotInstanceUri + ".");
 					}
+				else if (verbose) System.out.print("\n");
+				
+				if (oroScenarioUri != null) 
+				{
+				instancesModel = FileManager.get().loadModel(oroScenarioUri);
+				if (verbose) System.out.println(" * Scenario-specific ontology loaded from " + oroScenarioUri + ".");
+				}
 				else if (verbose) System.out.print("\n");
 				
 				
 			} catch (NotFoundException nfe) {
-				System.err.println("[ERROR] Could not find " + owlUri + " or " + owlInstanceUri + ". Exiting.");
+				System.err.println("[ERROR] Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.");
 				System.exit(1);
 			}
 			//Ontology model and reasonner type

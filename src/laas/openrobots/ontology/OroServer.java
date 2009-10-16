@@ -134,7 +134,6 @@ public class OroServer implements IServiceProvider {
 			keepOn = false; 
 			try {
 				for (IConnector c : connectors)	c.finalizeConnector();
-				//Thread.sleep(2000); 
 			} catch (OntologyConnectorException e) {
 				e.printStackTrace();
 			} 
@@ -411,9 +410,9 @@ public class OroServer implements IServiceProvider {
         	parameters.load(fstream);
 			fstream.close();
 			
-			if (!parameters.containsKey("ontology"))
+			if (!parameters.containsKey("oro_common_sense"))
 			{
-				System.err.println("No ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like ontology=openrobots.owl");
+				System.err.println("No common sense ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like oro_common_sense=commonsense.owl");
 	        	System.exit(1);
 			}
 		}
