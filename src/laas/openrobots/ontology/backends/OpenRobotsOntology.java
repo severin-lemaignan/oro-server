@@ -673,9 +673,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			else
 				objString = obj.toString();
 
-			result.add(stmt.getPredicate().getLocalName()
-					+ " OF " + stmt.getSubject().getLocalName() + " IS "
-					+ objString);
+			result.add(	stmt.getSubject().getLocalName() + " " + 
+						stmt.getPredicate().getLocalName() + " " +
+						objString);
 		}
 		return result;
 		
@@ -1205,7 +1205,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//		loading of the OWL ontology thanks Jena	
 		try {
 			Model mainModel = null;
-			Model instancesModel = null;
+			Model robotInstancesModel = null;
+			Model scenarioModel = null;
 					
 			try {
 				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
@@ -1213,14 +1214,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 				if (oroRobotInstanceUri != null) 
 					{
-					instancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
+					robotInstancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
 					if (verbose) System.out.println(" * Robot-specific ontology loaded from " + oroRobotInstanceUri + ".");
 					}
 				else if (verbose) System.out.print("\n");
 				
 				if (oroScenarioUri != null) 
 				{
-				instancesModel = FileManager.get().loadModel(oroScenarioUri);
+				scenarioModel = FileManager.get().loadModel(oroScenarioUri);
 				if (verbose) System.out.println(" * Scenario-specific ontology loaded from " + oroScenarioUri + ".");
 				}
 				else if (verbose) System.out.print("\n");
@@ -1237,13 +1238,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
 			onto.enterCriticalSection(Lock.WRITE);
-			if (instancesModel != null) onto.add(instancesModel);
+			if (robotInstancesModel != null) onto.add(robotInstancesModel);
+			if (scenarioModel != null) onto.add(scenarioModel);
 			onto.leaveCriticalSection();
 			
 			if (verbose) {
 				Helpers.printInGreen(" * Ontology successfully loaded");
 				System.out.print(" (");
-				if (instancesModel != null) System.out.print("domain instances loaded and merged. ");
+				if (robotInstancesModel != null) System.out.print("Robot-specific knowledge loaded and merged. ");
+				if (scenarioModel != null) System.out.print("Scenario-specific knowledge loaded and merged. ");
 				System.out.println(onto_model_reasonner_name + " initialized).");
 			}
 			
