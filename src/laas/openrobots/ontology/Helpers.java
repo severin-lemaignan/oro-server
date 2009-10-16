@@ -41,6 +41,7 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -230,5 +231,58 @@ public class Helpers {
 		}
 		
 		return type;
+	}
+	
+	/** Split a string into tokens separated by commas. It properly handle quoted strings and arrays delimited by [] or {}.
+	 * 
+	 * @param str A string to tokenize.
+	 * @return A list of tokens
+	 */
+	public static ArrayList<String> tokenize (String str, char delimiter) {
+		ArrayList<String> tokens = new ArrayList<String>();
+		
+		int countSBrackets = 0;
+		int countCBraces = 0;
+		int countSQuotes = 0;
+		boolean inSQuotes = false;
+		int countDQuotes = 0;
+		boolean inDQuotes = false;
+		
+		int start_pos = 0;
+		
+		for (int i = 0; i < str.length() ; i++) {
+			if (str.charAt(i) == '[' && ((i > 0) ? str.charAt(i - 1) != '\\' : true))
+				countSBrackets++;
+			if (str.charAt(i) == ']' && ((i > 0) ? str.charAt(i - 1) != '\\' : true))
+				countSBrackets--;
+			
+			if (str.charAt(i) == '{' && ((i > 0) ? str.charAt(i - 1) != '\\' : true))
+				countCBraces++;
+			if (str.charAt(i) == '}' && ((i > 0) ? str.charAt(i - 1) != '\\' : true))
+				countCBraces--;
+			
+			if (str.charAt(i) == '"' && ((i > 0) ? str.charAt(i - 1) != '\\' : true) && !inDQuotes) {countDQuotes++; inDQuotes = true;}
+			else if (str.charAt(i) == '"' && ((i > 0) ? str.charAt(i - 1) != '\\' : true) && inDQuotes) {countDQuotes--; inDQuotes = false;}
+			
+			if (str.charAt(i) == '\'' && ((i > 0) ? str.charAt(i - 1) != '\\' : true) && !inSQuotes) {countSQuotes++; inSQuotes = true;}
+			else if (str.charAt(i) == '\'' && ((i > 0) ? str.charAt(i - 1) != '\\' : true) && inSQuotes) {countSQuotes--; inSQuotes = false;}
+			
+			if (str.charAt(i) == delimiter &&
+					countSBrackets == 0 &&
+					countCBraces == 0 &&
+					countSQuotes == 0 &&
+					countDQuotes == 0) {
+				tokens.add(str.substring(start_pos, i));
+				start_pos = i + 1;
+			}
+		}
+		
+		tokens.add(str.substring(start_pos, str.length()));
+		
+		//for (String s : tokens)
+		//	System.out.println("Token: <" + s + ">");
+
+		return tokens;
+		
 	}
 }

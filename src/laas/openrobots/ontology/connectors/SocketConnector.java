@@ -405,56 +405,6 @@ public class SocketConnector implements IConnector, Runnable {
     		    		
     		return "\"" + res + "\"";
     	}
-
-    	/** Split a string into tokens separated by commas. It properly handle quoted strings and arrays delimited by [] or {}.
-    	 * 
-    	 * @param str A string to tokenize. IT MUST be surrounded by {} or []
-    	 * @return A list of tokens
-    	 */
-    	public ArrayList<String> tokenize (String str) {
-    		ArrayList<String> tokens = new ArrayList<String>();
-    		
-    		int countSBrackets = 0;
-    		int countCBraces = 0;
-    		int countSQuotes = 0;
-    		boolean inSQuotes = false;
-    		int countDQuotes = 0;
-    		boolean inDQuotes = false;
-    		
-    		int start_pos = 1;
-    		
-    		for (int i = 1; i < str.length() - 1 ; i++) {
-    			if (str.charAt(i) == '[' && str.charAt(i - 1) != '\\') countSBrackets++;
-    			if (str.charAt(i) == ']' && str.charAt(i - 1) != '\\') countSBrackets--;
-    			
-    			if (str.charAt(i) == '{' && str.charAt(i - 1) != '\\') countCBraces++;
-    			if (str.charAt(i) == '}' && str.charAt(i - 1) != '\\') countCBraces--;
-    			
-    			if (str.charAt(i) == '"' && str.charAt(i - 1) != '\\' && !inDQuotes) {countDQuotes++; inDQuotes = true;}
-    			else if (str.charAt(i) == '"' && str.charAt(i - 1) != '\\' && inDQuotes) {countDQuotes--; inDQuotes = false;}
-    			
-    			if (str.charAt(i) == '\'' && str.charAt(i - 1) != '\\' && !inSQuotes) {countSQuotes++; inSQuotes = true;}
-    			else if (str.charAt(i) == '\'' && str.charAt(i - 1) != '\\' && inSQuotes) {countSQuotes--; inSQuotes = false;}
-    			
-    			if (str.charAt(i) == ',' &&
-    					countSBrackets == 0 &&
-    					countCBraces == 0 &&
-    					countSQuotes == 0 &&
-    					countDQuotes == 0) {
-    				tokens.add(str.substring(start_pos, i));
-    				start_pos = i + 1;
-    			}
-    		}
-    		
-    		tokens.add(str.substring(start_pos, str.length() - 1));
-    		
-//    		System.out.println(str);
-//    		for (String s : tokens)
-//    			System.out.println(s);
-//    		
-    		return tokens;
-    		
-    	}
     	
 		  private Object deserialize(String val, Class<?> type) {
 				//not typed because of Method::invoke requirements <- that's what I call a bad excuse
@@ -488,7 +438,7 @@ public class SocketConnector implements IConnector, Runnable {
 					val = val.substring(1, val.length() - 1); //remove the [] or {}
 					
 					//checks that every elements of the map is made of tokens separated by :
-					for (String s : tokenize(val))
+					for (String s : Helpers.tokenize(val, ','))
 						if (!isValidMap || !s.contains(":"))
 							isValidMap = false;
 					
@@ -498,7 +448,7 @@ public class SocketConnector implements IConnector, Runnable {
 					if (isValidMap && Map.class.isAssignableFrom(type)){
 						Map<String, String> result = new HashMap<String, String>();
 						
-						for (String s : tokenize(val))
+						for (String s : Helpers.tokenize(val, ','))
 							result.put(	cleanValue(s.trim().split(":", 2)[0]), 
 										cleanValue(s.trim().split(":", 2)[1]));
 						
@@ -507,14 +457,14 @@ public class SocketConnector implements IConnector, Runnable {
 					//if the string looks like a set and a set of a list is indeed expected...
 					else if (isValidSet && Set.class.isAssignableFrom(type)){
 						Set<String> result = new HashSet<String>();
-						for (String s : tokenize(val))
+						for (String s : Helpers.tokenize(val, ','))
 							result.add(cleanValue(s));
 						return result;
 					}					
 					//if the string looks like a set and a list of a list is indeed expected...
 					else if (isValidSet && List.class.isAssignableFrom(type)){
 						List<String> result = new ArrayList<String>();
-						for (String s : tokenize(val))
+						for (String s : Helpers.tokenize(val, ','))
 							result.add(cleanValue(s));
 						return result;
 					}

@@ -118,10 +118,21 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 *                          BASIC TESTS                                *
 	 ***********************************************************************/
 	
+	public void testHelpersFunction() {
+	
+		System.out.println("[UNITTEST] ***** TEST: Testing helper functions *****");
+		
+		// with a comma separator, the string below should be tokenized in "{}", "f\'\", " \}", " [r ,t,\]" ",r ] ", "a" (5 tokens)
+		// with a space as separator, the string below should be tokenized in "{},f\'\,", "\},", "[r ,t,\]" ",r ]", ",a" (4 tokens)
+		String strToTokenize = "{},f\\\'\\, \\}, [r ,t,\\]\" \",r ] ,a";
+		assertEquals("Wrong tokenization using commas.", 5, Helpers.tokenize(strToTokenize, ',').size());
+		assertEquals("Wrong tokenization using spaces.", 4, Helpers.tokenize(strToTokenize, ' ').size());
+	}
+	
 	public void testSave() {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
-		System.out.println(" * Serializing the ontology to disk...");
+		System.out.println("[UNITTEST] ***** TEST: Serializing the ontology to disk *****");
 		try {
 			oro.save("./test.owl");
 		} catch (Exception e) {
