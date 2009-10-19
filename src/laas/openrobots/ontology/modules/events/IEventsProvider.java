@@ -1,4 +1,4 @@
-package laas.openrobots.ontology.events;
+package laas.openrobots.ontology.modules.events;
 
 import java.util.Set;
 

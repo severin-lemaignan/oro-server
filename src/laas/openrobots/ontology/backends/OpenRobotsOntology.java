@@ -60,11 +60,11 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.RPCMethod;
-import laas.openrobots.ontology.events.IEventsProvider;
-import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.*;
-import laas.openrobots.ontology.memory.MemoryManager;
-import laas.openrobots.ontology.memory.MemoryProfile;
+import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.memory.MemoryManager;
+import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.types.ResourceDescription;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;

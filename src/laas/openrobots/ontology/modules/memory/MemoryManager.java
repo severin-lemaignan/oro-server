@@ -1,4 +1,4 @@
-package laas.openrobots.ontology.memory;
+package laas.openrobots.ontology.modules.memory;
 
 import java.text.ParseException;
 import java.util.Date;

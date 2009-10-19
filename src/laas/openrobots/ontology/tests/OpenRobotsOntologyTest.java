@@ -58,7 +58,7 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
-import laas.openrobots.ontology.memory.MemoryProfile;
+import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Property;

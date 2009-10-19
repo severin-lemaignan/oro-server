@@ -12,12 +12,12 @@ import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
-import laas.openrobots.ontology.events.IEventsProvider;
-import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
-import laas.openrobots.ontology.memory.MemoryProfile;
+import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.query.QueryParseException;

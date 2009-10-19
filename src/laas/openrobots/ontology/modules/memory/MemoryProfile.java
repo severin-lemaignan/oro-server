@@ -1,7 +1,7 @@
 /**  
  * Represents the different available profile of memory.
  */
-package laas.openrobots.ontology.memory;
+package laas.openrobots.ontology.modules.memory;
 
 /**
  * @author slemaign

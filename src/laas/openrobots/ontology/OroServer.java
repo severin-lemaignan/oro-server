@@ -56,10 +56,10 @@ import java.util.Map.Entry;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
-import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.memory.MemoryManager;
+import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.memory.MemoryManager;
 
 /**
  * {@code OroServer} is the application entry point. It initializes and starts the various services, connectors and background tasks, as set up in the <code>oro-server</code> configuration file.<br/> 
