@@ -4,7 +4,6 @@
 package laas.openrobots.ontology.memory;
 
 /**
- * Note: be careful of using only uppercase profile names (because of fromString method).
  * @author slemaign
  *
  */

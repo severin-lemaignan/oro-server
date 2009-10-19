@@ -42,6 +42,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -366,7 +367,6 @@ public class OroServer implements IServiceProvider {
 	)
 	public Set<String> listSimpleMethods() {
 		
-		
 		Set<String> help = new HashSet<String>();
 		
 		Iterator<Entry<Pair<String, String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
@@ -375,6 +375,39 @@ public class OroServer implements IServiceProvider {
 	    	//build the list of expected parameters 	
 	        help.add(pairs.getKey().getLeft());
 	    }
+		return help;
+	}
+	
+	@RPCMethod(
+			desc = "returns a list of available methods in HTML format for inclusion in documentation."
+	)
+	public String makeHtmlDoc() {
+		
+		Calendar cal = Calendar.getInstance();
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+
+		String help = "<h2>List of available methods</h2>\n";
+		help += "<i>(Last updated on " + sdf.format(cal.getTime()) + ")</i>\n";
+		help += "<ul class=\"RpcMethodsList\">\n";
+		
+		Iterator<Entry<Pair<String, String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
+	    while (it.hasNext()) {
+	    	Entry<Pair<String, String>, Pair<Method, Object>> pairs = it.next();
+	    	
+	    	//build the list of expected parameters
+	    	String params = "(";
+	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    		params += param.getSimpleName() + ", ";
+	    	
+	    	if (!params.equals("("))
+	    		params = params.substring(0, params.length() - 2);
+	    	
+	    	params += ")";
+	    		        
+	    	//build the list of expected parameters 	
+	        help += "\t<li>{@linkplain " + pairs.getValue().getRight().getClass().getName() + "#" + pairs.getValue().getLeft().getName() + params + " <em>" + pairs.getKey().getLeft() + "</em><i>" + params + "</i>}: " + pairs.getKey().getRight() + "</li>\n";
+	    }
+	    help += "</ul>\n";
 		return help;
 	}
 
