@@ -177,14 +177,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Resource subject;
 		Property predicate;
 		RDFNode object;
-	
-		//TODO: We limit the split to 3 tokens to allow spaces in the object when it is a literal string. A better solution would be to properly detect quotes and count only spaces that are not inside quotes.
+		
 		ArrayList<String> tokens_statement = Helpers.tokenize(statement.trim(), ' ');
 				
 		if (tokens_statement.size() != 3)
-		{
 			throw new IllegalStatementException("Three tokens are expected in a statement, " + tokens_statement.size() + " found in " + statement + ".");
-		}
 		
 		//expand the namespaces for subject and predicate.
 		for (int i = 0; i<2; i++){

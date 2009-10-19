@@ -277,8 +277,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
 		assertNotNull("getInfos didn't answered anything!",infos);
-		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains("type OF baboon IS Animal"));
-		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains("isFemale OF baboon IS true"));
+		assertTrue("getInfos method should tell that baboon is an instance of Animal.", infos.contains("baboon type Animal"));
+		assertTrue("getInfos method should tell that baboon has a data property set to \"true\".", infos.contains("baboon isFemale true"));
 	
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -311,8 +311,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertNotNull("getInfosDefaultNs didn't answered anything!",infos);
 		//remove this test which depends on the type of reasonner
 		//assertEquals("getInfosDefaultNs method should return 10 statements about baboon.", 11, infos.size());
-		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains("type OF baboon IS Animal"));
-		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains("isFemale OF baboon IS true"));
+		assertTrue("getInfosDefaultNs method should tell that baboon is an instance of Animal.", infos.contains("baboon type Animal"));
+		assertTrue("getInfosDefaultNs method should tell that baboon has a data property set to \"true\".", infos.contains("baboon isFemale true"));
 			
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

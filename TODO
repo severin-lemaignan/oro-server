@@ -1,3 +1,4 @@
 - implement module CURIOSITY
 - re-introduce module EVENT MANAGER
 - implement reinforcement learning into module MEMORY MANAGER
+- implement "diff" and "incommon" methods

@@ -36,6 +36,8 @@
 
 package laas.openrobots.ontology;
 
+import java.util.ArrayList;
+
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Alt;
 import com.hp.hpl.jena.rdf.model.Bag;
@@ -63,7 +65,7 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
  */
 public class PartialStatement implements Statement {
 
-	private String stmtTokens[];
+	private ArrayList<String> stmtTokens;
 	
 	private StatementImpl baseStmt;
 	
@@ -84,29 +86,30 @@ public class PartialStatement implements Statement {
 		Property predicate = null;
 		RDFNode object = null;
 		
-		//TODO: We limit the split to 3 tokens to allow spaces in the object when it is a literal string. A better solution would be to properly detect quotes and count only spaces that are not inside quotes.
-		stmtTokens = partialStatement.trim().split(" ", 3);
+		stmtTokens = Helpers.tokenize(partialStatement.trim(), ' ');
 		
-		if (stmtTokens.length != 3)
-					throw new IllegalStatementException("Three tokens are expected in a partial statement, " + stmtTokens.length + " found in " + partialStatement + ".");
+		if (stmtTokens.size() != 3)
+			throw new IllegalStatementException("Three tokens are expected in a partial statement, " + stmtTokens.size() + " found in " + partialStatement + ".");
+		
 				
 		//checks that at least one token starts with a "?".
-		if (!(stmtTokens[0].startsWith("?") || stmtTokens[1].startsWith("?") || stmtTokens[2].startsWith("?")) ) throw new IllegalStatementException("At least one token should be marked as unbounded (starting with a \"?\").");
+		if (!(stmtTokens.get(0).startsWith("?") || stmtTokens.get(1).startsWith("?") || stmtTokens.get(2).startsWith("?")) )
+			throw new IllegalStatementException("At least one token should be marked as unbounded (starting with a \"?\").");
 		
-		if (!stmtTokens[0].startsWith("?"))
-			subject = model.getResource(Namespaces.format(stmtTokens[0]));
+		if (!stmtTokens.get(0).startsWith("?"))
+			subject = model.getResource(Namespaces.format(stmtTokens.get(0)));
 		else
 			subject = model.createResource("nullSubject"); //if the subject is unbounded (a variable), creates an "nullSubject" resource to replace the subject.
 		
-		if (!stmtTokens[1].startsWith("?"))
-			predicate = model.getProperty(Namespaces.format(stmtTokens[1]));
+		if (!stmtTokens.get(1).startsWith("?"))
+			predicate = model.getProperty(Namespaces.format(stmtTokens.get(1)));
 		else
 			predicate = model.createProperty("nullPredicate"); //if the predicate is unbounded (a variable), creates an "nullPredicate" property to replace the predicate.
 		
 
-		if (!stmtTokens[2].startsWith("?"))
+		if (!stmtTokens.get(2).startsWith("?"))
 		{
-			object = Helpers.parseLiteral(stmtTokens[2], model);				
+			object = Helpers.parseLiteral(stmtTokens.get(2), model);				
 			assert(object!=null);
 		}
 		else
@@ -124,16 +127,16 @@ public class PartialStatement implements Statement {
 	 */
 	public String asSparqlRow(){	
 		return (
-				stmtTokens[0].startsWith("?") ? 
-						stmtTokens[0] : 
+				stmtTokens.get(0).startsWith("?") ? 
+						stmtTokens.get(0) : 
 						"<" + getSubject().toString() + ">"
 				) + " " + 
-				(stmtTokens[1].startsWith("?") ? 
-						stmtTokens[1] : 
+				(stmtTokens.get(1).startsWith("?") ? 
+						stmtTokens.get(1) : 
 						"<" + getPredicate().toString() + ">"
 				) + " " + 
-				(stmtTokens[2].startsWith("?") ? 
-						stmtTokens[2] : 
+				(stmtTokens.get(2).startsWith("?") ? 
+						stmtTokens.get(2) : 
 						(getObject().isLiteral()? 
 								Helpers.literalToSparqlSyntax((Literal)getObject()) : 
 								"<" + getObject().toString() + ">")
@@ -147,10 +150,15 @@ public class PartialStatement implements Statement {
 	 */
 	static public boolean isPartialStatement(String lex)
 	{
-		String stmtTokens[] = lex.trim().split(" ", 3);
+		ArrayList<String> stmtTokens = Helpers.tokenize(lex.trim(), ' ');
 		
-		if (stmtTokens.length != 3) return false;
-		if (!(stmtTokens[0].startsWith("?") || stmtTokens[1].startsWith("?") || stmtTokens[2].startsWith("?")) ) return false;
+		if (stmtTokens.size() != 3)
+			return false;
+		
+				
+		//checks that at least one token starts with a "?".
+		if (!(stmtTokens.get(0).startsWith("?") || stmtTokens.get(1).startsWith("?") || stmtTokens.get(2).startsWith("?")) )
+			return false;
 		
 		return true;
 		
