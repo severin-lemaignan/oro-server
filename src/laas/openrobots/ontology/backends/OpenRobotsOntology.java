@@ -56,6 +56,7 @@ import java.util.Vector;
 
 import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.RPCMethod;
@@ -806,10 +807,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSuperclassesOf(myClass, false) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntClass c : getSuperclassesOf(myClass, false) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
 		return result;
 	}
@@ -827,10 +826,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSuperclassesOf(myClass, true) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntClass c : getSuperclassesOf(myClass, true) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
 		return result;
 	}
@@ -878,10 +875,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSubclassesOf(myClass, false) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntClass c : getSubclassesOf(myClass, false) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
 		return result;
 	}
@@ -899,10 +894,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntClass c : getSubclassesOf(myClass, true) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntClass c : getSubclassesOf(myClass, true) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
 		return result;
 	}
@@ -934,6 +927,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return result;
 	}
 
+	@Override
 	@RPCMethod(
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class."
 	)
@@ -947,14 +941,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntResource c : getInstancesOf(myClass, false) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntResource c : getInstancesOf(myClass, false) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
 		return result;
 	}
 	
+	@Override
 	@RPCMethod(
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class."
 	)
@@ -968,10 +961,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
-		for (OntResource c : getInstancesOf(myClass, true) ) {
-			if (c.getLabel(null) != null) result.put(Namespaces.contract(c.getURI()), c.getLabel(null));
-			else result.put(Namespaces.contract(c.getURI()), c.getLocalName());
-		}
+		for (OntResource c : getInstancesOf(myClass, true) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
 		return result;
 	}
@@ -996,16 +987,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	)
 	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
 				
-		return getResourceDetails(id, "en");
+		return getResourceDetails(id, OroServer.DEFAULT_LANGUAGE);
 	}
 
-
+	@Override
 	@RPCMethod(
 			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
 	)
 	public List<String> lookup(String id) throws NotFoundException {
 		
-		if (forceLookupTableUpdate) rebuildLookupTable(); //if statements have been remove, we must force a rebuilt of the lookup table else a former concept taht doesn't exist anymore could be returned.
+		if (forceLookupTableUpdate) rebuildLookupTable(); //if statements have been removed, we must force a rebuilt of the lookup table else a former concept that doesn't exist anymore could be returned.
 				
 		List<String> result = new ArrayList<String>();
 		

@@ -155,6 +155,10 @@ public class Helpers {
 		return ISO8601Local.parse(xsdDateTime);
 	}
 
+	public static String getLabel(OntResource resource) {
+		return getLabel(resource, OroServer.DEFAULT_LANGUAGE); 
+	}
+	
 	public static String getLabel(OntResource resource, String languageCode) {
 		return ((resource.getLabel(languageCode) == null) ? 
 					((resource.getLabel(null) == null) ? resource.getLocalName() : resource.getLabel(null)) : 

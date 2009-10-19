@@ -23,9 +23,9 @@ import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 
-/** Implements a socket interface to oro-server.<br/>
+/** Implements a socket interface to {@code oro-server} RPC methods.<br/>
  * <br/>
- * The protocol is ASCII-based (ie, you can connect to the server with <em>telnet<em> to test everything).<br/>
+ * The protocol is ASCII-based (ie, you can connect to the server with <em>telnet</em> to test everything).<br/>
  * <br/>
  * 
  * <h2>Requests</h2>
@@ -38,14 +38,14 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
  * #end#
  * </pre>
  * 
- * <em>parameters<em> can be either:
+ * <em>parameters</em> can be either:
  * <ul>
  * <li>strings (quotes are not necessary, and are removed if present),</li>
  * <li>integers (strings made only of numbers),</li>
  * <li>floats (strings made of numbers with a dot somewhere),</li>
  * <li>booleans (strings equal to <em>true</em> or <em>false</em>, case insensitive),</li>
  * <li>(ordered) lists or (unordered) sets of strings, with this structure: <em>[val1, val2, ..., valn]</em>. If strings contain commas, they must be (single or doubled) quoted.</li>
- * <li>map of (key, value) pairs of strings, with this structure: <em>{key1:val1, key2:val2, ...]</em>. If strings (be keys or values) contain commas, they must be (single or doubled) quoted.</li>
+ * <li>map of (key, value) pairs of strings, with this structure: <em>{key1:val1, key2:val2, ...}</em>. If strings (be keys or values) contain commas, they must be (single or doubled) quoted.</li>
  * </ul>
  * Please note that collections of collections are not supported.<br/>
  * 

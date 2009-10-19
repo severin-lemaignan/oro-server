@@ -113,6 +113,14 @@ public class OroServer implements IServiceProvider {
 	 * The default configuration file (set to {@value}).
 	 */
 	public static final String DEFAULT_CONF = "etc/oro-server/oro.conf";
+	
+	/**
+	 * Defines the standard language used in particular for labels retrieval.<br/>
+	 * This field can be set up in the configuration file with the {@code language} option.<br/>
+	 *  Expected values are ISO 2 characters language codes.
+	 */
+	public static String DEFAULT_LANGUAGE = "en";
+	
 	public static final String VERSION = "0.6.2"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
@@ -448,6 +456,9 @@ public class OroServer implements IServiceProvider {
 				System.err.println("No common sense ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like oro_common_sense=commonsense.owl");
 	        	System.exit(1);
 			}
+			
+			// Retrieve, if available, the default language for label retrieval.
+			DEFAULT_LANGUAGE = parameters.getProperty("language", "en");
 		}
         catch (FileNotFoundException fnfe)
         {

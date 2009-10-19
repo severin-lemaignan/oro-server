@@ -11,6 +11,7 @@ import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.events.IEventsProvider;
 import laas.openrobots.ontology.events.IWatcher;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -241,12 +242,13 @@ public interface IOntologyBackend extends IServiceProvider{
 	public abstract void add(Set<String> statements, String memProfile) throws IllegalStatementException;
 	
 	/**
-	 * Like {@link #add(Vector<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
+	 * Like {@link #add(Set<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
 
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
 	 * @throws IllegalStatementException
 	 * 
-	 * @see #add(Vector<String>, MemoryProfile)
+	 * @see #add(Set<String>, MemoryProfile)
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract void add(Set<String> statements) throws IllegalStatementException;
 	
@@ -349,7 +351,8 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
 	 * @see #guess(String, Vector, double)
-	 * @see PartialStatement
+	 * @see PartialStatement Syntax of partial statements
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Set<String> find(String varName,
 			Set<String> partial_statements, Set<String> filters) throws IllegalStatementException;
@@ -391,6 +394,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
 	 * @see #find(String, Vector, Vector)
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Set<String> find(String varName,
 			Set<String> partial_statements) throws IllegalStatementException;
@@ -445,6 +449,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @return a table containing the matching individuals and the corresponding match quality level (from 0.0: no match to 1.0: perfect match).
 	 * @throws UnmatchableException thrown if we don't know how to compare (ie to calculate a distance) two nodes. TODO : improve this description.
 	 * @see #find(String, Vector)
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Hashtable<Resource, Double> guess(String varName,
 			Vector<PartialStatement> partialStatements, double threshold)
@@ -469,6 +474,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @param lex_resource the lexical form of an existing resource.
 	 * @return a RDF model containing all the statements related the the given resource.
 	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Set<String> getInfos(String lex_resource)
 			throws NotFoundException;
@@ -476,22 +482,69 @@ public interface IOntologyBackend extends IServiceProvider{
 	/**
 	 * Returns the id and type (INSTANCE, CLASS, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of the concept whose label or id match the given parameter. If several concepts match, an randomly choosen one is returned.
 	 * 
-	 * @param label the label to look for.
-	 * @return the id of the concept whose label matchs the parameter.
+	 * @param label the label (in any language) or id to look for.
+	 * @return A list made of the id of the concept whose label matchs the parameter followed by its type.
 	 * @throws NotFoundException
-	 * @see {@link ResourceType}
+	 * @see ResourceType
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract List<String> lookup(String id)
+	public abstract List<String> lookup(String label)
 			throws NotFoundException;
 
 
+	/** Returns all the super classes of a given class, as asserted or inferred from the ontology.
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file). 
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	
 	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException;
+	
+	/** Returns all the direct super-classes of a given class (ie, the classes whose the given class is a direct descendant), as asserted or inferred from the ontology.
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
 	public Map<String, String> getDirectSuperclassesOf(String type) throws NotFoundException;
 	
+	/** Returns all the sub-classes of a given class, as asserted or inferred from the ontology.
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
 	public Map<String, String> getSubclassesOf(String type) throws NotFoundException;
+	
+	/** Returns all the direct sub-classes of a given class (ie, the classes whose the given class is the direct parent), as asserted or inferred from the ontology.
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
 	public Map<String, String> getDirectSubclassesOf(String type) throws NotFoundException;
 	
+	/** Returns all the instances of a given class, as asserted or inferred from the ontology. 
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
 	public Map<String, String> getInstancesOf(String type) throws NotFoundException;
+	
+	/**  Returns all the direct instances of a given class (ie, the instances whose the given class is the direct parent), as asserted or inferred from the ontology.
+	 * 
+	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @return A map of instances ids (individuals) associated to their labels (in the default language, as defined in the configuration file).
+	 * @throws NotFoundException
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
 	public Map<String, String> getDirectInstancesOf(String type) throws NotFoundException; 
 	
 	/**
@@ -520,6 +573,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
 	 * @see {@link #clear(PartialStatement)} for an example.
 	 * @see PartialStatement
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract void clear(String partialStmt) throws IllegalStatementException;
 	
@@ -528,6 +582,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * Saves the in-memory ontology model to a RDF/XML file.
 	 * 
 	 * @param path The path and name of the OWL file to save to (for instance {@code ./ontos/saved.owl})
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract void save(String path);
 	
@@ -535,6 +590,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * Allows to register several <em>events providers</em> (typically, one by underlying middleware) which in turn provide access to <em>watchers</em>. Watchers expose a <em>watch expression</em> which is a SPARQL <code>ASK</code> query. Every time a change is made on the ontology, the ontology backend which implements this interface is expected to execute this query against the model and notify the watchers (through {@link IWatcher#notifySubscriber()}) if the result is positive.
 	 * @param eventsProviders A set of event providers.
 	 * @see IWatcher, IEventsProvider
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders);
 
