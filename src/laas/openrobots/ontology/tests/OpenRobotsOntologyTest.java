@@ -57,7 +57,10 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.NotComparableException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.query.ResultSet;
@@ -516,14 +519,22 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertEquals("One short term statements should be returned.", 1, rs_short_term.size());
 	
-		oro.save("./before_cleaning.owl");
+		try {
+			oro.save("./before_cleaning.owl");
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		
 		
 		System.out.print(" * Waiting a bit (" + (MemoryProfile.SHORTTERM.duration() + 500) + "ms)...");
 		Thread.sleep(MemoryProfile.SHORTTERM.duration() + 500);
 		
 		
-		oro.save("./after_cleaning.owl");
+		try {
+			oro.save("./after_cleaning.owl");
+		} catch (OntologyServerException e) {
+			fail();
+		}
 
 		oro.getModel().enterCriticalSection(Lock.READ);
 		rsIter = oro.getModel().listReifiedStatements() ;
@@ -1042,5 +1053,80 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+	
+	/**
+	 * This tests the diff and similar function that extract different or common features between concepts.
+	 */
+	public void testDiff() {
+
+		System.out.println("[UNITTEST] ***** TEST: Diff and Similarities test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		DiffModule diffModule = new DiffModule(oro);
+		
+		//Add a statement
+		try {
+			oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		String conceptA = "sheepy";
+		String conceptB = "baboon";
+		String conceptC = "baboon2";
+		
+		Set<String> differences = null;
+		Set<String> similarities = null;
+		
+		try {
+			differences = diffModule.getDifferences(conceptA, conceptB);	
+		} catch (NotFoundException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		try {
+			differences = diffModule.getSimilarities(conceptA, conceptB);	
+		} catch (NotFoundException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		
+		Iterator<String> itDiff = differences.iterator();
+		
+		System.out.println("Differences between a " + conceptA + " and a " + conceptB);
+		while(itDiff.hasNext())
+		{
+			String currentRes = itDiff.next();
+			System.out.println(currentRes);
+		}
+		
+		assertTrue("The baboon and the sheep are different animals", differences.contains("[sheepy rdf:type Sheep, baboon rdf:type Monkey]"));
+		
+		
+		Iterator<String> itSim = similarities.iterator();
+		
+		System.out.println("Similarities between a " + conceptA + " and a " + conceptB);
+		while(itSim.hasNext())
+		{
+			String currentRes = itSim.next();
+			System.out.println(currentRes);
+		}
+		
+		assertTrue("The baboon and the sheep should be identified as animals", similarities.contains("? rdf:type Animal"));
+		
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+
 	
 }

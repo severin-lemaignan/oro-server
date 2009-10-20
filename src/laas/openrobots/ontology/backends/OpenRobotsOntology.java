@@ -1312,7 +1312,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		try {
 			file = new FileOutputStream(path);
 		} catch (FileNotFoundException e) {
-			System.err.println("[ERROR] Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 			throw new OntologyServerException("Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 		}
 		onto.enterCriticalSection(Lock.READ);
