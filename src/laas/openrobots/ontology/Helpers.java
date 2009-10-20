@@ -215,6 +215,7 @@ public class Helpers {
 	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
 		OpenRobotsOntology.ResourceType type;
 
+		if (resource == null) return OpenRobotsOntology.ResourceType.UNDEFINED;
 		
 		try {
 			
