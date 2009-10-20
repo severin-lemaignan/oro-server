@@ -14,6 +14,7 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -582,9 +583,10 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * Saves the in-memory ontology model to a RDF/XML file.
 	 * 
 	 * @param path The path and name of the OWL file to save to (for instance {@code ./ontos/saved.owl})
+	 * @throws OntologyServerException thrown when the output path is not valid or not accessible.
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract void save(String path);
+	public abstract void save(String path) throws OntologyServerException;
 	
 	/**
 	 * Allows to register several <em>events providers</em> (typically, one by underlying middleware) which in turn provide access to <em>watchers</em>. Watchers expose a <em>watch expression</em> which is a SPARQL <code>ASK</code> query. Every time a change is made on the ontology, the ontology backend which implements this interface is expected to execute this query against the model and notify the watchers (through {@link IWatcher#notifySubscriber()}) if the result is positive.

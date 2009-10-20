@@ -1304,16 +1304,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	@RPCMethod(
-			desc="exports the current ontology model to an OWL file."
+			desc="exports the current ontology model to an OWL file. The provided path must be writable by the server."
 	)
-	public void save(String path) {
+	public void save(String path) throws OntologyServerException {
 		if (verbose) System.out.print(" * Saving ontology to " + path +"...");
 		FileOutputStream file;
 		try {
 			file = new FileOutputStream(path);
 		} catch (FileNotFoundException e) {
-			System.err.println("[ERROR] Error while opening " + path + " to output the ontology. Check it's a valid filename!");
-			return;
+			System.err.println("[ERROR] Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
+			throw new OntologyServerException("Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 		}
 		onto.enterCriticalSection(Lock.READ);
 		onto.write(file);
