@@ -548,6 +548,52 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This test checks that statements that are addable can be removed as well.
+	 * 
+	 * @throws InterruptedException
+	 */
+	public void testRemove() throws InterruptedException {
+		
+		System.out.println("[UNITTEST] ***** TEST: Remove 2 *****");
+		
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+	
+		Set<String> stmts = new HashSet<String>();
+		
+		stmts.add("gorilla rdfs:label KingKong"); //This statement create de facto a KingKong concept.
+		stmts.add("gorilla rdfs:comment \"KingKong is nice\"");
+		
+		try {
+
+			int nbStmt = oro.getModel().listStatements().toList().size();
+			
+			oro.add(stmts);
+			
+			try {
+				oro.save("./after_add.owl");
+			} catch (OntologyServerException e) {
+				fail();
+			}
+			
+			oro.remove(stmts);
+			
+			try {
+				oro.save("./after_remove.owl");
+			} catch (OntologyServerException e) {
+				fail();
+			}
+			
+			assertEquals("The number of statements after removal of new statements should be the same as before.", nbStmt, oro.getModel().listStatements().toList().size());
+			
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test checks that concept can be retrieved by their labels. 
 	 * @throws InterruptedException 
 	 */
@@ -721,10 +767,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 
+	
 	/**
 	 * This test checks that the Remove and Clear methods work as expected.
 	 */
-	public void testRemoveAndClear() {
+	public void testAdvancedRemoveAndClear() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
 		
@@ -830,11 +877,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		//There's no more assertions permitting to say that sparrows are animals, so they shouldn't appear.
 		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
-		
+	
 	
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+
 	
 	/**
 	 * Tests ontology consistency checking.
@@ -1092,7 +1140,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		try {
-			differences = diffModule.getSimilarities(conceptA, conceptB);	
+			similarities = diffModule.getSimilarities(conceptA, conceptB);	
 		} catch (NotFoundException e) {
 			e.printStackTrace();
 			fail(e.getMessage());

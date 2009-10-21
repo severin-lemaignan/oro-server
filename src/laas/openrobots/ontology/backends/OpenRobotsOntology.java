@@ -264,15 +264,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 			}
 			
-			/* The label maps is now updated when needed (ie, when a concept lookup is done but not found, we rebuilt the map.
-			//TODO: move that somewhere else.
-			if (Namespaces.toLightString(statement.getPredicate()).equalsIgnoreCase("rdfs:label"))
-				labelsMap.put(statement.getObject().as(Literal.class).getLexicalForm().toLowerCase(), 
-						//new Pair<String, ResourceType>(Namespaces.toLightString(statement.getSubject()), Helpers.getType(statement.getSubject())));
-						new Pair<String, ResourceType>(Namespaces.toLightString(statement.getSubject()), ResourceType.UNDEFINED)); //TODO !! Must figure out how to get the right type
-						
-			*/
-			
 		}
 		catch (Exception e)
 		{
@@ -680,28 +671,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 
 	/**
-	 * Returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.<br/>
-	 * Usage example:<br/>
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 * Model results = myOntology.getInfos("ns:individual1");
+	 * Like {@link #getSubmodel(OntResource)} a string (the lexical form of a resource) as input.
 	 * 
-	 * NodeIterator types = results.listObjectsOfProperty(myOntology.createProperty("rdf:type"));
-	 *
-	 * for ( ; types.hasNext() ; )
-	 * {
-	 *	System.out.println(types.nextNode().toString());
-	 * }
-	 * </pre>
-	 * This example would print all the types (classes) of the instance {@code ns:individual1}.
-	 * 
-	 * @param lex_resource the lexical form of an existing resource.
+	 * @param lex_resource The URI of a resource in the ontology.
 	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(OntResource)
 	 */
-	private Model getSubmodel(String lex_resource) throws NotFoundException {
-		
-		Model resultModel;
+	public Model getSubmodel(String lex_resource) throws NotFoundException {
 		
 		if (verbose) System.out.print(" * Looking for statements about " + lex_resource + "...");
 		
@@ -718,13 +695,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if (verbose) System.out.println("resource not found!");
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
 		}
+		
+		if (verbose) System.out.println("done.");
+		
+		return getSubmodel(node);
+	}
 	
+	@Override
+	public Model getSubmodel(Resource node) throws NotFoundException {
+		
+		Model resultModel;
+		
 		
 		String resultQuery = Namespaces.prefixes();
 		
 		//we use the SPARQL query type "DESCRIBE" to get a RDF graph with all the links to this resource.
 		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
-		resultQuery += "DESCRIBE <" + lex_resource +">";
+		resultQuery += "DESCRIBE <" + node.getURI() +">";
 		
 		onto.enterCriticalSection(Lock.READ);
 		try	{
@@ -744,28 +731,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		finally {
 			onto.leaveCriticalSection();
 		}
-		
-		if (verbose) System.out.println("done.");
-		
-		//resultModel.write(System.out);
-				
-		//for (StmtIterator stmts = resultModel.listStatements(); stmts.hasNext() ; ){
-		//	System.out.println(stmts.nextStatement().toString());
-		//}
-		
+			
 		return resultModel;
-	}
-	
-	/**
-	 * Like {@link #getSubmodel(String)} but using a Jena {@link com.hp.hpl.jena.rdf.model.Resource resource} instead of a string as input.
-	 * 
-	 * @param resource A Jena resource.
-	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
-	 * @see #getSubmodel(String)
-	 */
-	private Model getSubmodel(Resource resource) throws NotFoundException {
-		return getSubmodel(resource.toString());
 	}
 	
 	public Set<OntClass> getSuperclassesOf(OntClass type) throws NotFoundException {
@@ -1273,10 +1240,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public void remove(Statement stmt) {
 		if (verbose) System.out.println(" * Removing statement ["+ Namespaces.toLightString(stmt) + "]...");
 		
-		//TODO: move that somewhere else.
-		if (Namespaces.toLightString(stmt.getPredicate()).equalsIgnoreCase("rdfs:label"))
-			lookupTable.remove(stmt.getObject().as(Literal.class).getLexicalForm().toLowerCase());
-		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
 		onto.leaveCriticalSection();
@@ -1298,7 +1261,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@RPCMethod(
 			desc="removes one or several statements (triplets S-P-O) from the ontology."
 	)
-	public void remove(List<String> stmts) throws IllegalStatementException {
+	public void remove(Set<String> stmts) throws IllegalStatementException {
 		for (String stmt : stmts) remove(stmt);		
 	}
 

@@ -23,6 +23,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -278,7 +279,7 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see #add(Vector)
 	 * @see #remove(String)
 	 */
-	public abstract void remove(List<String> stmts) throws IllegalStatementException;
+	public abstract void remove(Set<String> stmts) throws IllegalStatementException;
 	
 	/**
 	 * Tries to identify a resource given a set of partially defined statements (plus optional restrictions) about this resource.<br/>
@@ -595,5 +596,15 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders);
+	
+	/**
+	 * Returns the set of inferred and asserted statement involving a resource as a Jena Model..
+	 * 
+	 * @param resource A Jena resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(String)
+	 */
+	public Model getSubmodel(Resource node) throws NotFoundException ;
 
 }

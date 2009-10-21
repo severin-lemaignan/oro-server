@@ -85,7 +85,7 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
  * <h3>Adding facts to the knowledge base</h3>
  * <pre>
  * > add
- * > [human rdf:type Human, human rdfs:label Ramses, myself sees Ramses]
+ * > [human rdf:type Human, human rdfs:label "Ramses", myself sees Ramses]
  * > #end#
  * </pre>
  *
