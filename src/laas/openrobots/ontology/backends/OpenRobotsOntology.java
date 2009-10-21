@@ -95,11 +95,17 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 /**
  * The OpenRobotsOntology class is the main storage backend for oro-server.<br/>
  * 
- * It maps useful methods for knowledge access in a robotic context to a Jena-baked {@link com.hp.hpl.jena.ontology.OntModel ontology}.<br/>
+ * It maps useful methods for knowledge access in a robotic context to a 
+ * Jena-baked {@link com.hp.hpl.jena.ontology.OntModel ontology}.<br/>
  * <br/>
- * Amongst other feature, it offers an easy way to {@linkplain #query(String) query} the ontology with standard SPARQL requests, it can try to {@linkplain #find(String, Vector) find} resources matching a set of statements or  {@linkplain #checkConsistency() check the consistency} of the knowledge storage.<br/><br/>
+ * Amongst other feature, it offers an easy way to {@linkplain #query(String) 
+ * query} the ontology with standard SPARQL requests, it can try to 
+ * {@linkplain #find(String, Vector) find} resources matching a set of 
+ * statements or {@linkplain #checkConsistency() check the consistency} of the
+ * knowledge storage.<br/><br/>
  * 
- * Examples covering the various aspects of the API can be found in the {@linkplain laas.openrobots.ontology.tests Unit Tests}.
+ * Examples covering the various aspects of the API can be found in the 
+ * {@linkplain laas.openrobots.ontology.tests Unit Tests}.
  *  
  * @author Severin Lemaignan <i>severin.lemaignan@laas.fr</i>
  */
@@ -134,7 +140,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	/**
 	 * Constructor which takes a config file as parameter.<br/>
-	 * The constructor first opens the ontology, then loads it into memory and eventually bounds it to Jena internal reasonner. Thus, the instanciation of OpenRobotsOntology may take some time (several seconds, depending on the size on the ontology).<br/>
+	 * The constructor first opens the ontology, then loads it into memory and 
+	 * eventually bounds it to Jena internal reasonner. Thus, the instanciation 
+	 * of OpenRobotsOntology may take some time (several seconds, depending on 
+	 * the size on the ontology).<br/>
 	 * <br/>
 	 * Available options:<br/>
 	 * <ul>
@@ -182,7 +191,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		ArrayList<String> tokens_statement = Helpers.tokenize(statement.trim(), ' ');
 				
 		if (tokens_statement.size() != 3)
-			throw new IllegalStatementException("Three tokens are expected in a statement, " + tokens_statement.size() + " found in " + statement + ".");
+			throw new IllegalStatementException("Three tokens are expected in a statement, " +	tokens_statement.size() + " found in " + statement + ".");
 		
 		//expand the namespaces for subject and predicate.
 		for (int i = 0; i<2; i++){
@@ -491,6 +500,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Set<String> result = new HashSet<String>();
 		Iterator<String> stmts = statements.iterator();
 		
+		if (varName.startsWith("?")) varName = varName.substring(1);
+		
 		String query = "SELECT ?" + varName + "\n" +
 		"WHERE {\n";
 		while (stmts.hasNext())
@@ -545,6 +556,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Iterator<PartialStatement> stmts = partialStatements.iterator();
 		
 		String query = "";
+		
+		if (varName.startsWith("?")) varName = varName.substring(1);
 		
 		System.out.println(" * Trying to guess what \""+ varName + "\" could be...");
 		
