@@ -1311,7 +1311,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	private void rebuildLookupTable() {
 		{
-			
 			if (modelChanged) {
 				
 				modelChanged = false;
@@ -1319,6 +1318,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				lookupTable.clear();
 				
 				ExtendedIterator<Individual> resources = onto.listIndividuals();
+				
 				while(resources.hasNext()) {
 					Individual res = resources.next();
 					
@@ -1327,12 +1327,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					ExtendedIterator<RDFNode> labels = res.listLabels(null);
 					
 					if (labels.hasNext())
-						while(labels.hasNext()) {
-							
+						while(labels.hasNext()) {							
 							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(),
 											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
 						}
-					else lookupTable.put(	res.getLocalName().toLowerCase(),
+					
+					lookupTable.put(res.getLocalName().toLowerCase(), 
 							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
 					
 				}
