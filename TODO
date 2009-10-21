@@ -2,3 +2,4 @@
 - re-introduce module EVENT MANAGER
 - implement reinforcement learning into module MEMORY MANAGER
 - implement "diff" and "incommon" methods
+- use isatty to detect if we redirect to a tty
