@@ -752,11 +752,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return getSuperclassesOf(type, false);
 	}
 	
+	@Override
 	public Set<OntClass> getSuperclassesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 		
-		if (verbose) System.out.print(" * Looking up for superclasses of " + type.getLocalName() + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		ExtendedIterator<OntClass> it = type.listSuperClasses(onlyDirect);
@@ -768,9 +768,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		onto.leaveCriticalSection();
-		
-		if (verbose) System.out.println("done.");
-		
+				
 		return result;
 	}
 	
@@ -781,6 +779,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
+		if (verbose) System.out.print(" * Looking up for superclasses of " + type + "...");
+		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
 		onto.leaveCriticalSection();
@@ -789,6 +789,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		for (OntClass c : getSuperclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
+		
+		if (verbose) System.out.println("done.");
 		
 		return result;
 	}
@@ -800,6 +802,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
+		if (verbose) System.out.print(" * Looking for direct superclasses of " + type + "...");
+		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
 		onto.leaveCriticalSection();
@@ -808,6 +812,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		for (OntClass c : getSuperclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
+		
+		if (verbose) System.out.println("done.");
 		
 		return result;
 	}
@@ -818,12 +824,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return getSubclassesOf(type, false);
 	}
 	
+	@Override
 	public Set<OntClass> getSubclassesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
-		
-		if (verbose) System.out.print(" * Looking up for subclasses of " + type.getLocalName() + "...");
-		
+			
 		onto.enterCriticalSection(Lock.READ);
 		
 		ExtendedIterator<OntClass> it = type.listSubClasses(onlyDirect);
@@ -836,9 +841,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		onto.leaveCriticalSection();
-		
-		if (verbose) System.out.println("done.");
-		
+				
 		return result;
 	}
 	
@@ -849,6 +852,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
+		if (verbose) System.out.print(" * Looking up for subclasses of " + type + "...");
+		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
 		onto.leaveCriticalSection();
@@ -857,6 +862,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		for (OntClass c : getSubclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
+		
+		if (verbose) System.out.println("done.");
 		
 		return result;
 	}
@@ -868,6 +875,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
+		if (verbose) System.out.print(" * Looking for direct subclasses of " + type + "...");
+		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
 		onto.leaveCriticalSection();
@@ -877,18 +886,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntClass c : getSubclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
+		if (verbose) System.out.println("done.");
+		
 		return result;
 	}
 	
 	public Set<OntResource> getInstancesOf(OntClass type) throws NotFoundException {
 		return getInstancesOf(type, false);
 	}
-	
+
+
 	public Set<OntResource> getInstancesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
 		
 		Set<OntResource> result = new HashSet<OntResource>();
-		
-		if (verbose) System.out.print(" * Looking up for instances of " + type.getLocalName() + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		
@@ -903,17 +913,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		onto.leaveCriticalSection();
 		
-		if (verbose) System.out.println("done.");
 		return result;
 	}
-
-	@Override
+	
 	@RPCMethod(
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class."
 	)
 	public Map<String, String> getInstancesOf(String type) throws NotFoundException {
 		
 		Map<String, String> result = new HashMap<String, String>();
+		
+		if (verbose) System.out.print(" * Looking up for instances of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -924,16 +934,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntResource c : getInstancesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
+		if (verbose) System.out.println("done.");
+		
 		return result;
 	}
 	
-	@Override
 	@RPCMethod(
 			desc = "returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class."
 	)
 	public Map<String, String> getDirectInstancesOf(String type) throws NotFoundException {
 		
 		Map<String, String> result = new HashMap<String, String>();
+		
+		if (verbose) System.out.print(" * Looking for direct instances of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -944,6 +957,53 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntResource c : getInstancesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
+		if (verbose) System.out.println("done.");
+		
+		return result;
+	}
+	
+	@Override
+	public Set<OntClass> getClassesOf(Individual individual, boolean onlyDirect) throws NotFoundException {
+		
+		Set<OntClass> result = new HashSet<OntClass>();
+
+		
+		onto.enterCriticalSection(Lock.READ);
+		ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
+		while (it.hasNext())
+		{
+			OntClass tmp = it.next();
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
+			}
+		}
+		onto.leaveCriticalSection();
+		
+		if (verbose) System.out.println("done.");
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			desc = "returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of asserted and inferred classes of a given individual."
+	)
+	public Map<String, String> getClassesOf(String individual) throws NotFoundException {
+		
+		Map<String, String> result = new HashMap<String, String>();
+		
+		if (verbose) System.out.print(" * Looking for classes of " + individual + "...");
+		
+		onto.enterCriticalSection(Lock.READ);
+		Individual myClass = onto.getIndividual(Namespaces.format(individual));
+		onto.leaveCriticalSection();
+		
+		if (myClass == null) throw new NotFoundException("The class " + individual + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		
+		for (OntResource c : getClassesOf(myClass, false) )
+			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
+
+		if (verbose) System.out.println("done.");
+		
 		return result;
 	}
 	

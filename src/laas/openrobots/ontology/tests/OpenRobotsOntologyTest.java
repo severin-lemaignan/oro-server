@@ -605,6 +605,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	
 		Set<String> stmts = new HashSet<String>();
 		stmts.add("gorilla rdfs:label \"king kong\"");
+		stmts.add("iddebile rdf:type Human");
+		
 		try {
 			oro.add(stmts);
 		} catch (IllegalStatementException e) {
@@ -622,7 +624,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookup("BabouIn").get(0));
 		assertEquals("The \"baboon\" type should be INSTANCE.", ResourceType.INSTANCE.toString(), oro.lookup("BabouIn").get(1));
 		assertEquals("The \"baboon\" instance should be retieved.", "baboon", oro.lookup("Baboon monkey").get(0));
-		assertEquals("The \"gorilla\" instance should be retieved.", "gorilla", oro.lookup("king kong").get(0));
+		assertEquals("The \"gorilla\" instance should be retrieved.", "gorilla", oro.lookup("king kong").get(0));
+		assertEquals("The \"iddebile\" instance should be retrieved.", "iddebile", oro.lookup("iddebile").get(0));
 		
 		assertEquals("\"Monkey\" should be a CLASS.", ResourceType.CLASS.toString(), oro.lookup("Monkey").get(1));
 		
@@ -676,9 +679,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertEquals("Three instances of animal should be returned (cow, baboon and gorilla).", 3, oro.getInstancesOf("Animal").size());
 		assertEquals("One direct instance of animal should be returned (cow).", 1, oro.getDirectInstancesOf("Animal").size());
+		
+		assertEquals("Eight subclasses of A should be returned.", 8, oro.getSubclassesOf("A").size());
 	
 		long totalTime = (System.currentTimeMillis()-startTime);
-		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 5 + "ms");
+		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 8 + "ms");
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -952,6 +957,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		partial_statements.add("?mysterious oro:isFemale true^^xsd:boolean");  //Attention: "?mysterious oro:isFemale true" is valid, but "?mysterious oro:isFemale true^^xsd:boolean" is not!
 
 		try {
+			matchingResources = oro.find("?mysterious", partial_statements);
+			
 			matchingResources = oro.find("mysterious", partial_statements);
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
@@ -1114,8 +1121,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
-			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT);
+			//oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT); //we can infer that sheepy is an animal
 			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT);
 			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e1) {
@@ -1126,6 +1133,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		String conceptA = "sheepy";
 		String conceptB = "baboon";
 		String conceptC = "baboon2";
+		String conceptD = "Monkey"; //to check that we can not compare instances and classes.
 		
 		Set<String> differences = null;
 		Set<String> similarities = null;
@@ -1173,6 +1181,51 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertTrue("The baboon and the sheep should be identified as animals", similarities.contains("? rdf:type Animal"));
 		
 				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This tests the diff and similar function in complex hierarchies of 
+	 * classes.
+	 */
+	public void testAdvancedDiff() {
+
+		System.out.println("[UNITTEST] ***** TEST: Complex hierarchies Diff test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		Set<String> differences = null;
+		Set<String> sim1 = null;
+		Set<String> sim2 = null;
+		Set<String> sim3 = null;
+		Set<String> sim4 = null;
+		
+		long startTime = System.currentTimeMillis();
+		
+		DiffModule diffModule = new DiffModule(oro);
+		
+		try {
+			sim1 = diffModule.getSimilarities("f", "j");
+			sim2 = diffModule.getSimilarities("f", "k");
+			sim3 = diffModule.getSimilarities("f", "e");
+			sim4 = diffModule.getSimilarities("f", "f");
+		} catch (NotFoundException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		long totalTime = (System.currentTimeMillis()-startTime);
+		
+		assertTrue("", sim1.size() == 2 && sim1.contains("? rdf:type " + Namespaces.format("B")) && sim1.contains("? rdf:type " + Namespaces.format("D")));
+		assertTrue("", sim2.size() == 2 && sim2.contains("? rdf:type " + Namespaces.format("B")) && sim2.contains("? rdf:type " + Namespaces.format("D")));
+		assertTrue("", sim3.size() == 1 && sim3.contains("? rdf:type " + Namespaces.format("E")));
+		assertTrue("", sim4.size() == 1 && sim4.contains("? rdf:type " + Namespaces.format("F")));
+		
+		//assertTrue("Classes F and J", differences.contains("[sheepy rdf:type Sheep, baboon rdf:type Monkey]"));
+		
+		System.out.println("[UNITTEST] ***** Average time per comparison:" + totalTime / 4 + "ms");
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 

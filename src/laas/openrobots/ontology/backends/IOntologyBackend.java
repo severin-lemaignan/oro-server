@@ -20,7 +20,10 @@ import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
+import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -606,5 +609,14 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see #getSubmodel(String)
 	 */
 	public Model getSubmodel(Resource node) throws NotFoundException ;
+
+	Set<OntClass> getSuperclassesOf(OntClass type, boolean onlyDirect)
+			throws NotFoundException;
+
+	Set<OntClass> getClassesOf(Individual individual, boolean onlyDirect)
+			throws NotFoundException;
+
+	Set<OntClass> getSubclassesOf(OntClass type, boolean onlyDirect)
+			throws NotFoundException;
 
 }
