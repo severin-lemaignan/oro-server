@@ -1,11 +1,12 @@
 package laas.openrobots.ontology.modules.diff;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import laas.openrobots.ontology.Helpers;
+import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.NotComparableException;
@@ -14,15 +15,11 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.NodeIterator;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 
-public class DiffModule {
+public class DiffModule implements IServiceProvider {
 	
 	IOntologyBackend oro;
 	
@@ -132,6 +129,9 @@ public class DiffModule {
 		return result;
 	}
 
+	@RPCMethod(
+			desc="given two concepts, return the list of relevant differences (types, properties...) between these concepts."
+	)	
 	public Set<String> getDifferences(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
@@ -148,6 +148,7 @@ public class DiffModule {
 	
 	/***************** SIMILARITIES *********************/
 	
+	
 	public Set<String> getSimilarities(OntResource conceptA, OntResource conceptB) throws NotComparableException {
 		
 		Set<String> result = new HashSet<String>();
@@ -157,12 +158,15 @@ public class DiffModule {
 		Set<OntClass> commonAncestors = commonAncestors();
 		
 		for (OntClass c : commonAncestors) {
-			result.add("? rdf:type " + c.getURI());
+			result.add("? rdf:type " + Namespaces.toLightString(c));
 		}
 		
 		return result;
 	}
 	
+	@RPCMethod(
+			desc="given two concepts, return the list of relevant similarities (types, properties...) between these concepts."
+	)	
 	public Set<String> getSimilarities(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
 		oro.getModel().enterCriticalSection(Lock.READ);

@@ -1221,9 +1221,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertTrue("", sim2.size() == 2 && sim2.contains("? rdf:type " + Namespaces.format("B")) && sim2.contains("? rdf:type " + Namespaces.format("D")));
 		assertTrue("", sim3.size() == 1 && sim3.contains("? rdf:type " + Namespaces.format("E")));
 		assertTrue("", sim4.size() == 1 && sim4.contains("? rdf:type " + Namespaces.format("F")));
-		
-		//assertTrue("Classes F and J", differences.contains("[sheepy rdf:type Sheep, baboon rdf:type Monkey]"));
-		
+				
 		System.out.println("[UNITTEST] ***** Average time per comparison:" + totalTime / 4 + "ms");
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");

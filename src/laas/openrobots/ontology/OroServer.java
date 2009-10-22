@@ -58,6 +58,7 @@ import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 
@@ -191,9 +192,9 @@ public class OroServer implements IServiceProvider {
 		
     	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
 
-		/********************************************************************************
-		 *               BACKENDS and SERVICES REGISTRATION                             *
-		 ********************************************************************************/
+		/***********************************************************************
+		 *               BACKENDS and SERVICES REGISTRATION                    *
+		 **********************************************************************/
 
 		//add the services offered by the OroServer class
 		addNewServiceProviders(this);
@@ -201,10 +202,13 @@ public class OroServer implements IServiceProvider {
 		//Open and load the ontology + register ontology services by the server. If the configuration file can not be found, it exits.
 		oro = new OpenRobotsOntology(confParams);
 		
-		//System.out.println(oro.getResourceDetails("PurposefulAction").getJson());
-		
 		addNewServiceProviders(oro);
-				
+		
+		/********************* SERVICES REGISTRATION **************************/
+		
+		IServiceProvider diffModule = new DiffModule(oro);
+		addNewServiceProviders(diffModule);
+		
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
