@@ -1217,10 +1217,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		long totalTime = (System.currentTimeMillis()-startTime);
 		
-		assertTrue("", sim1.size() == 2 && sim1.contains("? rdf:type " + Namespaces.format("B")) && sim1.contains("? rdf:type " + Namespaces.format("D")));
-		assertTrue("", sim2.size() == 2 && sim2.contains("? rdf:type " + Namespaces.format("B")) && sim2.contains("? rdf:type " + Namespaces.format("D")));
-		assertTrue("", sim3.size() == 1 && sim3.contains("? rdf:type " + Namespaces.format("E")));
-		assertTrue("", sim4.size() == 1 && sim4.contains("? rdf:type " + Namespaces.format("F")));
+		assertTrue("", sim1.size() == 2 && sim1.contains("? rdf:type B") && sim1.contains("? rdf:type D"));
+		assertTrue("", sim2.size() == 2 && sim2.contains("? rdf:type B") && sim2.contains("? rdf:type D"));
+		assertTrue("", sim3.size() == 1 && sim3.contains("? rdf:type E"));
+		assertTrue("", sim4.size() == 1 && sim4.contains("? rdf:type F"));
 				
 		System.out.println("[UNITTEST] ***** Average time per comparison:" + totalTime / 4 + "ms");
 		
