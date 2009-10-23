@@ -14,10 +14,16 @@ import laas.openrobots.ontology.exceptions.NotComparableException;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
+import com.hp.hpl.jena.util.iterator.Filter;
 
 public class DiffModule implements IServiceProvider {
 	
@@ -41,11 +47,15 @@ public class DiffModule implements IServiceProvider {
 		if (Helpers.getType(conceptA) != ResourceType.INSTANCE) throw new NotComparableException("Only the comparison between instances (individuals) is currently implemented");
 		
 		//We recreate two ontology models from details we get for each concepts.
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
 		modelA = ModelFactory.createOntologyModel(oro.getModel().getSpecification(), oro.getSubmodel(conceptA));
 		modelB = ModelFactory.createOntologyModel(oro.getModel().getSpecification(), oro.getSubmodel(conceptB));
 		
 		indivA = oro.getModel().getIndividual(conceptA.getURI());
 		indivB = oro.getModel().getIndividual(conceptB.getURI());
+		
+		oro.getModel().leaveCriticalSection();
 	}
 	
 	/** Returns the classes that concept A and B have in common, as close as
@@ -87,6 +97,8 @@ public class DiffModule implements IServiceProvider {
 		
 		Set<OntClass> result = new HashSet<OntClass>(commonAncestors);
 		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
 		for (OntClass c : commonAncestors) {
 			
 			if (result.size() == 1)
@@ -94,9 +106,7 @@ public class DiffModule implements IServiceProvider {
 			
 			//We need to retrieve the class c IN the main ontology model to be
 			//able to get the subclasses.
-			oro.getModel().enterCriticalSection(Lock.READ);
 			OntClass classInOro = oro.getModel().getOntClass(c.getURI());
-			oro.getModel().leaveCriticalSection();
 			
 			assert(c.equals(classInOro));
 			
@@ -109,7 +119,31 @@ public class DiffModule implements IServiceProvider {
 			
 		}
 		
+		oro.getModel().leaveCriticalSection();
+		
 		return result;
+	}
+
+	/*********************** Common properties*********************************/
+	private Set<OntProperty> commonProperties() {
+
+		
+		//Creates a filter to keep only properties in the default ORO namespace,
+		// thus removing properties inferred from RDF or OWL models.
+		Filter<OntProperty> defaultNsFilter = new Filter<OntProperty>() 
+				{
+		            public boolean accept(OntProperty p) {
+		                if (p.getNameSpace().equals(Namespaces.DEFAULT_NS))                
+		                	return true;
+		                return false;
+		            }
+				};
+				
+		Set<OntProperty> propA = modelA.listOntProperties().filterKeep(defaultNsFilter).toSet();
+		Set <OntProperty> commonProp = modelB.listOntProperties().filterKeep(defaultNsFilter).toSet();
+		commonProp.retainAll(propA);
+		
+		return commonProp;
 	}
 		
 	/***************** DIFFERENCES *********************/
@@ -155,10 +189,18 @@ public class DiffModule implements IServiceProvider {
 		
 		loadModels(conceptA, conceptB);
 
-		Set<OntClass> commonAncestors = commonAncestors();
-		
-		for (OntClass c : commonAncestors) {
+		//*********************** Common ancestors *****************************
+		for (OntClass c : commonAncestors()) {
 			result.add("? rdf:type " + Namespaces.toLightString(c));
+		}
+				
+		//*********************** Common properties ****************************
+		for (OntProperty p : commonProperties()) {
+						
+			RDFNode o = modelA.getProperty(indivA, p).getObject();
+			
+			if (o.equals(modelB.getProperty(indivB, p).getObject()))
+				result.add("? " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(o));
 		}
 		
 		return result;

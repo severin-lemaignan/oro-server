@@ -1110,11 +1110,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
-	 * This tests the diff and similar function that extract different or common features between concepts.
+	 * This tests the similarities function that extracts common features between concepts.
 	 */
-	public void testDiff() {
+	public void testSimilarities() {
 
-		System.out.println("[UNITTEST] ***** TEST: Diff and Similarities test *****");
+		System.out.println("[UNITTEST] ***** TEST: Similarities test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		DiffModule diffModule = new DiffModule(oro);
@@ -1129,56 +1129,56 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
 		}
-		
-		String conceptA = "sheepy";
-		String conceptB = "baboon";
-		String conceptC = "baboon2";
-		String conceptD = "Monkey"; //to check that we can not compare instances and classes.
-		
-		Set<String> differences = null;
+				
 		Set<String> similarities = null;
 		
+		//check that we can not compare instances and classes.
 		try {
-			differences = diffModule.getDifferences(conceptA, conceptB);	
+			similarities = diffModule.getSimilarities("baboon", "Monkey");
+			fail("We shouldn't be allowed to compare instances and classes!");
 		} catch (NotFoundException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
-			fail();
 		}
 		
+		
+		System.out.println(" * Similarities between the cow and the sheep");
 		try {
-			similarities = diffModule.getSimilarities(conceptA, conceptB);	
+			similarities = diffModule.getSimilarities("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
 		} catch (NotFoundException e) {
-			e.printStackTrace();
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
 			fail();
 		}
-		
-		
-		Iterator<String> itDiff = differences.iterator();
-		
-		System.out.println("Differences between a " + conceptA + " and a " + conceptB);
-		while(itDiff.hasNext())
-		{
-			String currentRes = itDiff.next();
-			System.out.println(currentRes);
-		}
-		
-		assertTrue("The baboon and the sheep are different animals", differences.contains("[sheepy rdf:type Sheep, baboon rdf:type Monkey]"));
-		
-		
+	
 		Iterator<String> itSim = similarities.iterator();
-		
-		System.out.println("Similarities between a " + conceptA + " and a " + conceptB);
 		while(itSim.hasNext())
 		{
 			String currentRes = itSim.next();
 			System.out.println(currentRes);
 		}
+		assertTrue("The cow and the sheep should be identified as animals that eat grass", similarities.contains("? rdf:type Animal") && similarities.contains("? eats grass") && similarities.size() == 2);
 		
-		assertTrue("The baboon and the sheep should be identified as animals", similarities.contains("? rdf:type Animal"));
+		
+		//**********************************************************************
+		
+		System.out.println("Similarities between the baboon and another baboon");
+		try {
+			similarities = diffModule.getSimilarities("baboon", "baboon2");
+		} catch (NotFoundException e) {
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+	
+		itSim = similarities.iterator();
+		while(itSim.hasNext())
+		{
+			String currentRes = itSim.next();
+			System.out.println(currentRes);
+		}
+		assertTrue("The 2 baboons should be identified as monkeys", similarities.contains("? rdf:type Monkey") && similarities.size() == 1);
 		
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
