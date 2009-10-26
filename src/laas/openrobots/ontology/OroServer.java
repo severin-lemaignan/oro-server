@@ -122,7 +122,7 @@ public class OroServer implements IServiceProvider {
 	 */
 	public static String DEFAULT_LANGUAGE = "en";
 	
-	public static final String VERSION = "0.6.3"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.6.4"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 

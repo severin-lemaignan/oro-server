@@ -96,6 +96,7 @@ import com.hp.hpl.jena.util.iterator.Filter;
  * 
  * @author slemaign
  *
+ * @since 0.6.4
  */
 public class DiffModule implements IServiceProvider {
 	
