@@ -1068,6 +1068,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return parameters;		
 	}
 	
+	
+	/**
+	 * 
+	 */
+	@RPCMethod(
+		desc = "Reload the base ontologies, discarding all inserted of " +
+				"removed statements" 
+	)
+	public void reload() {
+		load();
+	}
 	/***************************************
 	 *          Private methods            *
 	 **************************************/
@@ -1230,7 +1241,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto_model_reasonner_name = "Jena internal reasonner - OWL rule inference engine -";
 		}
 		
-		//		loading of the OWL ontology thanks Jena	
+		// loading of the OWL ontologies thanks Jena	
 		try {
 			Model mainModel = null;
 			Model robotInstancesModel = null;
