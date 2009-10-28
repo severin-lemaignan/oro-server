@@ -36,14 +36,15 @@
 
 package laas.openrobots.ontology;
 
-import java.util.Dictionary;
 import java.util.Hashtable;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.util.iterator.Filter;
 
 /**
  * This class provides several static method for namespace manipulation ({@linkplain #expand(String) expansion}, {@linkplain #toLightString(RDFNode) contraction}, {@linkplain #prefixes() SPARQL prefixes header}...).
@@ -280,5 +281,17 @@ public class Namespaces {
 		if(defaultNS != null) DEFAULT_NS = defaultNS;
 	}
 	
+	/** Returns a filter to keep only properties in the default ORO namespace,
+	 * thus removing properties inferred from RDF or OWL models.
+	 */
+	public static Filter<OntProperty> getDefaultNsFilter() {
+		 return new Filter<OntProperty>(){
+	            public boolean accept(OntProperty p) {
+	                if (p.getNameSpace().equals(DEFAULT_NS))                
+	                	return true;
+	                return false;
+	            }
+			};
+	}
 
 }

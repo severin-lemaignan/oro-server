@@ -292,20 +292,9 @@ public class DiffModule implements IServiceProvider {
 	/*********************** Common properties*********************************/
 	private Set<OntProperty> commonProperties() {
 
-		
-		//Creates a filter to keep only properties in the default ORO namespace,
-		// thus removing properties inferred from RDF or OWL models.
-		Filter<OntProperty> defaultNsFilter = new Filter<OntProperty>() 
-				{
-		            public boolean accept(OntProperty p) {
-		                if (p.getNameSpace().equals(Namespaces.DEFAULT_NS))                
-		                	return true;
-		                return false;
-		            }
-				};
 				
-		Set<OntProperty> propA = modelA.listOntProperties().filterKeep(defaultNsFilter).toSet();
-		Set <OntProperty> commonProp = modelB.listOntProperties().filterKeep(defaultNsFilter).toSet();
+		Set<OntProperty> propA = modelA.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter()).toSet();
+		Set <OntProperty> commonProp = modelB.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter()).toSet();
 		commonProp.retainAll(propA);
 		
 		return commonProp;

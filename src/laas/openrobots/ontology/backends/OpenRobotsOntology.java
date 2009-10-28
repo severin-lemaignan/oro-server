@@ -77,6 +77,7 @@ import com.hp.hpl.jena.ontology.ObjectProperty;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
@@ -90,6 +91,7 @@ import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
+import com.hp.hpl.jena.util.iterator.Filter;
 
 
 /**
@@ -666,8 +668,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		while (stmts.hasNext()) {
 			Statement stmt = stmts.nextStatement();
 			RDFNode obj = stmt.getObject();
+			//Property p = stmt.getPredicate();
+			
 			String objString;
 
+			//returns only statement involving properties from the ORO namespace
+			//or stating the type/subtype of the instance.
+			/*
+			if (!	(p.getNameSpace().equals(Namespaces.DEFAULT_NS) || 
+					p.getLocalName().equals("type") ||
+					p.getLocalName().equals("subClassOf")))
+				continue;
+			*/
+			
 			if (obj.isResource())
 				objString = ((Resource) obj.as(Resource.class)).getLocalName();
 			else if (obj.isLiteral())
