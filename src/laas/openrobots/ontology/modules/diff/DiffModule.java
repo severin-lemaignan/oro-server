@@ -130,7 +130,6 @@ public class DiffModule implements IServiceProvider {
 		if (Helpers.getType(conceptA) != ResourceType.INSTANCE) throw new NotComparableException("Only the comparison between instances (individuals) is currently implemented");
 		
 		//We recreate two ontology models from details we get for each concepts.
-		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		modelA = ModelFactory.createOntologyModel(oro.getModel().getSpecification(), oro.getSubmodel(conceptA));
 		modelB = ModelFactory.createOntologyModel(oro.getModel().getSpecification(), oro.getSubmodel(conceptB));
@@ -163,8 +162,7 @@ public class DiffModule implements IServiceProvider {
 			sameClass = true;
 		else
 			sameClass = false;
-		
-		oro.getModel().leaveCriticalSection();
+
 	}
 	
 	/** Returns the classes that concept A and B have in common, as close as
@@ -202,8 +200,6 @@ public class DiffModule implements IServiceProvider {
 		
 		Set<OntClass> result = new HashSet<OntClass>(commonAncestors);
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		
 		for (OntClass c : commonAncestors) {
 			
 			if (result.size() == 1)
@@ -223,9 +219,7 @@ public class DiffModule implements IServiceProvider {
 				result.remove(c);				
 			
 		}
-		
-		
-		oro.getModel().leaveCriticalSection();
+
 		return result;		
 	}
 
@@ -249,7 +243,6 @@ public class DiffModule implements IServiceProvider {
 
 		if (sameClass) return result;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		for (OntClass c : commonAncestors()) {
 			
@@ -287,9 +280,7 @@ public class DiffModule implements IServiceProvider {
 			if (!ancestorsForC.isEmpty())
 				result.add(ancestorsForC);
 		}
-		
-		oro.getModel().leaveCriticalSection();
-		
+				
 		return result;
 		
 	}
@@ -326,6 +317,8 @@ public class DiffModule implements IServiceProvider {
 	public Set<Set<String>> getDifferences(OntResource conceptA, OntResource conceptB) throws NotComparableException {
 		
 		Set<Set<String>> result = new HashSet<Set<String>>();
+		
+		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		loadModels(conceptA, conceptB);
 	
@@ -376,6 +369,8 @@ public class DiffModule implements IServiceProvider {
 			result.add(resultForP);
 		}
 		
+		oro.getModel().leaveCriticalSection();
+		
 		return result;
 	}
 
@@ -421,6 +416,8 @@ public class DiffModule implements IServiceProvider {
 		
 		Set<String> result = new HashSet<String>();
 		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
 		loadModels(conceptA, conceptB);
 
 		//*********************** Common ancestors *****************************
@@ -443,6 +440,8 @@ public class DiffModule implements IServiceProvider {
 			for (RDFNode o : objPropB)
 					result.add("? " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(o));
 		}
+		
+		oro.getModel().leaveCriticalSection();
 		
 		return result;
 	}
