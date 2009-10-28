@@ -34,7 +34,7 @@
  * 
 */
 
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.helpers;
 
 import java.util.Hashtable;
 

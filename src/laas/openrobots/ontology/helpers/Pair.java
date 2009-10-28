@@ -1,4 +1,4 @@
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.helpers;
 
 public class Pair<L, R> {
  

@@ -58,6 +58,10 @@ import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Pair;
+import laas.openrobots.ontology.helpers.TextIOHelpers;
+import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
@@ -122,6 +126,8 @@ public class OroServer implements IServiceProvider {
 	 */
 	public static String DEFAULT_LANGUAGE = "en";
 	
+	public static boolean HAS_A_TTY;
+	
 	public static final String VERSION = "0.6.4"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
@@ -139,7 +145,7 @@ public class OroServer implements IServiceProvider {
 	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
-			System.out.println(" * Application interrupted. Shutting down..."); 
+			TextIOHelpers.log("Application interrupted. Shutting down...\n", VerboseLevel.WARNING); 
 
 			keepOn = false; 
 			try {
@@ -148,7 +154,7 @@ public class OroServer implements IServiceProvider {
 				e.printStackTrace();
 			} 
 			
-			System.out.println(" * Bye bye.");
+			TextIOHelpers.log("Bye bye.\n", VerboseLevel.IMPORTANT);
 		} 
 	} 
 	
@@ -172,12 +178,18 @@ public class OroServer implements IServiceProvider {
     	eventsProviders = new HashSet<IEventsProvider>();
     	registredServices = new HashMap<Pair<String,String>, Pair<Method, Object>>();
     	
-    	Helpers.printlnInBlue("--------------------------------------\n" +
-    						"-                                    -\n" +			
-    						"-          OroServer " + VERSION + "           -\n" +
-    						"-                                    -\n" +
-    						"-         " + (char)27 + "[0m(c)LAAS-CNRS 2009"+ (char)27 +"[34m          -\n" +
-							"--------------------------------------");
+    	//Check if the application is connected to a console. We don't want to
+    	//color outputs in a logfile for instance.
+    	HAS_A_TTY = System.console() == null ? false : true;
+    	
+    	TextIOHelpers.printInBlue("+------------------------------------+\n" +
+    						"|                                    |\n" +			
+    						"|          OroServer " + VERSION + "           |\n" +
+    						"|                                    |\n" +
+    						"|         ");
+    	System.out.print("(c)LAAS-CNRS 2009");
+    	TextIOHelpers.printlnInBlue("          |\n" +
+							"+------------------------------------+");
     	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
     	
@@ -188,7 +200,7 @@ public class OroServer implements IServiceProvider {
     		confFile = args[0];
     	
     	confParams = getConfiguration(confFile);
-		System.out.println(" * Using configuration file " + confFile);
+    	TextIOHelpers.log("Using configuration file " + confFile + "\n\n", VerboseLevel.IMPORTANT);
 		
     	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
 
@@ -213,16 +225,17 @@ public class OroServer implements IServiceProvider {
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
 			
-		Helpers.printlnInPurple(" * Following services are registred:");
+		TextIOHelpers.log("\nFollowing services are registred:\n", VerboseLevel.IMPORTANT);
     	for (Pair<String,String> m : registredServices.keySet())
     	{
-    		Helpers.printInPurple("\t- " + m.getLeft());
+    		TextIOHelpers.log("\t- " + m.getLeft(), VerboseLevel.EMPHASIZE);
     		//if present, display the description as well
     		if (m.getRight() != "")
-    			System.out.println(" -> " + m.getRight());
+    			TextIOHelpers.log(" -> " + m.getRight() + "\n");
     		else
-    			System.out.println("");
+    			TextIOHelpers.log("\n");
     	}
+    	TextIOHelpers.log("\n");
 
 		
 		/********************************************************************************
@@ -237,13 +250,13 @@ public class OroServer implements IServiceProvider {
 			try {
 				c.initializeConnector();
 			} catch (OntologyConnectorException e) {
-				System.err.println("[ERROR] Couldn't initialize a connector: " + e.getLocalizedMessage());
+				TextIOHelpers.log("Couldn't initialize a connector: " + e.getLocalizedMessage() + ". Ignoring it.\n", VerboseLevel.SERIOUS_ERROR);
 				connectors.remove(c);
 			}
 		}
 		
 		if (connectors.size() == 0) {
-			System.err.println("[FATAL ERROR] None of the connectors could be started! Killing myself now.");
+			TextIOHelpers.log("None of the connectors could be started! Killing myself now.\n", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}
 
@@ -286,7 +299,7 @@ public class OroServer implements IServiceProvider {
 		Map<String, String> stats = new HashMap<String, String>();
 		
 		
-		SimpleDateFormat formatNew = new SimpleDateFormat("HHHH 'hour(s)' mm 'minute(s)' ss 'second(s)'");
+		SimpleDateFormat formatNew = new SimpleDateFormat("HH:mm:ss");
 		formatNew.setTimeZone( TimeZone.getTimeZone( "GMT" ) );
 		
 		stats.put("version", VERSION);
@@ -318,6 +331,7 @@ public class OroServer implements IServiceProvider {
 	)
 	public String help() {
 		
+		if (!HAS_A_TTY) return "Please connect a console to the server to read the online help.";
 		
 		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below the list of available remote services in the knowledge base:\n";
 		
@@ -457,7 +471,7 @@ public class OroServer implements IServiceProvider {
 			
 			if (!parameters.containsKey("oro_common_sense"))
 			{
-				System.err.println("No common sense ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like oro_common_sense=commonsense.owl");
+				TextIOHelpers.log("No common sense ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like oro_common_sense=commonsense.owl\n", VerboseLevel.FATAL_ERROR);
 	        	System.exit(1);
 			}
 			
@@ -466,12 +480,12 @@ public class OroServer implements IServiceProvider {
 		}
         catch (FileNotFoundException fnfe)
         {
-        	System.err.println("No config file. Check \"" + configFileURI + "\" exists.");
+        	TextIOHelpers.log("No config file. Check \"" + configFileURI + "\" exists.\n", VerboseLevel.FATAL_ERROR);
         	System.exit(1);
         }
         catch (Exception e)
 		{
-			System.err.println("Config file input error. Check config file syntax.");
+        	TextIOHelpers.log("Config file input error. Check config file syntax.\n", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}
         

@@ -6,8 +6,8 @@ package laas.openrobots.ontology.connectors;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
+import laas.openrobots.ontology.helpers.Pair;
 
 /**
  * @author slemaign

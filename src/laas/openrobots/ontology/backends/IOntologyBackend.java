@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Vector;
 
 import laas.openrobots.ontology.IServiceProvider;
-import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
@@ -16,6 +15,7 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;

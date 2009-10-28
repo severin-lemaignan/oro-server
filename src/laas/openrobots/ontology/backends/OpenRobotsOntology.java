@@ -54,13 +54,15 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import laas.openrobots.ontology.Helpers;
-import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.OroServer;
-import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.exceptions.*;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.helpers.Pair;
+import laas.openrobots.ontology.helpers.TextIOHelpers;
+import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
@@ -122,8 +124,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private ResultSet lastQueryResult;
 	private String lastQuery;
 	
-	
-	private boolean verbose;
 	
 	private Properties parameters;
 
@@ -241,7 +241,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			if (memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT) //LONGTERM memory
 			{
-				if (verbose) System.out.print(" * Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]...");
+				TextIOHelpers.log("Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]...");
 				
 				onto.enterCriticalSection(Lock.WRITE);
 				onto.add(statement);
@@ -252,7 +252,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 			else
 			{
-				if (verbose) System.out.print(" * Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]...");
+				TextIOHelpers.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]...");
 				
 				onto.enterCriticalSection(Lock.WRITE);
 				
@@ -278,15 +278,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		catch (Exception e)
 		{
-			if (verbose) {
-				System.err.println("\n[ERROR] Couldn't add the statement for an unknown reason. \n Details:\n ");
-				e.printStackTrace();
-				System.err.println("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ");
-				System.exit(1);
-			}			
-		}
-	
-		if (verbose) System.out.println("done.");
+			TextIOHelpers.log("\nCouldn't add the statement for an unknown reason. \n Details:\n ", VerboseLevel.ERROR);
+			e.printStackTrace();
+			TextIOHelpers.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
+			System.exit(1);
+		}			
+
+		TextIOHelpers.log("done.\n");
 	}
 
 	@Override
@@ -310,8 +308,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	public boolean check(Statement statement) {
-		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
-		
+			
 		onto.enterCriticalSection(Lock.READ);
 		
 		//trivial to answer true is the statement has been asserted.
@@ -326,11 +323,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return myQueryExecution.execAsk();
 		}
 		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 		finally {
@@ -341,7 +338,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	public boolean check(PartialStatement statement) {
-		if (verbose) System.out.print(" * Checking a fact: ["+ statement + "]...");
 						
 		String resultQuery = "ASK { " + statement.asSparqlRow() + " }";
 		
@@ -352,11 +348,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return myQueryExecution.execAsk();
 		}
 		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query parsing while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query execution while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query execution while trying to check a partial statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 
@@ -367,6 +363,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	)
 	public Boolean check(Vector<String> stmts) throws IllegalStatementException{
 	
+		TextIOHelpers.log("Checking facts: "+ stmts + "\n");
+		
 		for (String s : stmts)
 		{
 			if (PartialStatement.isPartialStatement(s))
@@ -384,7 +382,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			desc="checks that the ontology is semantically consistent"
 	)
 	public Boolean checkConsistency() throws InconsistentOntologyException {
-		if (verbose) System.out.print(" * Checking ontology consistency...");
+		TextIOHelpers.log("Checking ontology consistency...", VerboseLevel.IMPORTANT);
 		
 		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
@@ -394,7 +392,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (!report.isValid())
 		{
-			if (verbose) System.out.println("ontology inconsistent!");
+			TextIOHelpers.log("ontology inconsistent!\n", VerboseLevel.WARNING);
 			for (Iterator<Report> i = report.getReports(); i.hasNext(); ) {
 	            cause += " - " + i.next();
 			}
@@ -402,7 +400,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			throw new InconsistentOntologyException(cause);
 		}
 		
-		if (verbose) System.out.println("no problems.");
+		TextIOHelpers.log("no problems.\n", VerboseLevel.IMPORTANT);
 		return true;
 		
 	}
@@ -418,7 +416,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		this.lastQuery = query;
 		
-		if (verbose) System.out.print(" * Processing query...");
+		TextIOHelpers.log("Processing query...");
 		
 		try	{
 			Query myQuery = QueryFactory.create(query, Syntax.syntaxSPARQL );
@@ -427,15 +425,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
 		catch (QueryParseException e) {
-			System.err.println("[ERROR] error during query parsing ! ("+ e.getLocalizedMessage() +").");
+			TextIOHelpers.log("error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 		catch (QueryExecException e) {
-			System.err.println("[ERROR] error during query execution ! ("+ e.getLocalizedMessage() +").");
+			TextIOHelpers.log("error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.");
 		
 		
 		return this.lastQueryResult;
@@ -561,7 +559,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (varName.startsWith("?")) varName = varName.substring(1);
 		
-		System.out.println(" * Trying to guess what \""+ varName + "\" could be...");
+		TextIOHelpers.log("Trying to guess what \""+ varName + "\" could be...");
 		
 		//TODO don't forget to check that properties are functional!
 		
@@ -600,7 +598,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//Compute mean values and discard resources whose matching quality is smaller than the threshold.
 		Enumeration<Resource> objects = result.keys();
 		
-		if (verbose) System.out.println("  -> Results (threshold="+threshold+"):");
+		TextIOHelpers.log("\n  -> Results (threshold="+threshold+"):\n");
 		
 		while (objects.hasMoreElements())
 		{
@@ -608,7 +606,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 						
 			result.put(current, result.get(current) / nbMatches.get(current));
 			
-			if (verbose) System.out.println("\t" + current.toString() + " -> " + result.get(current));
+			TextIOHelpers.log("\t" + current.toString() + " -> " + result.get(current) + "\n");
 			
 			if (result.get(current) < threshold) result.remove(current);
 		}
@@ -706,7 +704,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public Model getSubmodel(String lex_resource) throws NotFoundException {
 		
-		if (verbose) System.out.print(" * Looking for statements about " + lex_resource + "...");
+		TextIOHelpers.log("Looking for statements about " + lex_resource + "...");
 		
 		lex_resource = Namespaces.format(lex_resource);
 		
@@ -718,11 +716,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.leaveCriticalSection();
 		
 		if (node == null){
-			if (verbose) System.out.println("resource not found!");
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
 		}
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return getSubmodel(node);
 	}
@@ -747,11 +744,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			resultModel = myQueryExecution.execDescribe();
 		}
 		catch (QueryParseException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query parsing while trying the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query parsing while trying the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			return null;
 		}
 		catch (QueryExecException e) {
-			if (verbose) System.err.println("[ERROR] internal error during query execution while try the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+			TextIOHelpers.log("internal error during query execution while try the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			return null;
 		}
 		finally {
@@ -792,7 +789,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking up for superclasses of " + type + "...");
+		TextIOHelpers.log("Looking up for superclasses of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -803,7 +800,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntClass c : getSuperclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -815,7 +812,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking for direct superclasses of " + type + "...");
+		TextIOHelpers.log("Looking for direct superclasses of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -826,7 +823,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntClass c : getSuperclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -865,7 +862,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking up for subclasses of " + type + "...");
+		TextIOHelpers.log("Looking up for subclasses of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -876,7 +873,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntClass c : getSubclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -888,7 +885,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking for direct subclasses of " + type + "...");
+		TextIOHelpers.log("Looking for direct subclasses of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -899,7 +896,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntClass c : getSubclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 		
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -936,7 +933,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking up for instances of " + type + "...");
+		TextIOHelpers.log("Looking up for instances of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -947,7 +944,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntResource c : getInstancesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -959,7 +956,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking for direct instances of " + type + "...");
+		TextIOHelpers.log("Looking for direct instances of " + type + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		OntClass myClass = onto.getOntClass(Namespaces.format(type));
@@ -970,7 +967,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntResource c : getInstancesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -992,8 +989,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		onto.leaveCriticalSection();
 		
-		if (verbose) System.out.println("done.");
-		
 		return result;
 	}
 	
@@ -1004,7 +999,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		if (verbose) System.out.print(" * Looking for classes of " + individual + "...");
+		TextIOHelpers.log("Looking for classes of " + individual + "...");
 		
 		onto.enterCriticalSection(Lock.READ);
 		Individual myClass = onto.getIndividual(Namespaces.format(individual));
@@ -1015,7 +1010,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (OntResource c : getClassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
-		if (verbose) System.out.println("done.");
+		TextIOHelpers.log("done.\n");
 		
 		return result;
 	}
@@ -1104,7 +1099,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		this.lookupTable = new HashMap<String, Pair<String, ResourceType>>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
-		this.verbose  = Boolean.parseBoolean(parameters.getProperty("verbose", "true"));
+		
 		Namespaces.setDefault(parameters.getProperty("default_namespace"));
 		
 		this.load();
@@ -1142,7 +1137,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					try {
 						statement = createPartialStatement(w.getWatchPattern());
 					} catch (IllegalStatementException e) {
-						if (verbose) System.err.println("[ERROR] Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
+						TextIOHelpers.log("Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
 						return;
 					}
 						
@@ -1151,10 +1146,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					try	{
 						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 						watchersCache.put(w.getWatchPattern(), Pair.create(query, false));
-						if (verbose) System.out.println("\n * New watch expression added to cache: " + resultQuery);
+						TextIOHelpers.log("New watch expression added to cache: " + resultQuery + "\n");
 					}
 					catch (QueryParseException e) {
-						if (verbose) System.err.println("[ERROR] internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.");
+						TextIOHelpers.log("Internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
 						return;
 					}
 					
@@ -1167,7 +1162,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 					if (QueryExecutionFactory.create(currentQuery.getLeft(), onto).execAsk()){
 						
-						if (verbose) System.out.println("\n * Event triggered for pattern " + w.getWatchPattern());
+						TextIOHelpers.log("Event triggered for pattern " + w.getWatchPattern() + "\n");
 						
 						switch(w.getTriggeringType()){
 						case ON_TRUE:
@@ -1205,7 +1200,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 				}
 				catch (QueryExecException e) {
-					if (verbose) System.err.println("[ERROR] internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)");
+					TextIOHelpers.log("Internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 					throw e;
 				}
 				finally {
@@ -1262,25 +1257,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 			try {
 				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
-				if (verbose) System.out.print(" * Common sense ontology initialized with "+ oroCommonSenseUri +".\n");
+				TextIOHelpers.log("Common sense ontology initialized with "+ oroCommonSenseUri +".\n", VerboseLevel.IMPORTANT);
 				
 				if (oroRobotInstanceUri != null) 
 					{
 					robotInstancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
-					if (verbose) System.out.println(" * Robot-specific ontology loaded from " + oroRobotInstanceUri + ".");
+					TextIOHelpers.log("Robot-specific ontology loaded from " + oroRobotInstanceUri + ".\n", VerboseLevel.IMPORTANT);
 					}
-				else if (verbose) System.out.print("\n");
 				
 				if (oroScenarioUri != null) 
 				{
 				scenarioModel = FileManager.get().loadModel(oroScenarioUri);
-				if (verbose) System.out.println(" * Scenario-specific ontology loaded from " + oroScenarioUri + ".");
+				TextIOHelpers.log("Scenario-specific ontology loaded from " + oroScenarioUri + ".\n", VerboseLevel.IMPORTANT);
 				}
-				else if (verbose) System.out.print("\n");
 				
 				
 			} catch (NotFoundException nfe) {
-				System.err.println("[ERROR] Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.");
+				TextIOHelpers.log(" Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.", VerboseLevel.FATAL_ERROR);
 				System.exit(1);
 			}
 			//Ontology model and reasonner type
@@ -1294,13 +1287,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if (scenarioModel != null) onto.add(scenarioModel);
 			onto.leaveCriticalSection();
 			
-			if (verbose) {
-				Helpers.printInGreen(" * Ontology successfully loaded");
-				System.out.print(" (");
-				if (robotInstancesModel != null) System.out.print("Robot-specific knowledge loaded and merged. ");
-				if (scenarioModel != null) System.out.print("Scenario-specific knowledge loaded and merged. ");
-				System.out.println(onto_model_reasonner_name + " initialized).");
-			}
+			TextIOHelpers.log("Ontology successfully loaded ", VerboseLevel.IMPORTANT);
+			TextIOHelpers.log(" (");
+				if (robotInstancesModel != null) TextIOHelpers.log("Robot-specific knowledge loaded and merged. ");
+				if (scenarioModel != null) TextIOHelpers.log("Scenario-specific knowledge loaded and merged. ");
+				TextIOHelpers.log(onto_model_reasonner_name + " initialized).\n");
 			
 			
 		} catch (ReasonerException re){
@@ -1316,7 +1307,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	public void clear(PartialStatement partialStmt) {
-		if (verbose) System.out.println(" * Clearing statements matching ["+ partialStmt + "]...");
+		TextIOHelpers.log("Clearing statements matching ["+ partialStmt + "]\n");
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		
@@ -1335,7 +1326,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	public void remove(Statement stmt) {
-		if (verbose) System.out.println(" * Removing statement ["+ Namespaces.toLightString(stmt) + "]...");
+		TextIOHelpers.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]");
 		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
@@ -1367,7 +1358,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			desc="exports the current ontology model to an OWL file. The provided path must be writable by the server."
 	)
 	public void save(String path) throws OntologyServerException {
-		if (verbose) System.out.print(" * Saving ontology to " + path +"...");
+		TextIOHelpers.log("Saving ontology to " + path +"...", VerboseLevel.IMPORTANT);
 		FileOutputStream file;
 		try {
 			file = new FileOutputStream(path);
@@ -1378,7 +1369,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.write(file);
 		onto.leaveCriticalSection();
 		
-		if (verbose) System.out.println("done");
+		TextIOHelpers.log("done.\n");
 		
 	}
 

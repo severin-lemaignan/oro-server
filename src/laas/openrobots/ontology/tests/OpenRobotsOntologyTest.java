@@ -48,8 +48,6 @@ import java.util.Set;
 import java.util.Vector;
 
 import junit.framework.TestCase;
-import laas.openrobots.ontology.Helpers;
-import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -60,6 +58,8 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 

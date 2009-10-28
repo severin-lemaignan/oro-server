@@ -19,9 +19,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import laas.openrobots.ontology.Helpers;
-import laas.openrobots.ontology.Pair;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Pair;
+import laas.openrobots.ontology.helpers.TextIOHelpers;
+import laas.openrobots.ontology.helpers.VerboseLevel;
 
 /** Implements a socket interface to {@code oro-server} RPC methods.<br/>
  * <br/>
@@ -164,7 +166,7 @@ public class SocketConnector implements IConnector, Runnable {
 					} catch (InterruptedException e) {}
 					
 					if (System.currentTimeMillis() - timeLastActivity > (KEEP_ALIVE_SOCKET_DURATION * 1000)) {
-						System.err.println(" * Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.");
+						TextIOHelpers.log("Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.", VerboseLevel.WARNING);
 						keepOnThisWorker = false;
 						break;
 		    		}
@@ -172,7 +174,7 @@ public class SocketConnector implements IConnector, Runnable {
 					try{
 			    		line = in.readLine(); //answers null if the stream doesn't contain a "\n"
 			        } catch (IOException e) {
-						System.err.println("Read failed on one of the opened socket.");
+			        	TextIOHelpers.log("Read failed on one of the opened socket (" + getName() + "). Killing it.\n", VerboseLevel.SERIOUS_ERROR);
 						keepOnThisWorker = false;
 						break;
 					}
@@ -214,7 +216,7 @@ public class SocketConnector implements IConnector, Runnable {
 			  String queryName = request.get(0);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
-	    		System.out.println(" * Closing communication with client " + getName());
+	    		TextIOHelpers.log("Closing communication with client " + getName());
 	    		
 	    		keepOnThisWorker = false;
 	    		
@@ -300,7 +302,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			}
 	    	    			
 	    	    			if (!invokationDone) {
-	    						System.err.println("ERROR while executing the request: no way to serialize the return value of method '"+ queryName + "' (return type is " + m.getReturnType().getName() + ").");
+	    	    				TextIOHelpers.log("Error while executing the request: no way to serialize the return value of method '"+ queryName + "' (return type is " + m.getReturnType().getName() + ").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 	    						result ="error\n" +
 	    								"\n" +
 	    								"No way to serialize return value of method '" + queryName + "' (return type is " + m.getReturnType().getName() + ").";	
@@ -308,25 +310,25 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			
 	    	    			
 						} catch (IllegalArgumentException e) {
-							System.err.println("ERROR while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+							TextIOHelpers.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
 							result = "error\n" +
 									e.getClass().getName() + "\n" +
 									e.getLocalizedMessage().replace("\"", "'");
 							
 						} catch (ClassCastException e) {
-							System.err.println("ERROR while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+							TextIOHelpers.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
 							result = "error\n" +
 							e.getClass().getName() + "\n" +
 							e.getLocalizedMessage().replace("\"", "'");
 							
 						} catch (IllegalAccessException e) {
-							System.err.println("ERROR while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage());
+							TextIOHelpers.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
 							result = "error\n" +
 							e.getClass().getName() + "\n" +
 							e.getLocalizedMessage().replace("\"", "'");	
 							
 						} catch (InvocationTargetException e) {
-							System.err.println("ERROR while executing the request '" + queryName + "': " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage());
+							TextIOHelpers.log("Error while executing the request '" + queryName + "': " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage() + "\n", VerboseLevel.ERROR);
 							result = "error\n" + 
 									e.getCause().getClass().getName() + "\n" +
 									e.getCause().getLocalizedMessage().replace("\"", "'");							
@@ -338,7 +340,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    	}
 	    		}
 	    		if (!methodFound){
-					System.err.println("ERROR while executing the request: method \""+ queryName + "\" (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.");
+	    			TextIOHelpers.log("Error while executing the request: method \""+ queryName + "\" (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.\n", VerboseLevel.ERROR);
 					result = "error\n" +
 							"NotImplementedException\n" +
 							"Method " + queryName + " (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.";						
@@ -493,7 +495,7 @@ public class SocketConnector implements IConnector, Runnable {
 			try{
 			        server.close();
 			} catch (IOException e) {
-			        throw new OntologyConnectorException("[ERROR] Could not close the socket server!");
+			        throw new OntologyConnectorException("Could not close the socket server!");
 			}
 		}
 
@@ -518,12 +520,12 @@ public class SocketConnector implements IConnector, Runnable {
 		try{
 	      server = new ServerSocket(port); 
 	    } catch (IOException e) {
-	      System.err.println("[ERROR] Error while creating the server: could not listen on port " + port + ". Port busy?");
-	      System.exit(-1);
+	    	TextIOHelpers.log("Error while creating the server: could not listen on port " + port + ". Port busy?\n", VerboseLevel.FATAL_ERROR);
+	    	System.exit(-1);
 	    }
 	    
 	    
-	    Helpers.printlnInGreen(" * Server started on port " + port);
+	    TextIOHelpers.log("Server started on port " + port + "\n", VerboseLevel.IMPORTANT);
 	    
 	    while(keepOn){
 	      ClientWorker w;
@@ -532,7 +534,7 @@ public class SocketConnector implements IConnector, Runnable {
 	        Thread t = new Thread(w, w.getName());
 	        t.start();
 	      } catch (IOException e) {
-	        System.err.println("Accept failed on port " + port);
+	    	  TextIOHelpers.log("Accept failed on port " + port + "\n", VerboseLevel.FATAL_ERROR);
 	        System.exit(-1);
 	      }
 	    }

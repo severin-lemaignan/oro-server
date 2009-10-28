@@ -34,7 +34,7 @@
  * 
 */
 
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -46,6 +46,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
@@ -177,40 +178,6 @@ public class Helpers {
 
 	}
 	
-	public static void printlnInBlue(String msg){
-		System.out.print ((char)27 + "[34m");
-		System.out.println (msg);
-		System.out.print ((char)27 + "[0m");
-	}
-	
-	public static void printlnInGreen(String msg){
-		System.out.print ((char)27 + "[32m");
-		System.out.println (msg);
-		System.out.print ((char)27 + "[0m");
-	}
-	public static void printInGreen(String msg){
-		System.out.print ((char)27 + "[32m");
-		System.out.print (msg);
-		System.out.print ((char)27 + "[0m");
-	}
-	
-	public static void printlnInRed(String msg){
-		System.out.print ((char)27 + "[31m");
-		System.out.println (msg);
-		System.out.print ((char)27 + "[0m");
-	}
-	
-	public static void printlnInPurple(String msg){
-		System.out.print ((char)27 + "[35m");
-		System.out.println (msg);
-		System.out.print ((char)27 + "[0m");
-	}
-	
-	public static void printInPurple(String msg){
-		System.out.print ((char)27 + "[35m");
-		System.out.print (msg);
-		System.out.print ((char)27 + "[0m");
-	}
 		
 	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
 		OpenRobotsOntology.ResourceType type;

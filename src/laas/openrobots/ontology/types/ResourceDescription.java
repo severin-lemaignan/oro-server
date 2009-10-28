@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.helpers.Helpers;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntResource;

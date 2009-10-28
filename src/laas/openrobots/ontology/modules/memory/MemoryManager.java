@@ -5,8 +5,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import laas.openrobots.ontology.Helpers;
-import laas.openrobots.ontology.Namespaces;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.rdf.model.Property;

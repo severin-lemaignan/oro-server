@@ -3,13 +3,13 @@ package laas.openrobots.ontology.modules.diff;
 import java.util.HashSet;
 import java.util.Set;
 
-import laas.openrobots.ontology.Helpers;
 import laas.openrobots.ontology.IServiceProvider;
-import laas.openrobots.ontology.Namespaces;
 import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.NotComparableException;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
