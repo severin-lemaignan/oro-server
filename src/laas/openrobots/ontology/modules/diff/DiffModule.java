@@ -84,6 +84,11 @@ import com.hp.hpl.jena.util.iterator.Filter;
  * 
  * In the example above, S3 = {{Animal, Car}, {WhiteAnimal, WhiteCar}}
  * 
+ * The {@link #getDifferences(OntResource, OntResource)} method would actually
+ * return a set of sets of statements, sorting by parent types the values for 
+ * the two concepts (for instance, {@code [[a type Animal, b type Car], [a type
+ * WhiteAnimal, b type WhiteCar]]}).
+ * 
  * <h2>Comparison of other properties</h2>
  * 
  * The {@link #getSimilarities(OntResource, OntResource)} method will return as 
