@@ -355,7 +355,7 @@ public class SocketConnector implements IConnector, Runnable {
     			str += protectValue(v.toString()) + ",";
     		}
     		
-    		str = str.substring(0, str.length() - 1) + "]";
+    		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
     		
     		return str;
     	}
@@ -366,7 +366,7 @@ public class SocketConnector implements IConnector, Runnable {
     			str += protectValue(v.toString()) + ",";
     		}
     		
-    		str = str.substring(0, str.length() - 1) + "]";
+    		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
     		
     		return str;
     	}
@@ -377,7 +377,7 @@ public class SocketConnector implements IConnector, Runnable {
     			str += protectValue(es.getKey().toString()) + ":" + protectValue(es.getValue().toString()) + ",";
     		}
     		
-    		str = str.substring(0, str.length() - 1) + "}";
+    		str = (str.equals("{") ? str : str.substring(0, str.length() - 1)) + "}";
     		
     		return str;
     	}
