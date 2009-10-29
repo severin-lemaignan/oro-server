@@ -60,7 +60,7 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Pair;
-import laas.openrobots.ontology.helpers.TextIOHelpers;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
@@ -127,6 +127,7 @@ public class OroServer implements IServiceProvider {
 	public static String DEFAULT_LANGUAGE = "en";
 	
 	public static boolean HAS_A_TTY;
+	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
 	
 	public static final String VERSION = "0.6.4"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
@@ -145,7 +146,7 @@ public class OroServer implements IServiceProvider {
 	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
-			TextIOHelpers.log("Application interrupted. Shutting down...\n", VerboseLevel.WARNING); 
+			Logger.log("Application interrupted. Shutting down...\n", VerboseLevel.WARNING); 
 
 			keepOn = false; 
 			try {
@@ -154,7 +155,7 @@ public class OroServer implements IServiceProvider {
 				e.printStackTrace();
 			} 
 			
-			TextIOHelpers.log("Bye bye.\n", VerboseLevel.IMPORTANT);
+			Logger.log("Bye bye.\n", VerboseLevel.IMPORTANT);
 		} 
 	} 
 	
@@ -182,27 +183,34 @@ public class OroServer implements IServiceProvider {
     	//color outputs in a logfile for instance.
     	HAS_A_TTY = System.console() == null ? false : true;
     	
-    	TextIOHelpers.printInBlue("+------------------------------------+\n" +
-    						"|                                    |\n" +			
-    						"|          OroServer " + VERSION + "           |\n" +
-    						"|                                    |\n" +
-    						"|         ");
-    	System.out.print("(c)LAAS-CNRS 2009");
-    	TextIOHelpers.printlnInBlue("          |\n" +
-							"+------------------------------------+");
     	
-    	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
-    	
-    	
+
     	if (args.length < 1 || args.length > 1)
     		confFile = DEFAULT_CONF;
     	else
     		confFile = args[0];
     	
+    	//Load the configuration file. If it can not be found, exits.
     	confParams = getConfiguration(confFile);
-    	TextIOHelpers.log("Using configuration file " + confFile + "\n\n", VerboseLevel.IMPORTANT);
-		
-    	//System.err.close(); //remove YARP message, but remove Oro error messages as well!!
+    	
+    	if (! (VERBOSITY == VerboseLevel.SILENT)) {
+	    	Logger.printInBlue(
+	    						"+------------------------------------+\n" +
+	    						"|                                    |\n" +			
+	    						"|          OroServer " + 
+	    										VERSION + "           |\n" +
+	    						"|                                    |\n" +
+	    						"|         ");
+	    	System.out.print("(c)LAAS-CNRS 2009");
+	    	Logger.printlnInBlue("          |\n" +
+								"+------------------------------------+");
+    	}
+    	
+    	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
+    	
+    	Logger.log("Using configuration file " + confFile + "\n", 
+    						VerboseLevel.IMPORTANT);
+    	Logger.cr();
 
 		/***********************************************************************
 		 *               BACKENDS and SERVICES REGISTRATION                    *
@@ -211,7 +219,7 @@ public class OroServer implements IServiceProvider {
 		//add the services offered by the OroServer class
 		addNewServiceProviders(this);
 		
-		//Open and load the ontology + register ontology services by the server. If the configuration file can not be found, it exits.
+		//Open and load the ontology + register ontology services by the server. 
 		oro = new OpenRobotsOntology(confParams);
 		
 		addNewServiceProviders(oro);
@@ -225,24 +233,25 @@ public class OroServer implements IServiceProvider {
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
 			
-		TextIOHelpers.log("\nFollowing services are registred:\n", VerboseLevel.IMPORTANT);
+		Logger.log("Following services are registred:\n", VerboseLevel.IMPORTANT);
     	for (Pair<String,String> m : registredServices.keySet())
     	{
-    		TextIOHelpers.log("\t- " + m.getLeft(), VerboseLevel.EMPHASIZE);
+    		Logger.log("\t- " + m.getLeft(), VerboseLevel.EMPHASIZE);
     		//if present, display the description as well
     		if (m.getRight() != "")
-    			TextIOHelpers.log(" -> " + m.getRight() + "\n");
+    			Logger.log(" -> " + m.getRight() + "\n");
     		else
-    			TextIOHelpers.log("\n");
+    			Logger.log("\n");
     	}
-    	TextIOHelpers.log("\n");
+    	Logger.cr();
 
 		
 		/********************************************************************************
 		 *                       CONNECTORS INITIALIZATION                              *
 		 ********************************************************************************/
     	
-    	// Currently, only one connector, the socket connector (others bridges like YARP or JSON are now out of the oro-server code base)
+    	// Currently, only one connector, the socket connector 
+    	// (others bridges like YARP or JSON are now out of the oro-server code base)
     	SocketConnector sc = new SocketConnector(confParams, registredServices);
 		connectors.add(sc);
 
@@ -250,19 +259,19 @@ public class OroServer implements IServiceProvider {
 			try {
 				c.initializeConnector();
 			} catch (OntologyConnectorException e) {
-				TextIOHelpers.log("Couldn't initialize a connector: " + e.getLocalizedMessage() + ". Ignoring it.\n", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("Couldn't initialize a connector: " + e.getLocalizedMessage() + ". Ignoring it.\n", VerboseLevel.SERIOUS_ERROR);
 				connectors.remove(c);
 			}
 		}
 		
 		if (connectors.size() == 0) {
-			TextIOHelpers.log("None of the connectors could be started! Killing myself now.\n", VerboseLevel.FATAL_ERROR);
+			Logger.log("None of the connectors could be started! Killing myself now.\n", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}
 
-		/********************************************************************************
-		 *                               MAIN LOOP                                      *
-		 ********************************************************************************/
+/*******************************************************************************
+*                                MAIN LOOP                                     *
+*******************************************************************************/
 
 		while(keepOn) {			
 			
@@ -273,7 +282,10 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	
-	public static void main(String[] args) throws OntologyConnectorException, InterruptedException, OntologyServerException {
+	public static void main(String[] args) throws 
+									OntologyConnectorException, 
+									InterruptedException, 
+									OntologyServerException {
 		new OroServer().runServer(args);
 	}
 	
@@ -327,7 +339,8 @@ public class OroServer implements IServiceProvider {
 	}
 
 	@RPCMethod(
-			desc = "returns a human-friendly list of available methods with their signatures and short descriptions."
+			desc = "returns a human-friendly list of available methods with " +
+					"their signatures and short descriptions."
 	)
 	public String help() {
 		
@@ -351,15 +364,22 @@ public class OroServer implements IServiceProvider {
 	    	
 	    	params += ")";
 	    	
-	        help += "\t- " + (char)27 + "[35m" + pairs.getKey().getLeft() + params + (char)27 + "[0m: " + pairs.getKey().getRight() + "\n";
+	        help += "\t- " + (char)27 + "[35m" + 
+	        		pairs.getKey().getLeft() + params + 
+	        		(char)27 + "[0m: " + 
+	        		pairs.getKey().getRight() + "\n";
 	    }
 		
-	    help += "\nTo execute a command, you must enter its name (case insensitive), followed by one parameter per line. To finish, type " + SocketConnector.MESSAGE_TERMINATOR + " and 'return'. The server should answer.\n";
+	    help += "\nTo execute a command, you must enter its name (case " +
+	    		"insensitive), followed by one parameter per line. To finish, type " + 
+	    		SocketConnector.MESSAGE_TERMINATOR + " and 'return'. " +
+	    		"The server should answer.\n";
 		return help;
 	}
 	
 	@RPCMethod(
-			desc = "returns the list of available methods with their signatures and short descriptions as a map."
+			desc = "returns the list of available methods with their signatures " +
+					"and short descriptions as a map."
 	)
 	public Map<String, String> listMethods() {
 		
@@ -405,7 +425,8 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	@RPCMethod(
-			desc = "returns a list of available methods in HTML format for inclusion in documentation."
+			desc = "returns a list of available methods in HTML format for " +
+					"inclusion in documentation."
 	)
 	public String makeHtmlDoc() {
 		
@@ -431,7 +452,11 @@ public class OroServer implements IServiceProvider {
 	    	params += ")";
 	    		        
 	    	//build the list of expected parameters 	
-	        help += "\t<li>{@linkplain " + pairs.getValue().getRight().getClass().getName() + "#" + pairs.getValue().getLeft().getName() + params + " <em>" + pairs.getKey().getLeft() + "</em><i>" + params + "</i>}: " + pairs.getKey().getRight() + "</li>\n";
+	        help += "\t<li>{@linkplain " + 
+	        		pairs.getValue().getRight().getClass().getName() + "#" + 
+	        		pairs.getValue().getLeft().getName() + params + " <em>" + 
+	        		pairs.getKey().getLeft() + "</em><i>" + params + "</i>}: " + 
+	        		pairs.getKey().getRight() + "</li>\n";
 	    }
 	    help += "</ul>\n";
 		return help;
@@ -454,7 +479,8 @@ public class OroServer implements IServiceProvider {
 	
 	/**
 	 * Read a configuration file and return to corresponding "Properties" object.
-	 * The configuration file contains the path to the ontology to be loaded and several options regarding the server configuration.
+	 * The configuration file contains the path to the ontology to be loaded and 
+	 * several options regarding the server configuration.
 	 * @param configFileURI The path and filename of the configuration file.
 	 * @return A Java.util.Properties instance containing the application configuration.
 	 */
@@ -469,23 +495,37 @@ public class OroServer implements IServiceProvider {
         	parameters.load(fstream);
 			fstream.close();
 			
+			// Retrieve, if available, the level of verbosity.
+			try {
+				VERBOSITY = VerboseLevel.valueOf(parameters.getProperty("verbosity", "info").toUpperCase());
+			} catch (IllegalArgumentException iae) {
+				VERBOSITY = VerboseLevel.INFO;
+				Logger.log("Invalid value for the verbosity level. Switch back to default verbosity.", VerboseLevel.SERIOUS_ERROR);
+			}
+			
 			if (!parameters.containsKey("oro_common_sense"))
 			{
-				TextIOHelpers.log("No common sense ontology specified in the configuration file (\"" + configFileURI + "\"). Add smthg like oro_common_sense=commonsense.owl\n", VerboseLevel.FATAL_ERROR);
+				Logger.log("No common sense ontology specified in the " +
+						"configuration file (\"" + configFileURI + "\"). Add " +
+						"smthg like oro_common_sense=commonsense.owl\n", 
+						VerboseLevel.FATAL_ERROR);
 	        	System.exit(1);
 			}
 			
 			// Retrieve, if available, the default language for label retrieval.
 			DEFAULT_LANGUAGE = parameters.getProperty("language", "en");
+			
 		}
         catch (FileNotFoundException fnfe)
         {
-        	TextIOHelpers.log("No config file. Check \"" + configFileURI + "\" exists.\n", VerboseLevel.FATAL_ERROR);
+        	Logger.log("No config file. Check \"" + configFileURI + "\" exists.\n", 
+        			VerboseLevel.FATAL_ERROR);
         	System.exit(1);
         }
         catch (Exception e)
 		{
-        	TextIOHelpers.log("Config file input error. Check config file syntax.\n", VerboseLevel.FATAL_ERROR);
+        	Logger.log("Config file input error. Check config file syntax.\n", 
+        			VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}
         

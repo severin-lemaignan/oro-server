@@ -6,7 +6,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.helpers.VerboseLevel;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -50,7 +52,7 @@ public class MemoryManager extends Thread {
 			try {
 				Thread.sleep(KNOWLEDGE_GARBAGE_COLLECTION_FREQ);
 			} catch (InterruptedException e) {
-				System.err.println("The memory manager thread has been interrupted!!");
+				Logger.log("The memory manager thread has been interrupted!!", VerboseLevel.SERIOUS_ERROR);
 				break;
 			}
 			
@@ -84,7 +86,7 @@ public class MemoryManager extends Thread {
 		            {
 		            //the reified statement	has no createdOn property. We skip it.
 		            } catch (ParseException e) {
-						System.err.println("The creation date of [" + rs.getStatement() + "] could not be parsed!");
+						Logger.log("The creation date of [" + rs.getStatement() + "] could not be parsed!", VerboseLevel.SERIOUS_ERROR);
 					}
 		        }
 		        
@@ -96,7 +98,7 @@ public class MemoryManager extends Thread {
 			onto.enterCriticalSection(Lock.WRITE);
 			try {
 				for (ReifiedStatement s : stmtToRemove) {
-					System.out.println(" * Cleaning old statement [" + s.getStatement() +"].");
+					Logger.log("Cleaning old statement [" + s.getStatement() +"].");
 					s.getStatement().removeReification();
 					s.getStatement().remove();
 					s.removeProperties();					

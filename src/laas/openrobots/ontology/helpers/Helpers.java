@@ -171,8 +171,8 @@ public class Helpers {
 		try {
 			return URLEncoder.encode(resource.getURI(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			System.exit(0);
+			Logger.log("This plateform doesn't support UTF-8 encoding! Exiting.", VerboseLevel.FATAL_ERROR);
+			System.exit(1);
 			return "";
 		}
 
@@ -198,7 +198,7 @@ public class Helpers {
 				type = OpenRobotsOntology.ResourceType.UNDEFINED;
 			
 		} catch (NoSuchFieldError nsfe) {
-			System.err.println("Couln't determine the type of " + resource + "! Issue with the reasonner?");
+			Logger.log("Couln't determine the type of " + resource + "! Issue with the reasonner?", VerboseLevel.SERIOUS_ERROR);
 			type = OpenRobotsOntology.ResourceType.UNDEFINED;
 		}
 		
@@ -250,9 +250,6 @@ public class Helpers {
 		}
 		
 		tokens.add(str.substring(start_pos, str.length()));
-		
-		//for (String s : tokens)
-		//	System.out.println("Token: <" + s + ">");
 
 		return tokens;
 		
