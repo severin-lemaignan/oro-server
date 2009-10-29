@@ -60,7 +60,6 @@ import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
@@ -132,7 +131,7 @@ public class OroServer implements IServiceProvider {
 	public static boolean HAS_A_TTY;
 	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
 	
-	public static final String VERSION = "0.6.4"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.6.5"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 

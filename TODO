@@ -1,5 +1,4 @@
 - implement module CURIOSITY
 - re-introduce module EVENT MANAGER
 - implement reinforcement learning into module MEMORY MANAGER
-- add categories for the RPC methods
 - implement different ontologies for different agents
