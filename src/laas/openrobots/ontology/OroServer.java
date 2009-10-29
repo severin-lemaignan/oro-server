@@ -64,6 +64,7 @@ import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
@@ -228,6 +229,9 @@ public class OroServer implements IServiceProvider {
 		
 		/********************* SERVICES REGISTRATION **************************/
 		
+		IServiceProvider baseModule = new BaseModule(oro);
+		addNewServiceProviders(baseModule);
+		
 		IServiceProvider diffModule = new DiffModule(oro);
 		addNewServiceProviders(diffModule);
 		
@@ -250,9 +254,9 @@ public class OroServer implements IServiceProvider {
     	Logger.cr();
 
 		
-		/********************************************************************************
-		 *                       CONNECTORS INITIALIZATION                              *
-		 ********************************************************************************/
+/*******************************************************************************
+*                       CONNECTORS INITIALIZATION                              *
+*******************************************************************************/
     	
     	// Currently, only one connector, the socket connector 
     	// (others bridges like YARP or JSON are now out of the oro-server code base)
@@ -309,6 +313,7 @@ public class OroServer implements IServiceProvider {
 	 * @return a map containing the statistics (pairs name/value)
 	 */
 	@RPCMethod(
+			category = "server",
 			desc = "returns some statistics on the server"
 	)
 	public static Map<String, String> stats() {
@@ -382,6 +387,7 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	@RPCMethod(
+			category = "server",
 			desc = "returns the list of available methods with their signatures " +
 					"and short descriptions as a map."
 	)
@@ -413,6 +419,7 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	@RPCMethod(
+			category = "server",
 			desc = "returns a raw list of available methods."
 	)
 	public Set<String> listSimpleMethods() {
@@ -428,6 +435,7 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	@RPCMethod(
+			category = "server",
 			desc = "returns a list of available methods in HTML format for " +
 					"inclusion in documentation."
 	)

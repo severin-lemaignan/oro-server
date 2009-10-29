@@ -382,6 +382,7 @@ public class DiffModule implements IServiceProvider {
 	 * @see #getDifferences(OntResource, OntResource)
 	 */
 	@RPCMethod(
+			category = "concept comparison",
 			desc="given two concepts, return the list of relevant differences (types, properties...) between these concepts."
 	)	
 	public Set<Set<String>> getDifferences(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
@@ -454,7 +455,8 @@ public class DiffModule implements IServiceProvider {
 	 * @see #getSimilarities(OntResource, OntResource)
 	 */
 	@RPCMethod(
-			desc="given two concepts, return the list of relevant similarities (types, properties...) between these concepts."
+			category = "concept comparison", 
+			desc = "given two concepts, return the list of relevant similarities (types, properties...) between these concepts."
 	)	
 	public Set<String> getSimilarities(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		

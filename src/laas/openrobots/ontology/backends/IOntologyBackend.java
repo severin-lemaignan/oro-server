@@ -1,14 +1,13 @@
 package laas.openrobots.ontology.backends;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -24,6 +23,7 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -38,7 +38,9 @@ import com.hp.hpl.jena.shared.NotFoundException;
  * @author slemaign
  *
  */
-public interface IOntologyBackend extends IServiceProvider{
+public interface IOntologyBackend extends IServiceProvider {
+
+
 
 	/**
 	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.Property property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
@@ -111,11 +113,13 @@ public interface IOntologyBackend extends IServiceProvider{
 	public abstract OntModel getModel();
 
 	/**
-	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
-	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
+	 * Adds a new statement (assertion) to the ontology. Does nothing is the statement already exists.<br/>
+	 * A memory profile is associated to the statement: statements associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} are stored and never removed from the ontology while other memory profiles allow the ontology to "forget" about certains facts after a given amount of time.
+	 *   
+	 * @param statement The new statement.
+	 * @param memProfile The memory profile associated to this statement.
 	 */
-	public abstract Boolean checkConsistency()
-			throws InconsistentOntologyException;
+	public abstract void add(Statement statement, MemoryProfile memProfile);
 
 	/**
 	 * Checks if a statement is asserted or can be inferred from the ontology. If the method returns false, IT DOES NOT mean that the statement itself is false. Most probably, the fact expressed by the statement is simply not known.
@@ -133,12 +137,19 @@ public interface IOntologyBackend extends IServiceProvider{
 	 *  <li>{@code [anAgent sees ?something]} would match all objects seen by instance "{@code anAgent}".</li>
 	 * </ul>
 	 * 
-	 * @param partial_statement the pattern to be evaluated
+	 * @param statement the partial pattern to be evaluated
 	 * @return true if the pattern matches at least one asserted or inferred statement of the ontology
 	 * @see #find(String, Vector)
 	 */
-	public abstract boolean check(PartialStatement partial_statement);
-	
+	public abstract boolean check(PartialStatement statement);
+
+	/**
+	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
+	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
+	 */
+	public abstract Boolean checkConsistency()
+			throws InconsistentOntologyException;
+
 	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>
 	 * 
@@ -165,244 +176,8 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see #queryAsXML(String)
 	 * @throws QueryParseException thrown if the argument is not a valid SPARQL query.
 	 */
-	public abstract ResultSet query(String query) throws QueryParseException;
-
-	/**
-	 * Like {@link #query(String) query} except it returns a XML-encoded SPARQL result.
-	 * 
-	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
-	 * @return The result of the query as SPARQL XML string.
-	 * @see #query(String)
-	 */
-	public abstract String queryAsXML(String query);
-
-	/**
-	 * Adds a new statement (assertion) to the ontology. Does nothing is the statement already exists.<br/>
-	 * A memory profile is associated to the statement: statements associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} are stored and never removed from the ontology while other memory profiles allow the ontology to "forget" about certains facts after a given amount of time.
-	 *   
-	 * @param statement The new statement.
-	 * @param memProfile The memory profile associated to this statement.
-	 */
-	public abstract void add(Statement statement, MemoryProfile memProfile);
-	
-	/**
-	 * 	 * Adds a set of statements (assertions) to the ontology from their string representation in the given memory profile.<br/>
-	 * This method does nothing if the statements already exist with the same memory profile. If the same statements are added with a different memory profile, the shortest term memory container has priority.
-	 * 
-	 * To create literals, you must suffix the value with {@code ^^xsd:} and the XML schema datatype.</br>
-	 * <br/>
-	 * For instance:
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 * myOntology.add("myIndividual myBooleanPredicate true^^xsd:boolean", MemoryProfile.SHORTTERM);
-	 * </pre>
-	 * 
-	 * Examples of statements: <br/>
-	 * <ul>
-	 * 	<li>{@code "oro:instance1 rdf:type oro:Class1"}</li>
-	 *  <li>{@code "oro:instance1 oro:dataProperty1 true^^xsd:boolean"}</li>
-	 *  <li>{@code "instance1 dataProperty1 true"} (if no namespace is specified, it uses the default one)</li>
-	 * </ul>
-	 *  
-	 * C++ code snippet with {@code liboro} library:
-	 *  
-	 * <pre>
-	 * #include &quot;oro.h&quot;
-	 * #include &quot;yarp_connector.h&quot;
-	 * 
-	 * using namespace std;
-	 * using namespace oro;
-	 * int main(void) {
-	 * 
-	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 		Ontology* onto = Ontology::createWithConnector(connector);
-	 * 
-	 * 		onto->add(Statement("gorilla rdf:type Monkey"));
-	 * 		onto->add(Statement("gorilla age 12^^xsd:int"));
-	 * 		onto->add(Statement("gorilla weight 75.2"));
-	 * 
-	 * 		// You can as well send a set of statement. The transport will be optimized (all the statements are sent in one time).
-	 * 		vector<Statement> stmts;
-	 * 
-	 * 		stmts.push_back("gorilla rdf:type Monkey");
-	 * 		stmts.push_back("gorilla age 12^^xsd:int");
-	 * 		stmts.push_back("gorilla weight 75.2");
-	 * 
-	 * 		onto->add(stmts);
-	 * 
-	 * 		return 0;
-	 * }
-	 * </pre>
-	 * 
-	 * This method does nothing if the statement already exists with the same memory profile. If the same statement is added with a different memory profile, the shortest term memory container has priority.
-	 * 
-	 * @param statement The new statement.
-	 * @param memProfile The memory profile associated with this statement.
-	 * @throws IllegalStatementException
-	 * 
-	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
-	 * @see #add(Statement, MemoryProfile)
-	 * @see #remove(Statement)
-	 */
-	public abstract void add(Set<String> statements, String memProfile) throws IllegalStatementException;
-	
-	/**
-	 * Like {@link #add(Set<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
-
-	 * @param statements A vector of string representing statements to be inserted in the ontology.
-	 * @throws IllegalStatementException
-	 * 
-	 * @see #add(Set<String>, MemoryProfile)
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public abstract void add(Set<String> statements) throws IllegalStatementException;
-	
-	/**
-	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.
-	 * 
-	 * @param stmt The statement to remove from the ontology.
-	 * @see #add(String)
-	 */
-	public abstract void remove(Statement stmt);
-
-	/**
-	 * Remove a given statement (represented as a string) from the ontology. Does nothing if the statement doesn't exist.
-	 * 
-	 * @param stmt A string representing the statement to remove from the ontology.
-	 * @see #add(String)
-	 * @see #remove(Statement)
-	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
-	 */
-	public abstract void remove(String stmt) throws IllegalStatementException;
-	
-	/**
-	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
-	 * 
-	 * @param stmts A vector of strings representing the statements to remove from the ontology.
-	 * @see #add(Vector)
-	 * @see #remove(String)
-	 */
-	public abstract void remove(Set<String> stmts) throws IllegalStatementException;
-	
-	/**
-	 * Tries to identify a resource given a set of partially defined statements (plus optional restrictions) about this resource.<br/>
-	 * 
-	 * First simple example:
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 *
-	 * Set<String> knowledge = new Set<String>();
-	 * knowledge.add("?mysterious_object ns:isEdibleBy ns:monkey");
-	 * knowledge.add("?mysterious_object ns:color "yellow"^^ns:color");
-	 *
-	 * Set<String> results = myOntology.find("mysterious_object", knowledge);
-	 * for (String res:results)
-	 * 		System.out.println(res);
-	 * </pre>
-	 * Supposing your ontology defines the right properties and instances, you can expect this example to output something like {@code ns:banana}.<br/>
-	 * <br/>
-	 * Example with restrictions:
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 *
-	 * Set<String> knowledge = new Set<String>();
-	 * Set<String> filters = new Set<String>();
-	 * 
-	 * knowledge.add("?mysterious_object ns:isEdibleBy ns:monkey");
-	 * knowledge.add("?mysterious_object ns:color "yellow"^^ns:color");
-	 * knowledge.add("?mysterious_object ns:size ?size);
-	 *
-	 * filters.add("?size >= 200.0");
-	 * filters.add("?size < 250.0");
-	 *
-	 * Set<String> results = myOntology.find("mysterious_object", knowledge, filters);
-	 * for (String res:results)
-	 * 		System.out.println(res);
-	 * </pre>
-	 * This example would output all the {@code ns:banana}s whose size is comprised between 200 and 250mm (assuming mm is the unit you are using...).
-	 * <br/>
-	 * C++ code snippet using liboro:  
-	 * <pre>
-	 * #include &quot;oro.h&quot;
-	 * #include &quot;yarp_connector.h&quot;
-	 * 
-	 * using namespace std;
-	 * using namespace oro;
-	 * int main(void) {
-	 * 		set&lt;Concept&gt; result;
-	 * 		set&lt;string&gt; partial_stmts;
-	 * 		set&lt;string&gt; filters;
-	 * 
-	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 		Ontology* onto = Ontology::createWithConnector(connector);
-	 * 
-	 * 		partial_stmts.insert("?mysterious rdf:type oro:Monkey");
-	 * 		partial_stmts.insert("?mysterious oro:weight ?value");
-	 * 
-	 * 		filters.insert("?value >= 50");
-	 * 
-	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, filters, result);
-	 * 
-	 * 		//display the result
-	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
-	 * 
-	 * 		return 0;
-	 * }
-	 * </pre>
-	 * 
-	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
-	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
-	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
-	 * @throws IllegalStatementException 
-	 * @see #guess(String, Vector, double)
-	 * @see PartialStatement Syntax of partial statements
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public abstract Set<String> find(String varName,
-			Set<String> partial_statements, Set<String> filters) throws IllegalStatementException;
-
-	/**
-	 * Tries to identify a resource given a set of partially defined statements about this resource.<br/>
-	 * 
-	 * This is a simpler form for {@link #find(String, Vector, Vector)}, without filters.
-	 * 
-	 * <br/>
-	 * C++ code snippet using liboro: 
-	 * <pre>
-	 * #include &quot;oro.h&quot;
-	 * #include &quot;yarp_connector.h&quot;
-	 * 
-	 * using namespace std;
-	 * using namespace oro;
-	 * int main(void) {
-	 * 		set&lt;Concept&gt; result;
-	 * 		set&lt;string&gt; partial_stmts;
-	 * 
-	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
-	 * 		Ontology* onto = Ontology::createWithConnector(connector);
-	 * 
-	 * 		partial_stmts.insert("?mysterious oro:eats oro:banana_tree");
-	 * 		partial_stmts.insert("?mysterious oro:isFemale true^^xsd:boolean");
-	 * 
-	 * 		onto->find(&quot;mysterious&quot;, partial_stmts, result);
-	 * 
-	 * 		//display the result
-	 * 		copy(result.begin(), result.end(), ostream_iterator<Concept>(cout, "\n"));
-	 * 
-	 * 		return 0;
-	 * }
-	 * </pre>
-	 * 
-	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
-	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
-	 * @throws IllegalStatementException 
-	 * @see #find(String, Vector, Vector)
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public abstract Set<String> find(String varName,
-			Set<String> partial_statements) throws IllegalStatementException;
+	public abstract ResultSet query(String query) throws QueryParseException,
+			QueryExecException;
 
 	/**
 	 * Tries to approximately identify an individual given a set of known statements about this resource.<br/>
@@ -461,29 +236,37 @@ public interface IOntologyBackend extends IServiceProvider{
 			throws UnmatchableException;
 
 	/**
-	 * Returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.<br/>
-	 * Usage example:<br/>
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 * Model results = myOntology.getInfos("ns:individual1");
+	 * Try to retrieve a resource from the ontology, based on its lexical form.
 	 * 
-	 * NodeIterator types = results.listObjectsOfProperty(myOntology.createProperty("rdf:type"));
-	 *
-	 * for ( ; types.hasNext() ; )
-	 * {
-	 *	System.out.println(types.nextNode().toString());
-	 * }
-	 * </pre>
-	 * This example would print all the types (classes) of the instance {@code ns:individual1}.
-	 * 
-	 * @param lex_resource the lexical form of an existing resource.
+	 * @param lex_resource The URI of a resource in the ontology.
 	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(OntResource)
 	 */
-	public abstract Set<String> getInfos(String lex_resource)
-			throws NotFoundException;
+	public abstract Resource getResource(String lex_resource) throws NotFoundException;
 	
+	/**
+	 * Returns the set of inferred and asserted statement involving a resource as a Jena Model..
+	 * 
+	 * @param resource A Jena resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(String)
+	 */
+	public abstract Model getSubmodel(Resource node) throws NotFoundException;
+
+	public abstract Set<OntClass> getSuperclassesOf(OntClass type,
+			boolean onlyDirect) throws NotFoundException;
+
+	public abstract Set<OntClass> getSubclassesOf(OntClass type,
+			boolean onlyDirect) throws NotFoundException;
+
+	public abstract Set<OntResource> getInstancesOf(OntClass type,
+			boolean onlyDirect) throws NotFoundException;
+
+	public abstract Set<OntClass> getClassesOf(Individual individual,
+			boolean onlyDirect) throws NotFoundException;
+
 	/**
 	 * Returns the id and type (INSTANCE, CLASS, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of the concept whose label or id match the given parameter. If several concepts match, an randomly choosen one is returned.
 	 * 
@@ -493,65 +276,8 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see ResourceType
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract List<String> lookup(String label)
-			throws NotFoundException;
+	public abstract List<String> lookup(String id) throws NotFoundException;
 
-
-	/** Returns all the super classes of a given class, as asserted or inferred from the ontology.
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file). 
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	
-	public Map<String, String> getSuperclassesOf(String type) throws NotFoundException;
-	
-	/** Returns all the direct super-classes of a given class (ie, the classes whose the given class is a direct descendant), as asserted or inferred from the ontology.
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public Map<String, String> getDirectSuperclassesOf(String type) throws NotFoundException;
-	
-	/** Returns all the sub-classes of a given class, as asserted or inferred from the ontology.
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public Map<String, String> getSubclassesOf(String type) throws NotFoundException;
-	
-	/** Returns all the direct sub-classes of a given class (ie, the classes whose the given class is the direct parent), as asserted or inferred from the ontology.
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public Map<String, String> getDirectSubclassesOf(String type) throws NotFoundException;
-	
-	/** Returns all the instances of a given class, as asserted or inferred from the ontology. 
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public Map<String, String> getInstancesOf(String type) throws NotFoundException;
-	
-	/**  Returns all the direct instances of a given class (ie, the instances whose the given class is the direct parent), as asserted or inferred from the ontology.
-	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
-	 * @return A map of instances ids (individuals) associated to their labels (in the default language, as defined in the configuration file).
-	 * @throws NotFoundException
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public Map<String, String> getDirectInstancesOf(String type) throws NotFoundException; 
-	
 	/**
 	 * Remove all statements matching the partial statement.
 	 * Usage example:<br/>
@@ -570,19 +296,15 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @param partialStmt The partial statement representing a "mask" of statements to delete.
 	 */
 	public abstract void clear(PartialStatement partialStmt);
-	
+
 	/**
-	 * Remove all statements matching the partial statement.
+	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.
 	 * 
-	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
-	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
-	 * @see {@link #clear(PartialStatement)} for an example.
-	 * @see PartialStatement
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 * @param stmt The statement to remove from the ontology.
+	 * @see #add(String)
 	 */
-	public abstract void clear(String partialStmt) throws IllegalStatementException;
-	
-	
+	public abstract void remove(Statement stmt);
+
 	/**
 	 * Saves the in-memory ontology model to a RDF/XML file.
 	 * 
@@ -591,32 +313,14 @@ public interface IOntologyBackend extends IServiceProvider{
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract void save(String path) throws OntologyServerException;
-	
+
 	/**
 	 * Allows to register several <em>events providers</em> (typically, one by underlying middleware) which in turn provide access to <em>watchers</em>. Watchers expose a <em>watch expression</em> which is a SPARQL <code>ASK</code> query. Every time a change is made on the ontology, the ontology backend which implements this interface is expected to execute this query against the model and notify the watchers (through {@link IWatcher#notifySubscriber()}) if the result is positive.
 	 * @param eventsProviders A set of event providers.
 	 * @see IWatcher, IEventsProvider
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders);
-	
-	/**
-	 * Returns the set of inferred and asserted statement involving a resource as a Jena Model..
-	 * 
-	 * @param resource A Jena resource.
-	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
-	 * @see #getSubmodel(String)
-	 */
-	public Model getSubmodel(Resource node) throws NotFoundException ;
-
-	Set<OntClass> getSuperclassesOf(OntClass type, boolean onlyDirect)
-			throws NotFoundException;
-
-	Set<OntClass> getClassesOf(Individual individual, boolean onlyDirect)
-			throws NotFoundException;
-
-	Set<OntClass> getSubclassesOf(OntClass type, boolean onlyDirect)
-			throws NotFoundException;
+	public abstract void registerEventsHandlers(
+			Set<IEventsProvider> eventsProviders);
 
 }

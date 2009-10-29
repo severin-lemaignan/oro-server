@@ -11,12 +11,14 @@ import java.util.Vector;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 import junit.framework.TestCase;
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 
@@ -27,11 +29,15 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  */
 public class ReasoningTests extends TestCase {
 	
-	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
+	final String ORO_TEST_CONF = "oro_test.conf";
 	Properties conf;
 	
 	public ReasoningTests() {
-		conf = getConfiguration(ORO_TEST_CONF);
+		String confFile = System.getProperty("ORO_TEST_CONF");
+		if (confFile == null)
+			confFile = ORO_TEST_CONF;
+		
+		conf = OroServer.getConfiguration(confFile);
 	}
 	
 	/**
@@ -42,7 +48,8 @@ public class ReasoningTests extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Load scalability *****");
 		
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -56,7 +63,7 @@ public class ReasoningTests extends TestCase {
 		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				oro.add(oro.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT);
+				onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding a statement " + i);
 				e.printStackTrace();

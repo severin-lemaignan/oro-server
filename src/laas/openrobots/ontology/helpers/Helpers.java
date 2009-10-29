@@ -38,16 +38,15 @@ package laas.openrobots.ontology.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
@@ -182,24 +181,24 @@ public class Helpers {
 	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
 		OpenRobotsOntology.ResourceType type;
 
-		if (resource == null) return OpenRobotsOntology.ResourceType.UNDEFINED;
+		if (resource == null) return ResourceType.UNDEFINED;
 		
 		try {
 			
 			if (resource.isClass())
-				type = OpenRobotsOntology.ResourceType.CLASS;
+				type = ResourceType.CLASS;
 			else if (resource.isIndividual())
-				type = OpenRobotsOntology.ResourceType.INSTANCE;
+				type = ResourceType.INSTANCE;
 			else if (resource.isDatatypeProperty())
-				type = OpenRobotsOntology.ResourceType.DATATYPE_PROPERTY;
+				type = ResourceType.DATATYPE_PROPERTY;
 			else if (resource.isProperty())
-				type = OpenRobotsOntology.ResourceType.OBJECT_PROPERTY;
+				type = ResourceType.OBJECT_PROPERTY;
 			else
-				type = OpenRobotsOntology.ResourceType.UNDEFINED;
+				type = ResourceType.UNDEFINED;
 			
 		} catch (NoSuchFieldError nsfe) {
 			Logger.log("Couln't determine the type of " + resource + "! Issue with the reasonner?", VerboseLevel.SERIOUS_ERROR);
-			type = OpenRobotsOntology.ResourceType.UNDEFINED;
+			type = ResourceType.UNDEFINED;
 		}
 		
 		return type;

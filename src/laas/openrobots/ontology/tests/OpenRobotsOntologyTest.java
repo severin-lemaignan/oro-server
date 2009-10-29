@@ -60,6 +60,7 @@ import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
@@ -204,30 +205,34 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
 	
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 
 		
 		/****************
 		 *  First query *
 		 ****************/
-		/* This test is not valid since classes are actually instances of owl:Thing as well (as Pellet implements).
 		long intermediateTime = System.currentTimeMillis();
 		
-		ResultSet result =	oro.query(
+		ResultSet result =	onto.query(
 						"SELECT ?instances \n" +
 						"WHERE { \n" +
-						"?instances rdf:type owl:Thing}\n");
+						"?instances rdf:type oro:Monkey}\n");
 	
 		
 		
 		System.out.println("[UNITTEST] First query executed in roughly "+ (System.currentTimeMillis() - intermediateTime) + "ms.");
 	
+	
+		int counter = 0;
 		while (result.hasNext())
 		{
+			counter ++;
 			String name = result.nextSolution().getResource("instances").getLocalName();
-			assertTrue("Only individuals should be returned. Got " + name, name.contains("apple") ||name.contains("cow") || name.contains("banana_tree") || name.contains("gorilla") || name.contains("baboon"));
+			assertTrue("Monkeys should be returned. Got " + name, name.contains("baboon") ||name.contains("gorilla"));
 		}
-		*/
+		assertEquals("Two monkeys should be returned", 2, counter);
+		
 		
 		/*****************
 		 *  Second query *
@@ -262,7 +267,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfos() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 				
 		Set<String> infos;
 
@@ -294,7 +300,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testGetInfosDefaultNs() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource using default namespace *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 				
 		Set<String> infos;
 
@@ -327,12 +334,13 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of a new statement in the ontology *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		long startTime = System.currentTimeMillis();
 		
 		try {
-			oro.add(oro.createStatement("oro:horse rdf:type oro:Animal"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("oro:horse rdf:type oro:Animal"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -353,7 +361,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long intermediateTime = System.currentTimeMillis();
 		
 		//Note: there are easier ways to query to ontology for simple cases (see find() for instance). But it comes later in the unit tests.
-		ResultSet result =	oro.query(
+		ResultSet result =	onto.query(
 				"SELECT ?instances \n" +
 				"WHERE { \n" +
 				"?instances rdf:type oro:Animal}\n");
@@ -379,7 +387,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testAddStmntWithLiteral() {
 
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		//First test a request before altering the ontology. 
 		String xmlResult =	oro.queryAsXML(
@@ -398,7 +407,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			oro.add(oro.createStatement("oro:fish oro:isFemale \"true\"^^xsd:boolean"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("oro:fish oro:isFemale \"true\"^^xsd:boolean"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -430,19 +439,20 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with different memory profile *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		MemoryProfile.timeBase = 100; //we accelerate 10 times the behaviour of the memory container.
 	
 		try {
-			oro.add(oro.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
 
 		try {
-			oro.add(oro.createStatement("snail eats grass"), MemoryProfile.EPISODIC);
+			onto.add(onto.createStatement("snail eats grass"), MemoryProfile.EPISODIC);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -464,12 +474,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 		Set<Statement> rs_stmts = new HashSet<Statement>();
 		Set<Statement> rs_short_term = new HashSet<Statement>();
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
+		onto.getModel().enterCriticalSection(Lock.READ);
 	
-		Property p_createdOn = oro.getModel().createProperty(Namespaces.addDefault("stmtCreatedOn"));
-		Property p_memoryProfile = oro.getModel().createProperty(Namespaces.addDefault("stmtMemoryProfile"));
+		Property p_createdOn = onto.getModel().createProperty(Namespaces.addDefault("stmtCreatedOn"));
+		Property p_memoryProfile = onto.getModel().createProperty(Namespaces.addDefault("stmtMemoryProfile"));
 
-		RSIterator rsIter = oro.getModel().listReifiedStatements() ;
+		RSIterator rsIter = onto.getModel().listReifiedStatements() ;
         while(rsIter.hasNext())
         {
             ReifiedStatement rs = rsIter.nextRS() ;
@@ -513,14 +523,14 @@ public class OpenRobotsOntologyTest extends TestCase {
             }
         }
  
-       	oro.getModel().leaveCriticalSection();
+       	onto.getModel().leaveCriticalSection();
        	
 		assertEquals("Two recently added statements should be returned.", 2, rs_stmts.size());
 		
 		assertEquals("One short term statements should be returned.", 1, rs_short_term.size());
 	
 		try {
-			oro.save("./before_cleaning.owl");
+			onto.save("./before_cleaning.owl");
 		} catch (OntologyServerException e) {
 			fail();
 		}
@@ -531,15 +541,15 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		
 		try {
-			oro.save("./after_cleaning.owl");
+			onto.save("./after_cleaning.owl");
 		} catch (OntologyServerException e) {
 			fail();
 		}
 
-		oro.getModel().enterCriticalSection(Lock.READ);
-		rsIter = oro.getModel().listReifiedStatements() ;
+		onto.getModel().enterCriticalSection(Lock.READ);
+		rsIter = onto.getModel().listReifiedStatements() ;
 		int nb = rsIter.toSet().size();
-		oro.getModel().leaveCriticalSection();
+		onto.getModel().leaveCriticalSection();
 		
 		assertEquals("Only one reified statement should now remain.", 1, nb);
 				
@@ -556,7 +566,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove 2 *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 	
 		Set<String> stmts = new HashSet<String>();
 		
@@ -565,12 +576,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 
-			int nbStmt = oro.getModel().listStatements().toList().size();
+			int nbStmt = onto.getModel().listStatements().toList().size();
 			
 			oro.add(stmts);
 			
 			try {
-				oro.save("./after_add.owl");
+				onto.save("./after_add.owl");
 			} catch (OntologyServerException e) {
 				fail();
 			}
@@ -578,12 +589,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 			oro.remove(stmts);
 			
 			try {
-				oro.save("./after_remove.owl");
+				onto.save("./after_remove.owl");
 			} catch (OntologyServerException e) {
 				fail();
 			}
 			
-			assertEquals("The number of statements after removal of new statements should be the same as before.", nbStmt, oro.getModel().listStatements().toList().size());
+			assertEquals("The number of statements after removal of new statements should be the same as before.", nbStmt, onto.getModel().listStatements().toList().size());
 			
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
@@ -601,7 +612,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Label lookup *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 	
 		Set<String> stmts = new HashSet<String>();
 		stmts.add("gorilla rdfs:label \"king kong\"");
@@ -653,7 +665,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Sub- and superclasses *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 	
 		Set<String> stmts = new HashSet<String>();
 		stmts.add("Insect rdfs:subClassOf Animal");
@@ -780,7 +793,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		String who_is_an_animal = "SELECT ?instances \n" +
 				"WHERE { \n" +
@@ -799,7 +813,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 				
-		ResultSet result =	oro.query(who_is_an_animal);
+		ResultSet result =	onto.query(who_is_an_animal);
 		
 		int count = 0;
 		while (result.hasNext()){
@@ -816,7 +830,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result = oro.query(who_is_an_animal);
+		result = onto.query(who_is_an_animal);
 		
 		count = 0;
 		while (result.hasNext()){
@@ -837,7 +851,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result =	oro.query(who_is_an_animal);		
+		result =	onto.query(who_is_an_animal);		
 		count = 0;
 		while (result.hasNext()){
 			result.next();
@@ -850,7 +864,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		"WHERE { \n" +
 		"oro:sparrow oro:eats ?food}\n";
 
-		result = oro.query(what_does_the_sparrow_eat);		
+		result = onto.query(what_does_the_sparrow_eat);		
 		count = 0;
 		while (result.hasNext()){
 			result.next();
@@ -866,7 +880,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result = oro.query(what_does_the_sparrow_eat);		
+		result = onto.query(what_does_the_sparrow_eat);		
 		count = 0;
 		while (result.hasNext()){
 			result.next();
@@ -874,7 +888,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		assertEquals("Nothing should be returned.", 0, count);
 		
-		result =	oro.query(who_is_an_animal);
+		result =	onto.query(who_is_an_animal);
 		count = 0;
 		while (result.hasNext()){
 			result.next();
@@ -897,7 +911,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
 		
 
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 				
 		try {
 			oro.checkConsistency();
@@ -907,7 +922,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 				
 		try {
-			oro.add(oro.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
@@ -929,7 +944,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		try {
-			oro.add(oro.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT);
 			oro.checkConsistency();
 			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!");
 		} catch (IllegalStatementException e) {
@@ -946,7 +961,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testMatching() {
 
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		Set<String> matchingResources = null;
 		
@@ -1073,11 +1089,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testInference() {
 
 		System.out.println("[UNITTEST] ***** TEST: Inference testing *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
 		
 		//Add a statement
 		try {
-			oro.add(oro.createStatement("sheep eats grass"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("sheep eats grass"), MemoryProfile.DEFAULT);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
