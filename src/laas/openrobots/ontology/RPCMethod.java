@@ -19,9 +19,10 @@ import java.lang.annotation.*;
 @Inherited
 public @interface RPCMethod {
 	/**
-	 * The name of the service. If this field is not specified, the name of the method on which the annotation is put will be use instead.
+	 * The category of the service. Used to sort the RPC methods by groups.
+	 * Optional.
 	 */
-	public String rpc_name() default "";
+	public String category() default "base";
 	/**
 	 * Contains a short description of the purpose of the service. 
 	 */

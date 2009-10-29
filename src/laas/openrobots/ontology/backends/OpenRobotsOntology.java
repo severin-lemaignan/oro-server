@@ -479,7 +479,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#queryAsXML(java.lang.String)
 	 */
 	@RPCMethod(
-			rpc_name = "query_as_xml", 
 			desc = "performs one or several SPARQL queries on the ontology and returns a XML-formatted result set"
 	)
 	public String queryAsXML(String query){
@@ -1274,7 +1273,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 				
 			} catch (NotFoundException nfe) {
-				Logger.log(" Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.", VerboseLevel.FATAL_ERROR);
+				Logger.log("Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.", VerboseLevel.FATAL_ERROR);
 				System.exit(1);
 			}
 			//Ontology model and reasonner type
@@ -1291,8 +1290,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			Logger.cr();
 			Logger.log("Ontology successfully loaded.\n", VerboseLevel.IMPORTANT);
 			if (robotInstancesModel != null) Logger.log("\t- Robot-specific knowledge loaded and merged.\n");
-			if (scenarioModel != null) Logger.log("\t - Scenario-specific knowledge loaded and merged.\n");
-			Logger.log("\t - " + onto_model_reasonner_name + " initialized.\n");
+			if (scenarioModel != null) Logger.log("\t- Scenario-specific knowledge loaded and merged.\n");
+			Logger.log("\t- " + onto_model_reasonner_name + " initialized.\n");
 			Logger.cr();
 			
 			

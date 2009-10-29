@@ -4,6 +4,7 @@
 package laas.openrobots.ontology.connectors;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
@@ -25,6 +26,6 @@ public interface IConnector extends Runnable {
 	 */
 	public abstract void run();
 
-	public abstract void refreshServiceList(Map<Pair<String, String>, Pair<Method, Object>> registredServices);
+	public abstract void refreshServiceList(Map<List<String>, Pair<Method, Object>> registredServices);
 
 }
