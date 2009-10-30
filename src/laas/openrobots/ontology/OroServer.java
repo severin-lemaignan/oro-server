@@ -130,6 +130,7 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean HAS_A_TTY;
 	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
+	public static boolean BLINGBLING;
 	
 	public static final String VERSION = "0.6.5"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
@@ -196,7 +197,8 @@ public class OroServer implements IServiceProvider {
     	confParams = getConfiguration(confFile);
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
-	    	Logger.printInBlue(
+	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[6m"); 
+    		Logger.printInBlue(
 	    						"+------------------------------------+\n" +
 	    						"|                                    |\n" +			
 	    						"|          OroServer " + 
@@ -206,6 +208,7 @@ public class OroServer implements IServiceProvider {
 	    	System.out.print("(c)LAAS-CNRS 2009");
 	    	Logger.printlnInBlue("          |\n" +
 								"+------------------------------------+");
+	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[25m");
     	}
     	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
@@ -527,6 +530,8 @@ public class OroServer implements IServiceProvider {
 			
 			// Retrieve, if available, the default language for label retrieval.
 			DEFAULT_LANGUAGE = parameters.getProperty("language", "en");
+			
+			BLINGBLING = Boolean.parseBoolean(parameters.getProperty("blingbling", "false"));
 			
 		}
         catch (FileNotFoundException fnfe)

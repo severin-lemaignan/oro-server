@@ -69,19 +69,39 @@ public class Logger {
 		switch(level) {
 			case FATAL_ERROR:
 			case SERIOUS_ERROR:				
-				printInRed(OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg);
+				if (!OroServer.BLINGBLING)
+					printInRed(OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg);
+				else
+					printInRed("U looser! :P " + msg);
 				break;
 				
 			case ERROR:
-				printInRed(msg);
+				if (!OroServer.BLINGBLING)
+					printInRed(msg);
+				else {
+					blingblingPower();
+					printInRed(msg + " lol!!");
+				}
+			
 				break;
 			
 			case WARNING:
-				printInPurple(OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg);
+				if (!OroServer.BLINGBLING)
+					printInPurple(OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg);
+				else {
+					blingblingPower();
+					printInPurple("(°_°) " + msg);
+				}
 				break;
 				
 			case IMPORTANT:
-				printInGreen(OroServer.HAS_A_TTY ? msg : "[!!] " + msg);
+				if (!OroServer.BLINGBLING)
+						printInGreen(OroServer.HAS_A_TTY ? msg : "[!!] " + msg);
+				else {
+					blingblingPower();
+					printInGreen("(^_^) " + msg);
+				}
+				
 				break;
 			
 			case EMPHASIZE:
@@ -107,48 +127,79 @@ public class Logger {
 	public static void printInBlue(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[34m");
 		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 
 	
 	public static void printlnInBlue(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[34m");
 		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	
 	public static void printlnInGreen(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[32m");
 		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	public static void printInGreen(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[32m");
 		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	
 	public static void printInRed(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[31m");
 		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	
 	public static void printlnInRed(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[31m");
 		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	
 	public static void printlnInPurple(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[35m");
 		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
 	}
 	
 	public static void printInPurple(String msg){
 		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[35m");
 		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[0m");
+		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
+	}
+	
+	public static void blingblingPower(){
+		if (!OroServer.HAS_A_TTY) return;
+		
+		for (int i = 0; i < 10 ; i++) {
+			long x = Math.round(Math.random() * 80);
+			long y = Math.round(Math.random() * 40);
+			long col = Math.round(Math.random() * 6) + 1;
+			
+			//save cursor position
+			System.out.print((char)27 + "[s");
+			//move cursor
+			System.out.print((char)27 + "[" + y + ";" + x + "H");
+			System.out.print((char)27 + "[3" + col + ";5m");
+			printAsciiStar();
+			System.out.print((char)27 + "[39;25m");
+			//restore cursor position
+			System.out.print((char)27 + "[u");
+			
+		}
+	}
+	
+	private static void printAsciiStar(){
+		System.out.print((char)27 + "[2D");		
+		System.out.print(" <o> ");
+		System.out.print((char)27 + "[4D" + (char)27 + "[1A");		
+		System.out.print(" | ");
+		System.out.print((char)27 + "[3D" + (char)27 + "[2B");		
+		System.out.print(" | ");		
+		System.out.print((char)27 + "[3D");		
 	}
 }

@@ -50,33 +50,53 @@ package laas.openrobots.ontology.helpers;
  */
 public enum VerboseLevel {
 
-	//Only for use in the config file. Indicates that nothing must be displayed.
+	/**
+	 * Only for use in the config file. Indicates that nothing must be displayed.
+	 */
 	SILENT,
 	
-	//Error that trigger the direct interuption of the application
+	/**
+	 * Error that trigger the direct interuption of the application
+	 */
 	FATAL_ERROR, 
 	
-	//Error that "shouldn't happen" but the server can live with.
+	/**
+	 * Error that "shouldn't happen" but the server can live with.
+	 */
 	SERIOUS_ERROR, 
 	
-	//"Normal" error, that will be reported to the clients
+	/**
+	 * "Normal" error, that will be reported to the clients
+	 */
 	ERROR, 
 
-	//Not an error, but an important information that can alter the way the server works.
+	/**
+	 * Not an error, but an important information that can alter the way the server works.
+	 */
 	WARNING, 
 	
-	//Important information that should be emphasized in a log
+	/**
+	 * Important information that should be emphasized in a log
+	 */
 	IMPORTANT,
 	
-	//Emphasized standard information
+	/**
+	 * Emphasized standard information
+	 */
 	EMPHASIZE,
 	
-	//Standard information
+	/**
+	 * Standard information
+	 */
 	INFO,
 	
-	//Important debug info
+	/**
+	 * Important debug info
+	 */
 	VERBOSE,
 	
-	//Not very important debug info.
+	/**
+	 * Not very important debug info.
+	 */
 	DEBUG;
 }
