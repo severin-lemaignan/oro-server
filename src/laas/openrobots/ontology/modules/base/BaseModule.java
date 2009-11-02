@@ -175,7 +175,7 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc="checks that one or several statements are asserted or can be inferred from the ontology"
 	)
-	public Boolean check(Vector<String> stmts) throws IllegalStatementException{
+	public Boolean check(Set<String> stmts) throws IllegalStatementException{
 	
 		Logger.log("Checking facts: "+ stmts + "\n");
 		
@@ -216,6 +216,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
 	 */
 	@RPCMethod(
+			category="querying",
 			desc="performs one SPARQL query on the ontology"
 	)
 	public Set<String> query(String key, String q) throws QueryParseException, QueryExecException
@@ -260,6 +261,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see #query(String)
 	 */
 	@RPCMethod(
+			category="querying",
 			desc = "performs one or several SPARQL queries on the ontology and returns a XML-formatted result set"
 	)
 	public String queryAsXML(String query){
@@ -348,6 +350,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
+			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements plus restrictions about this resource."
 	)	
 	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException {
@@ -430,6 +433,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
+			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements about this resource."
 	)	
 	public Set<String> find(String varName, Set<String> statements) throws IllegalStatementException {
@@ -457,7 +461,8 @@ public class BaseModule implements IServiceProvider {
 	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	@RPCMethod( 
+	@RPCMethod(
+			category="querying",
 			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the \"usages\" of a resource."
 	)
 	public Set<String> getInfos(String lex_resource) throws NotFoundException {
@@ -739,6 +744,7 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	@RPCMethod(
+			category="querying",
 			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.). The second parameter specify the desired language (following RFC4646)."
 	)
 	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
@@ -754,6 +760,7 @@ public class BaseModule implements IServiceProvider {
 	}
 		
 	@RPCMethod(
+			category="querying",
 			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
 	)
 	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
