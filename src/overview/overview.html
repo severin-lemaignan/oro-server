@@ -11,39 +11,57 @@
 The main communication channel with <em>oro-server</em> is a simple socket interface. However several bridges and wrapper to higher-level framework are available (including a C++ object-oriented abstraction, a YARP connector, a JSON connector). New ones can be easily created on request.<br/>
 
 <h2>List of available methods</h2>
-<i>(Last updated on 2009-10-29 18:43:39)</i>
+<i>(Last updated on 2009-11-02 10:00:45)</i>
 <ul class="RpcMethodsList">
+	<li>administration
+	<ul>
 	<li>{@linkplain laas.openrobots.ontology.backends.OpenRobotsOntology#reload() <em>reload</em><i>()</i>}: Reload the base ontologies, discarding all inserted of removed statements</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getResourceDetails(String) <em>getResourceDetails</em><i>(String)</i>}: returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.).</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getSubclassesOf(String) <em>getSubclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred subclasses of a given class.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#checkConsistency() <em>checkConsistency</em><i>()</i>}: checks that the ontology is semantically consistent</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#queryAsXML(String) <em>queryAsXML</em><i>(String)</i>}: performs one or several SPARQL queries on the ontology and returns a XML-formatted result set</li>
-	<li>{@linkplain laas.openrobots.ontology.OroServer#help() <em>help</em><i>()</i>}: returns a human-friendly list of available methods with their signatures and short descriptions.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#remove(Set) <em>remove</em><i>(Set)</i>}: removes one or several statements (triplets S-P-O) from the ontology.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getResourceDetails(String, String) <em>getResourceDetails</em><i>(String, String)</i>}: returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.). The second parameter specify the desired language (following RFC4646).</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#find(String, Set, Set) <em>find</em><i>(String, Set, Set)</i>}: tries to identify a resource given a set of partially defined statements plus restrictions about this resource.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectSuperclassesOf(String) <em>getDirectSuperclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct superclasses of a given class.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getSuperclassesOf(String) <em>getSuperclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred superclasses of a given class.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#check(Vector) <em>check</em><i>(Vector)</i>}: checks that one or several statements are asserted or can be inferred from the ontology</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#query(String, String) <em>query</em><i>(String, String)</i>}: performs one SPARQL query on the ontology</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set) <em>add</em><i>(Set)</i>}: adds one or several statements (triplets S-P-O) to the ontology, in long term memory.</li>
-	<li>{@linkplain laas.openrobots.ontology.OroServer#listMethods() <em>listMethods</em><i>()</i>}: returns the list of available methods with their signatures and short descriptions as a map.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectSubclassesOf(String) <em>getDirectSubclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct subclasses of a given class.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.diff.DiffModule#getSimilarities(String, String) <em>getSimilarities</em><i>(String, String)</i>}: given two concepts, return the list of relevant similarities (types, properties...) between these concepts.</li>
-	<li>{@linkplain laas.openrobots.ontology.OroServer#stats() <em>stats</em><i>()</i>}: returns some statistics on the server</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getClassesOf(String) <em>getClassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of asserted and inferred classes of a given individual.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getInfos(String) <em>getInfos</em><i>(String)</i>}: returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.diff.DiffModule#getDifferences(String, String) <em>getDifferences</em><i>(String, String)</i>}: given two concepts, return the list of relevant differences (types, properties...) between these concepts.</li>
-	<li>{@linkplain laas.openrobots.ontology.OroServer#makeHtmlDoc() <em>makeHtmlDoc</em><i>()</i>}: returns a list of available methods in HTML format for inclusion in documentation.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String) <em>lookup</em><i>(String)</i>}: try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property).</li>
-	<li>{@linkplain laas.openrobots.ontology.OroServer#listSimpleMethods() <em>listSimpleMethods</em><i>()</i>}: returns a raw list of available methods.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set, String) <em>add</em><i>(Set, String)</i>}: adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getInstancesOf(String) <em>getInstancesOf</em><i>(String)</i>}: returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#find(String, Set) <em>find</em><i>(String, Set)</i>}: tries to identify a resource given a set of partially defined statements about this resource.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectInstancesOf(String) <em>getDirectInstancesOf</em><i>(String)</i>}: returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class.</li>
 	<li>{@linkplain laas.openrobots.ontology.backends.OpenRobotsOntology#save(String) <em>save</em><i>(String)</i>}: exports the current ontology model to an OWL file. The provided path must be writable by the server.</li>
-	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectClassesOf(String) <em>getDirectClassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of asserted and inferred direct classes of a given individual.</li>
 </ul>
+</li>
+	<li>base
+	<ul>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set, String) <em>add</em><i>(Set, String)</i>}: adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#check(Vector) <em>check</em><i>(Vector)</i>}: checks that one or several statements are asserted or can be inferred from the ontology</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#checkConsistency() <em>checkConsistency</em><i>()</i>}: checks that the ontology is semantically consistent</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#find(String, Set) <em>find</em><i>(String, Set)</i>}: tries to identify a resource given a set of partially defined statements about this resource.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getInfos(String) <em>getInfos</em><i>(String)</i>}: returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getResourceDetails(String) <em>getResourceDetails</em><i>(String)</i>}: returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.).</li>
+	<li>{@linkplain laas.openrobots.ontology.OroServer#help() <em>help</em><i>()</i>}: returns a human-friendly list of available methods with their signatures and short descriptions.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String) <em>lookup</em><i>(String)</i>}: try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property).</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#query(String, String) <em>query</em><i>(String, String)</i>}: performs one SPARQL query on the ontology</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#queryAsXML(String) <em>queryAsXML</em><i>(String)</i>}: performs one or several SPARQL queries on the ontology and returns a XML-formatted result set</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#remove(Set) <em>remove</em><i>(Set)</i>}: removes one or several statements (triplets S-P-O) from the ontology.</li>
+</ul>
+</li>
+	<li>concept comparison
+	<ul>
+	<li>{@linkplain laas.openrobots.ontology.modules.diff.DiffModule#getDifferences(String, String) <em>getDifferences</em><i>(String, String)</i>}: given two concepts, return the list of relevant differences (types, properties...) between these concepts.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.diff.DiffModule#getSimilarities(String, String) <em>getSimilarities</em><i>(String, String)</i>}: given two concepts, return the list of relevant similarities (types, properties...) between these concepts.</li>
+</ul>
+</li>
+	<li>server
+	<ul>
+	<li>{@linkplain laas.openrobots.ontology.OroServer#listMethods() <em>listMethods</em><i>()</i>}: returns the list of available methods with their signatures and short descriptions as a map.</li>
+	<li>{@linkplain laas.openrobots.ontology.OroServer#listSimpleMethods() <em>listSimpleMethods</em><i>()</i>}: returns a raw list of available methods.</li>
+	<li>{@linkplain laas.openrobots.ontology.OroServer#makeHtmlDoc() <em>makeHtmlDoc</em><i>()</i>}: returns a list of available methods in HTML format for inclusion in documentation.</li>
+	<li>{@linkplain laas.openrobots.ontology.OroServer#stats() <em>stats</em><i>()</i>}: returns some statistics on the server</li>
+</ul>
+</li>
+	<li>taxonomy
+	<ul>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getClassesOf(String) <em>getClassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of asserted and inferred classes of a given individual.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectClassesOf(String) <em>getDirectClassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of asserted and inferred direct classes of a given individual.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectInstancesOf(String) <em>getDirectInstancesOf</em><i>(String)</i>}: returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred direct instances of a given class.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectSubclassesOf(String) <em>getDirectSubclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct subclasses of a given class.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getDirectSuperclassesOf(String) <em>getDirectSuperclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred direct superclasses of a given class.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getInstancesOf(String) <em>getInstancesOf</em><i>(String)</i>}: returns a map of {instance name, label} (or {instance name, instance name without namespace} is no label is available) of asserted and inferred instances of a given class.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getSubclassesOf(String) <em>getSubclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred subclasses of a given class.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getSuperclassesOf(String) <em>getSuperclassesOf</em><i>(String)</i>}: returns a map of {class name, label} (or {class name, class name without namespace} is no label is available) of all asserted and inferred superclasses of a given class.</li>
+</ul>
+</li>
+</ul>
+
 
 
 <h2>Where to go then?</h2>

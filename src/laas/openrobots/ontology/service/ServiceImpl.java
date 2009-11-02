@@ -21,24 +21,34 @@ public class ServiceImpl implements IService {
 			this.obj = obj;
 		}
 
+		@Override
 		public String getName() {
 			return name;
 		}
 
+		@Override
 		public String getCategory() {
 			return category;
 		}
 
+		@Override
 		public String getDesc() {
 			return desc;
 		}
 
+		@Override
 		public Method getMethod() {
 			return method;
 		}
 
+		@Override
 		public Object getObj() {
 			return obj;
+		}
+
+		@Override
+		public int compareTo(IService arg) {
+			return name.compareTo(arg.getName());
 		}
 		
 		

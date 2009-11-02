@@ -2,7 +2,7 @@ package laas.openrobots.ontology.service;
 
 import java.lang.reflect.Method;
 
-public interface IService {
+public interface IService extends Comparable<IService>{
 	
 	public String getName();
 

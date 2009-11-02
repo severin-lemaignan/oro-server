@@ -49,7 +49,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
@@ -243,19 +247,9 @@ public class OroServer implements IServiceProvider {
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
 			
-		Logger.log("Following services are registred:\n", VerboseLevel.IMPORTANT);
-    	for (String m : registredServices.keySet())
-    	{
-    		Logger.log("\t- " + m , VerboseLevel.EMPHASIZE);
-    		//Add the category
-    		Logger.log(" (" + registredServices.get(m).getCategory() + ")");
-    		//if present, display the description as well
-    		if (registredServices.get(m).getDesc() != "")
-    			Logger.log(" -> " + registredServices.get(m).getDesc() + "\n");
-    		else
-    			Logger.log("\n");
-    	}
-    	Logger.cr();
+		Logger.log("Following services are registred:\n", VerboseLevel.EMPHASIZE);
+		Logger.log(niceMethodsList());
+		Logger.cr();
 
 		
 /*******************************************************************************
@@ -361,30 +355,47 @@ public class OroServer implements IServiceProvider {
 		
 		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below the list of available remote services in the knowledge base:\n";
 		
-		for (String m : registredServices.keySet())
-	    {
-	    	
-	    	//build the list of expected parameters
-	    	String params = "(";
-	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
-	    		params += param.getSimpleName() + ", ";
-	    	
-	    	if (!params.equals("("))
-	    		params = params.substring(0, params.length() - 2);
-	    	
-	    	params += ")";
-	    	
-	        help += "\t- " + (char)27 + "[35m" + 
-	        		m + params + 
-	        		(char)27 + "[0m: " + 
-	        		registredServices.get(m).getDesc() + "\n";
-	    }
+		help += niceMethodsList();
 		
 	    help += "\nTo execute a command, you must enter its name (case " +
 	    		"insensitive), followed by one parameter per line. To finish, type " + 
 	    		SocketConnector.MESSAGE_TERMINATOR + " and 'return'. " +
 	    		"The server should answer.\n";
 		return help;
+	}
+	
+	private String niceMethodsList(){
+
+		String result = "";
+		
+		SortedMap<String, SortedSet<IService>> services = getServicesByCategory();
+		
+		for (String cat : services.keySet())
+	    {
+			result += "\n\t" + (char)27 + "[35m[" + 
+    		cat.toUpperCase() + "]"+
+    		(char)27 + "[39m\n";
+	    	
+			for (IService s : services.get(cat)) {
+							
+		    	//build the list of expected parameters
+		    	String params = "(";
+		    	for (Class<?> param : s.getMethod().getParameterTypes())
+		    		params += param.getSimpleName() + ", ";
+		    	
+		    	if (!params.equals("("))
+		    		params = params.substring(0, params.length() - 2);
+		    	
+		    	params += ")";
+		    	
+		    	result += "\t- " + (char)27 + "[31m" + 
+		        		s.getName() + params + 
+		        		(char)27 + "[39m: " + 
+		        		s.getDesc() + "\n";
+			}
+	    }
+		
+		return result;
 	}
 	
 	@RPCMethod(
@@ -441,33 +452,61 @@ public class OroServer implements IServiceProvider {
 		Calendar cal = Calendar.getInstance();
 	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
+	    SortedMap<String, SortedSet<IService>> services = getServicesByCategory();
+	    
 		String help = "<h2>List of available methods</h2>\n";
 		help += "<i>(Last updated on " + sdf.format(cal.getTime()) + ")</i>\n";
 		help += "<ul class=\"RpcMethodsList\">\n";
 		
-		for (String m : registredServices.keySet())
-	    {	
-	    	//build the list of expected parameters
-	    	String params = "(";
-	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
-	    		params += param.getSimpleName() + ", ";
-	    	
-	    	if (!params.equals("("))
-	    		params = params.substring(0, params.length() - 2);
-	    	
-	    	params += ")";
-	    		        
-	    	//build the list of expected parameters 	
-	        help += "\t<li>{@linkplain " + 
-	        		registredServices.get(m).getObj().getClass().getName() + "#" + 
-	        		registredServices.get(m).getMethod().getName() + params + " <em>" + 
-	        		m + "</em><i>" + params + "</i>}: " + 
-	        		registredServices.get(m).getDesc() + "</li>\n";
+		for (String cat : services.keySet())
+	    {
+			help += "\t<li>" + cat + "\n\t<ul>\n"; 
+    			    	
+			for (IService s : services.get(cat)) {
+		
+		    	//build the list of expected parameters
+		    	String params = "(";
+		    	for (Class<?> param : s.getMethod().getParameterTypes())
+		    		params += param.getSimpleName() + ", ";
+		    	
+		    	if (!params.equals("("))
+		    		params = params.substring(0, params.length() - 2);
+		    	
+		    	params += ")";
+		    		        
+		    	//build the list of expected parameters 	
+		        help += "\t<li>{@linkplain " + 
+		        		s.getObj().getClass().getName() + "#" + 
+		        		s.getMethod().getName() + params + " <em>" + 
+		        		s.getName() + "</em><i>" + params + "</i>}: " + 
+		        		s.getDesc() + "</li>\n";
+		    }
+			
+			help += "</ul>\n</li>\n";
+			
 	    }
 	    help += "</ul>\n";
 		return help;
 	}
 
+	private SortedMap<String, SortedSet<IService>> getServicesByCategory(){
+	
+		SortedMap<String, SortedSet<IService>> services = new TreeMap<String, SortedSet<IService>>();
+		
+		for (String m : registredServices.keySet()) {
+			
+			String cat = registredServices.get(m).getCategory();
+			
+			if (!services.containsKey(cat)) {
+				services.put(cat, new TreeSet<IService>());
+			}
+			
+			services.get(cat).add(registredServices.get(m));
+		}
+		
+		return services;
+	}
+	
 	private Map<String, IService> getDeclaredServices(Object o) {
 		
 		HashMap<String, IService> registredServices = new HashMap<String, IService>();
