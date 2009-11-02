@@ -225,12 +225,12 @@ public class SocketConnector implements IConnector, Runnable {
 	    	else
 	    	{
 	    		/******* Iterate on registred methods ********/
-	    		for (String name : registredServices.keySet()){
+	    		for (String key : registredServices.keySet()){
 	    			
-	    			Method m = registredServices.get(name).getMethod();
-	    			Object o = registredServices.get(name).getObj();
+	    			Method m = registredServices.get(key).getMethod();
+	    			Object o = registredServices.get(key).getObj();
 
-	    			if (name.equalsIgnoreCase(queryName) &&
+	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName) &&
 	    	    			(
     	    				(request.size() == 1) ? 
     	    						m.getParameterTypes().length == 0 :

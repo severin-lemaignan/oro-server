@@ -246,9 +246,12 @@ public class OroServer implements IServiceProvider {
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
-			
+		
+		if (HAS_A_TTY) {
 		Logger.log("Following services are registred:\n", VerboseLevel.EMPHASIZE);
 		Logger.log(niceMethodsList());
+		}
+		
 		Logger.cr();
 
 		
@@ -351,9 +354,12 @@ public class OroServer implements IServiceProvider {
 	)
 	public String help() {
 		
-		if (!HAS_A_TTY) return "Please connect a console to the server to read the online help.";
+		if (!HAS_A_TTY) return "Please connect a console to the server to read " +
+				"the online help.";
 		
-		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below the list of available remote services in the knowledge base:\n";
+		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running" +
+			" oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below " +
+			"the list of available remote services in the knowledge base:\n";
 		
 		help += niceMethodsList();
 		
@@ -378,15 +384,7 @@ public class OroServer implements IServiceProvider {
 	    	
 			for (IService s : services.get(cat)) {
 							
-		    	//build the list of expected parameters
-		    	String params = "(";
-		    	for (Class<?> param : s.getMethod().getParameterTypes())
-		    		params += param.getSimpleName() + ", ";
-		    	
-		    	if (!params.equals("("))
-		    		params = params.substring(0, params.length() - 2);
-		    	
-		    	params += ")";
+				String params = formatParameters(s.getMethod());
 		    	
 		    	result += "\t- " + (char)27 + "[31m" + 
 		        		s.getName() + params + 
@@ -410,18 +408,7 @@ public class OroServer implements IServiceProvider {
 		
 		for (String m : registredServices.keySet())
 	    {
-	    	
-	    	//build the list of expected parameters
-	    	String params = "(";
-	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
-	    		params += param.getSimpleName() + ", ";
-	    	
-	    	if (!params.equals("("))
-	    		params = params.substring(0, params.length() - 2);
-	    	
-	    	params += ")";
-	    	
-	        help.put(m + params, registredServices.get(m).getDesc());
+	        help.put(m, registredServices.get(m).getDesc());
 	    }
 		
 		return help;
@@ -464,15 +451,7 @@ public class OroServer implements IServiceProvider {
     			    	
 			for (IService s : services.get(cat)) {
 		
-		    	//build the list of expected parameters
-		    	String params = "(";
-		    	for (Class<?> param : s.getMethod().getParameterTypes())
-		    		params += param.getSimpleName() + ", ";
-		    	
-		    	if (!params.equals("("))
-		    		params = params.substring(0, params.length() - 2);
-		    	
-		    	params += ")";
+		    	String params = formatParameters(s.getMethod());
 		    		        
 		    	//build the list of expected parameters 	
 		        help += "\t<li>{@linkplain " + 
@@ -489,9 +468,18 @@ public class OroServer implements IServiceProvider {
 		return help;
 	}
 
+	/**
+	 * Return a map that associate categories of RPC services to the alphabetically
+	 * sorted list of the services.
+	 * 
+	 * The categories themselves are alphabetically sorted.
+	 * 
+	 * @return
+	 */
 	private SortedMap<String, SortedSet<IService>> getServicesByCategory(){
 	
-		SortedMap<String, SortedSet<IService>> services = new TreeMap<String, SortedSet<IService>>();
+		SortedMap<String, SortedSet<IService>> services = 
+									new TreeMap<String, SortedSet<IService>>();
 		
 		for (String m : registredServices.keySet()) {
 			
@@ -507,6 +495,26 @@ public class OroServer implements IServiceProvider {
 		return services;
 	}
 	
+	/**
+	 * Formats in a human-readable way the parameters of a method.
+	 * 
+	 * @param m The method
+	 * @return the in-parenthesis list of the method's parameters
+	 */
+	private String formatParameters(Method m) {
+		//build the list of expected parameters
+    	String params = "(";
+    	for (Class<?> param : m.getParameterTypes())
+    		params += param.getSimpleName() + ", ";
+    	
+    	if (!params.equals("("))
+    		params = params.substring(0, params.length() - 2);
+    	
+    	params += ")";
+    	
+    	return params;
+	}
+	
 	private Map<String, IService> getDeclaredServices(Object o) {
 		
 		HashMap<String, IService> registredServices = new HashMap<String, IService>();
@@ -514,9 +522,15 @@ public class OroServer implements IServiceProvider {
 		for (Method m : o.getClass().getMethods()) {
 			RPCMethod a = m.getAnnotation(RPCMethod.class);
 			if (a != null) {				
-				IService service = new ServiceImpl(m.getName(), a.category(), a.desc(), m, o);
+				IService service = new ServiceImpl(
+										m.getName(), 
+										a.category(), 
+										a.desc(), 
+										m, 
+										o);
 				
-				registredServices.put(m.getName(), service);
+				String name = m.getName()+formatParameters(m);
+				registredServices.put(name, service);
 			}
 		}
 		return registredServices;
@@ -527,7 +541,8 @@ public class OroServer implements IServiceProvider {
 	 * The configuration file contains the path to the ontology to be loaded and 
 	 * several options regarding the server configuration.
 	 * @param configFileURI The path and filename of the configuration file.
-	 * @return A Java.util.Properties instance containing the application configuration.
+	 * @return A Java.util.Properties instance containing the application 
+	 * configuration.
 	 */
 	public static Properties getConfiguration(String configFileURI){
 		/****************************
@@ -545,7 +560,8 @@ public class OroServer implements IServiceProvider {
 				VERBOSITY = VerboseLevel.valueOf(parameters.getProperty("verbosity", "info").toUpperCase());
 			} catch (IllegalArgumentException iae) {
 				VERBOSITY = VerboseLevel.INFO;
-				Logger.log("Invalid value for the verbosity level. Switch back to default verbosity.", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("Invalid value for the verbosity level. Switch back " +
+						"to default verbosity.", VerboseLevel.SERIOUS_ERROR);
 			}
 			
 			if (!parameters.containsKey("oro_common_sense"))

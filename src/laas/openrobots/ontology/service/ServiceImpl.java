@@ -48,7 +48,7 @@ public class ServiceImpl implements IService {
 
 		@Override
 		public int compareTo(IService arg) {
-			return name.compareTo(arg.getName());
+			return method.toString().compareTo(arg.getMethod().toString());
 		}
 		
 		
