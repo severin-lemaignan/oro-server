@@ -21,9 +21,9 @@ import java.util.Map.Entry;
 
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.helpers.Helpers;
-import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.service.IService;
 
 /** Implements a socket interface to {@code oro-server} RPC methods.<br/>
  * <br/>
@@ -117,7 +117,7 @@ public class SocketConnector implements IConnector, Runnable {
 	int port;
 	ServerSocket server = null;
 	
-	HashMap<List<String>, Pair<Method, Object>> registredServices;
+	HashMap<String, IService> registredServices;
 	private volatile boolean keepOn = true;
 	
 	/**
@@ -225,12 +225,12 @@ public class SocketConnector implements IConnector, Runnable {
 	    	else
 	    	{
 	    		/******* Iterate on registred methods ********/
-	    		for (List<String> name : registredServices.keySet()){
+	    		for (String name : registredServices.keySet()){
 	    			
-	    			Method m = registredServices.get(name).getLeft();
-	    			Object o = registredServices.get(name).getRight();
+	    			Method m = registredServices.get(name).getMethod();
+	    			Object o = registredServices.get(name).getObj();
 
-	    			if (name.get(0).equalsIgnoreCase(queryName) &&
+	    			if (name.equalsIgnoreCase(queryName) &&
 	    	    			(
     	    				(request.size() == 1) ? 
     	    						m.getParameterTypes().length == 0 :
@@ -477,7 +477,7 @@ public class SocketConnector implements IConnector, Runnable {
 		
 	public SocketConnector(
 			Properties params,
-			HashMap<List<String>, Pair<Method, Object>> registredServices) {
+			HashMap<String, IService> registredServices) {
 		
 		port = Integer.parseInt(params.getProperty("port", "6969")); //defaulted to port 6969 if no port provided in the configuration file.
 		KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(params.getProperty("keep_alive_socket_duration", "60")); //defaulted to 1 min if no duration is provided in the configuration file.
@@ -537,7 +537,7 @@ public class SocketConnector implements IConnector, Runnable {
 
 	@Override
 	public void refreshServiceList(
-			Map<List<String>, Pair<Method, Object>> registredServices) {
+			Map<String, IService> registredServices) {
 		// TODO Auto-generated method stub
 		
 	}

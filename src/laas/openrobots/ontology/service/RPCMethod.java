@@ -1,6 +1,8 @@
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.service;
 
 import java.lang.annotation.*;
+
+import laas.openrobots.ontology.OroServer;
 
 /**
  * This annotation marks all the available methods exposed to remote clients.<br/>

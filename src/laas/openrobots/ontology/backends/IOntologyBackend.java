@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -18,6 +16,8 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+import laas.openrobots.ontology.service.IServiceProvider;
+import laas.openrobots.ontology.service.RPCMethod;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
@@ -34,7 +34,7 @@ import com.hp.hpl.jena.shared.NotFoundException;
 
 /** This interface describes the abstract behaviour of an ontology backend. It presents the list of operation the "knowledge store" should provide to be used with the {@linkplain laas.openrobots.ontology.OroServer ontology server}.<br/>
  * <br/>
- * Please note that, since annotation can not be inherited in Java 1.6, it is useless to link this interface to the {@link laas.openrobots.ontology.IServiceProvider} interface. However, all classes implementing the {@link IOntologyBackend} must implement as well {@link IServiceProvider}.
+ * Please note that, since annotation can not be inherited in Java 1.6, it is useless to link this interface to the {@link laas.openrobots.ontology.service.IServiceProvider} interface. However, all classes implementing the {@link IOntologyBackend} must implement as well {@link IServiceProvider}.
  * @author slemaign
  *
  */

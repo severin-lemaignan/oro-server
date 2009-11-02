@@ -42,31 +42,30 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.Map.Entry;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
+import laas.openrobots.ontology.service.IService;
+import laas.openrobots.ontology.service.IServiceProvider;
+import laas.openrobots.ontology.service.RPCMethod;
+import laas.openrobots.ontology.service.ServiceImpl;
 
 /**
  * {@code OroServer} is the application entry point. It initializes and starts the various services, connectors and background tasks, as set up in the <code>oro-server</code> configuration file.<br/> 
@@ -141,9 +140,12 @@ public class OroServer implements IServiceProvider {
 	private volatile HashSet<IEventsProvider> eventsProviders;
 	
 	/**
-	 * This map contains all the "services" offered by the ontology server. Each entry contain 1/the name of the service (unique) 2/a brief description of the service 3/a method to be called 4/the object on which the method should be called.
+	 * This map contains all the "services" offered by the ontology server. Each
+	 * entry contain 1/the name of the service (unique) 2/an instance of a 
+	 * service model storing an instancied object on which the service should 
+	 * be called.
 	 */
-	private volatile HashMap<List<String>, Pair<Method, Object>> registredServices;
+	private volatile HashMap<String, IService> registredServices;
 	
 	private static OpenRobotsOntology oro = null;
 	
@@ -164,7 +166,7 @@ public class OroServer implements IServiceProvider {
 	
 	public void addNewServiceProviders(IServiceProvider provider)
 	{
-			Map<List<String>, Pair<Method, Object>> services = getDeclaredServices(provider);
+			Map<String, IService> services = getDeclaredServices(provider);
 			if (services != null)
 				registredServices.putAll(services);
 			
@@ -180,7 +182,7 @@ public class OroServer implements IServiceProvider {
     	
     	connectors = new HashSet<IConnector>();
     	eventsProviders = new HashSet<IEventsProvider>();
-    	registredServices = new HashMap<List<String>, Pair<Method, Object>>();
+    	registredServices = new HashMap<String, IService>();
     	
     	//Check if the application is connected to a console. We don't want to
     	//color outputs in a logfile for instance.
@@ -242,14 +244,14 @@ public class OroServer implements IServiceProvider {
 			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
 			
 		Logger.log("Following services are registred:\n", VerboseLevel.IMPORTANT);
-    	for (List<String> m : registredServices.keySet())
+    	for (String m : registredServices.keySet())
     	{
-    		Logger.log("\t- " + m.get(0) , VerboseLevel.EMPHASIZE);
+    		Logger.log("\t- " + m , VerboseLevel.EMPHASIZE);
     		//Add the category
-    		Logger.log(" (" + m.get(1) + ")");
+    		Logger.log(" (" + registredServices.get(m).getCategory() + ")");
     		//if present, display the description as well
-    		if (m.get(2) != "")
-    			Logger.log(" -> " + m.get(2) + "\n");
+    		if (registredServices.get(m).getDesc() != "")
+    			Logger.log(" -> " + registredServices.get(m).getDesc() + "\n");
     		else
     			Logger.log("\n");
     	}
@@ -359,15 +361,12 @@ public class OroServer implements IServiceProvider {
 		
 		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below the list of available remote services in the knowledge base:\n";
 		
-		Iterator<Entry<List<String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
-	    while (it.hasNext()) {
-	    	
-	    	Entry<List<String>, Pair<Method, Object>> pairs = it.next();
-	    	
+		for (String m : registredServices.keySet())
+	    {
 	    	
 	    	//build the list of expected parameters
 	    	String params = "(";
-	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
 	    		params += param.getSimpleName() + ", ";
 	    	
 	    	if (!params.equals("("))
@@ -376,9 +375,9 @@ public class OroServer implements IServiceProvider {
 	    	params += ")";
 	    	
 	        help += "\t- " + (char)27 + "[35m" + 
-	        		pairs.getKey().get(0) + params + 
+	        		m + params + 
 	        		(char)27 + "[0m: " + 
-	        		pairs.getKey().get(2) + "\n";
+	        		registredServices.get(m).getDesc() + "\n";
 	    }
 		
 	    help += "\nTo execute a command, you must enter its name (case " +
@@ -398,15 +397,12 @@ public class OroServer implements IServiceProvider {
 		
 		Map<String, String> help = new HashMap<String, String>();
 		
-		Iterator<Entry<List<String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
-	    while (it.hasNext()) {
-	    	
-	    	Entry<List<String>, Pair<Method, Object>> pairs = it.next();
-	    	
+		for (String m : registredServices.keySet())
+	    {
 	    	
 	    	//build the list of expected parameters
 	    	String params = "(";
-	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
 	    		params += param.getSimpleName() + ", ";
 	    	
 	    	if (!params.equals("("))
@@ -414,7 +410,7 @@ public class OroServer implements IServiceProvider {
 	    	
 	    	params += ")";
 	    	
-	        help.put(pairs.getKey().get(0) + params, pairs.getKey().get(2));
+	        help.put(m + params, registredServices.get(m).getDesc());
 	    }
 		
 		return help;
@@ -428,10 +424,9 @@ public class OroServer implements IServiceProvider {
 		
 		Set<String> help = new HashSet<String>();
 		
-		Iterator<Entry<List<String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
-	    while (it.hasNext()) {
-	    	Entry<List<String>, Pair<Method, Object>> pairs = it.next(); 	
-	        help.add(pairs.getKey().get(0));
+		for (String m : registredServices.keySet())
+	    {
+	        help.add(m);
 	    }
 		return help;
 	}
@@ -450,13 +445,11 @@ public class OroServer implements IServiceProvider {
 		help += "<i>(Last updated on " + sdf.format(cal.getTime()) + ")</i>\n";
 		help += "<ul class=\"RpcMethodsList\">\n";
 		
-		Iterator<Entry<List<String>, Pair<Method, Object>>> it = registredServices.entrySet().iterator();
-	    while (it.hasNext()) {
-	    	Entry<List<String>, Pair<Method, Object>> pairs = it.next();
-	    	
+		for (String m : registredServices.keySet())
+	    {	
 	    	//build the list of expected parameters
 	    	String params = "(";
-	    	for (Class<?> param : pairs.getValue().getLeft().getParameterTypes())
+	    	for (Class<?> param : registredServices.get(m).getMethod().getParameterTypes())
 	    		params += param.getSimpleName() + ", ";
 	    	
 	    	if (!params.equals("("))
@@ -466,28 +459,25 @@ public class OroServer implements IServiceProvider {
 	    		        
 	    	//build the list of expected parameters 	
 	        help += "\t<li>{@linkplain " + 
-	        		pairs.getValue().getRight().getClass().getName() + "#" + 
-	        		pairs.getValue().getLeft().getName() + params + " <em>" + 
-	        		pairs.getKey().get(0) + "</em><i>" + params + "</i>}: " + 
-	        		pairs.getKey().get(2) + "</li>\n";
+	        		registredServices.get(m).getObj().getClass().getName() + "#" + 
+	        		registredServices.get(m).getMethod().getName() + params + " <em>" + 
+	        		m + "</em><i>" + params + "</i>}: " + 
+	        		registredServices.get(m).getDesc() + "</li>\n";
 	    }
 	    help += "</ul>\n";
 		return help;
 	}
 
-	private Map<List<String>, Pair<Method, Object>> getDeclaredServices(Object o) {
+	private Map<String, IService> getDeclaredServices(Object o) {
 		
-		HashMap<List<String>, Pair<Method, Object>> registredServices = new HashMap<List<String>, Pair<Method, Object>>();
+		HashMap<String, IService> registredServices = new HashMap<String, IService>();
 		
 		for (Method m : o.getClass().getMethods()) {
 			RPCMethod a = m.getAnnotation(RPCMethod.class);
 			if (a != null) {				
-				List<String> serviceDesc = new ArrayList<String>();
-				serviceDesc.add(m.getName());
-				serviceDesc.add(a.category());
-				serviceDesc.add(a.desc());
+				IService service = new ServiceImpl(m.getName(), a.category(), a.desc(), m, o);
 				
-				registredServices.put(serviceDesc, new Pair<Method, Object>(m, o));
+				registredServices.put(m.getName(), service);
 			}
 		}
 		return registredServices;

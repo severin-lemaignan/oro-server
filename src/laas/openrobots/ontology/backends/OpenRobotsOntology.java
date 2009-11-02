@@ -56,7 +56,6 @@ import java.util.Vector;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.*;
 import laas.openrobots.ontology.helpers.Helpers;
@@ -68,6 +67,7 @@ import laas.openrobots.ontology.modules.events.IEventsProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+import laas.openrobots.ontology.service.RPCMethod;
 import laas.openrobots.ontology.types.ResourceDescription;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;

@@ -1,7 +1,8 @@
 /**
  * 
  */
-package laas.openrobots.ontology;
+package laas.openrobots.ontology.service;
+
 
 /**
  * This interface sole purpose is to signal that a class implement services for the oro-server (ie, methods annotated with a {@link RPCMethod} annotation).

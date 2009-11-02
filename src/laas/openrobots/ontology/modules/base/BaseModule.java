@@ -1,6 +1,5 @@
 package laas.openrobots.ontology.modules.base;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,15 +22,11 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.reasoner.ValidityReport;
-import com.hp.hpl.jena.reasoner.ValidityReport.Report;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 
-import laas.openrobots.ontology.IServiceProvider;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.RPCMethod;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -41,6 +36,8 @@ import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+import laas.openrobots.ontology.service.IServiceProvider;
+import laas.openrobots.ontology.service.RPCMethod;
 import laas.openrobots.ontology.types.ResourceDescription;
 
 public class BaseModule implements IServiceProvider {
