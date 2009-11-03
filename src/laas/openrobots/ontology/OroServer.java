@@ -62,9 +62,10 @@ import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
-import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.service.IService;
 import laas.openrobots.ontology.service.IServiceProvider;
@@ -91,7 +92,7 @@ import laas.openrobots.ontology.service.ServiceImpl;
  *  <p>
  *  Amongst the tasks that are run in background, we can list:
  *  <ul>
- *  	<li>The event manager (see {@link IEventsProvider})</li>
+ *  	<li>The event manager (see {@link IWatcherProvider})</li>
  *  	<li>The memory manager (see {@link MemoryManager})</li>
  *  </ul>
  *  Others are under developpement, including a "curiosity" module, a cognitive conflict detection and resolution module.
@@ -133,6 +134,8 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean HAS_A_TTY;
 	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
+	public static Properties serverParameters;
+	
 	public static boolean BLINGBLING;
 	
 	public static final String VERSION = "0.6.5"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
@@ -141,7 +144,6 @@ public class OroServer implements IServiceProvider {
 
 	private volatile boolean keepOn = true;
 	private volatile HashSet<IConnector> connectors;
-	private volatile HashSet<IEventsProvider> eventsProviders;
 	
 	/**
 	 * This map contains all the "services" offered by the ontology server. Each
@@ -182,10 +184,8 @@ public class OroServer implements IServiceProvider {
    	
     	
     	String confFile;
-    	Properties confParams;
     	
     	connectors = new HashSet<IConnector>();
-    	eventsProviders = new HashSet<IEventsProvider>();
     	registredServices = new HashMap<String, IService>();
     	
     	//Check if the application is connected to a console. We don't want to
@@ -200,7 +200,7 @@ public class OroServer implements IServiceProvider {
     		confFile = args[0];
     	
     	//Load the configuration file. If it can not be found, exits.
-    	confParams = getConfiguration(confFile);
+    	serverParameters = getConfiguration(confFile);
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[6m"); 
@@ -231,7 +231,7 @@ public class OroServer implements IServiceProvider {
 		addNewServiceProviders(this);
 		
 		//Open and load the ontology + register ontology services by the server. 
-		oro = new OpenRobotsOntology(confParams);
+		oro = new OpenRobotsOntology(serverParameters);
 		
 		addNewServiceProviders(oro);
 		
@@ -242,6 +242,11 @@ public class OroServer implements IServiceProvider {
 		
 		IServiceProvider diffModule = new DiffModule(oro);
 		addNewServiceProviders(diffModule);
+		
+		if (serverParameters.getProperty("enable_alterite", "true").equalsIgnoreCase("true")) {
+			IServiceProvider alteriteModule = new AlteriteModule(oro);
+			addNewServiceProviders(alteriteModule);
+		}
 		
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
@@ -261,7 +266,7 @@ public class OroServer implements IServiceProvider {
     	
     	// Currently, only one connector, the socket connector 
     	// (others bridges like YARP or JSON are now out of the oro-server code base)
-    	SocketConnector sc = new SocketConnector(confParams, registredServices);
+    	SocketConnector sc = new SocketConnector(serverParameters, registredServices);
 		connectors.add(sc);
 
 		for (IConnector c : connectors)	{

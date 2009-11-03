@@ -8,13 +8,15 @@ import java.util.Vector;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Namespaces;
-import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
@@ -316,11 +318,19 @@ public interface IOntologyBackend extends IServiceProvider {
 
 	/**
 	 * Allows to register several <em>events providers</em> (typically, one by underlying middleware) which in turn provide access to <em>watchers</em>. Watchers expose a <em>watch expression</em> which is a SPARQL <code>ASK</code> query. Every time a change is made on the ontology, the ontology backend which implements this interface is expected to execute this query against the model and notify the watchers (through {@link IWatcher#notifySubscriber()}) if the result is positive.
-	 * @param eventsProviders A set of event providers.
+	 * @param watcherProviders A set of event providers.
+	 * @throws EventRegistrationException 
 	 * @see IWatcher, IEventsProvider
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract void registerEventsHandlers(
-			Set<IEventsProvider> eventsProviders);
+	public abstract void registerEvents(
+			IWatcherProvider watcherProvider) throws EventRegistrationException;
+	
+	/**
+	 * Return the list of event types implemented (hence usable) by this backend.
+	 * 
+	 * @return The list of event type supported by the backend
+	 */
+	public Set<EventType> getSupportedEvents();
 
 }

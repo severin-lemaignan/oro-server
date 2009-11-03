@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import laas.openrobots.ontology.OroServer;
+import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -55,6 +56,7 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 
 /**
@@ -135,6 +137,20 @@ public class Helpers {
 		}
 			
 		else return "'" + lit.getLexicalForm() + "'^^<" + lit.getDatatypeURI() + ">";		
+	}
+	
+	/**Formats a statement for inclusion in a SPARQL query.</br>
+	 * 
+	 * @return the formatted statement.
+	 * @see PartialStatement#asSparqlRow() asSparqlRow() in PartialStatement class
+	 */
+	public static String asSparqlRow(Statement stmt){	
+		return 	"<" + stmt.getSubject().toString() + "> " + 
+				"<" + stmt.getPredicate().toString() + "> " +
+				(stmt.getObject().isLiteral()? 
+								literalToSparqlSyntax((Literal)stmt.getObject()) : 
+								"<" + stmt.getObject().toString() + ">")
+				+ " .\n";
 	}
 
 	/**

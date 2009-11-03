@@ -54,21 +54,20 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
-import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.*;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
-import laas.openrobots.ontology.modules.events.IEventsProvider;
+import laas.openrobots.ontology.modules.events.EventProcessor;
+import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.RPCMethod;
-import laas.openrobots.ontology.types.ResourceDescription;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
@@ -80,7 +79,6 @@ import com.hp.hpl.jena.ontology.ObjectProperty;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
-import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
@@ -94,8 +92,6 @@ import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-import com.hp.hpl.jena.util.iterator.Filter;
-
 
 /**
  * The OpenRobotsOntology class is the main storage backend for oro-server.<br/>
@@ -120,25 +116,22 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	private OntModel onto;
 	
-	private HashSet<IEventsProvider> eventsProviders;
-	
 	private ResultSet lastQueryResult;
 	private String lastQuery;
 	
-	
 	private Properties parameters;
 
-	//the watchersCache holds as keys the literal watch pattern and as value a pair of pre-processed query built from the watch pattern and a boolean holding the last known result of the query.
-	private HashMap<String, Pair<Query, Boolean>> watchersCache;
 	
 	private Map<String, Pair<String, ResourceType> > lookupTable;
 	private boolean modelChanged = true;
 	private boolean forceLookupTableUpdate = false; //useful to systematically rebuild the lookup table when a statement has been removed.
 	
 	private MemoryManager memoryManager;
+
+	private EventProcessor eventProcessor;
 	
 	/***************************************
-	 *          Constructor                *
+	 *          Constructors               *
 	 **************************************/
 	
 	/**
@@ -153,14 +146,30 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * <li><em>verbose = [true|false]</em>: set it to <em>true</em> to get more infos from the engine.</li>
 	 * <li><em>ontology = PATH</em>: the path to the OWL (or RDF) ontology to be loaded.</li> 
 	 * <li><em>default_namespace = NAMESPACE</em>: set the default namespace. Don't forget the trailing #!</li>
-	 * <li><em>short_namespaces = [true|false]</em> (default: true): if true, the ontology engine will return resource with prefix instead of full URI, or nothing if the resource is in the default namespace.</li>
+	 * <li><em>short_namespaces = [true|false]</em> (default: true): if true, the 
+	 * ontology engine will return resource with prefix instead of full URI, or 
+	 * nothing if the resource is in the default namespace.</li>
 	 * </ul>
-	 * The file may contain other options, related to the server configuration. See {@link laas.openrobots.ontology.OroServer}. Have a look as well at the config file itself for more details.
+	 * The file may contain other options, related to the server configuration. 
+	 * See {@link laas.openrobots.ontology.OroServer}. Have a look as well at the 
+	 * config file itself for more details.
 	 * 
 	 * @param parameters The set of parameters, read from the server configuration file.
 	 */
 	public OpenRobotsOntology(Properties parameters){
 		this.parameters = parameters;
+		initialize();
+	}
+	
+	/**
+	 * Constructor which takes a Jena {@linkplain OntModel} as parameter.<br/>
+	 * 
+	 * @param onto An already built ontology model. The OpenRobotsOntology will 
+	 * wrap it.
+	 */
+	public OpenRobotsOntology(OntModel onto){
+		if (onto == null) throw new IllegalArgumentException();
+		this.onto = onto;
 		initialize();
 	}
 
@@ -193,7 +202,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		ArrayList<String> tokens_statement = Helpers.tokenize(statement.trim(), ' ');
 				
 		if (tokens_statement.size() != 3)
-			throw new IllegalStatementException("Three tokens are expected in a statement, " +	tokens_statement.size() + " found in " + statement + ".");
+			throw new IllegalStatementException(
+					"Three tokens are expected in a statement, " +	
+					tokens_statement.size() + " found in " + statement + ".");
 		
 		//expand the namespaces for subject and predicate.
 		for (int i = 0; i<2; i++){
@@ -674,7 +685,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public List<String> lookup(String id) throws NotFoundException {
 		
-		if (forceLookupTableUpdate) rebuildLookupTable(); //if statements have been removed, we must force a rebuilt of the lookup table else a former concept that doesn't exist anymore could be returned.
+		//if statements have been removed, we must force a rebuilt of the lookup
+		//table else a former concept that doesn't exist anymore could be returned.
+		if (forceLookupTableUpdate) rebuildLookupTable();
 				
 		List<String> result = new ArrayList<String>();
 		
@@ -700,7 +713,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/**
 	 * Returns the current set of parameters.
 	 * 
-	 * @return the current set of parameters, reflecting the content of the configuration file.
+	 * @return the current set of parameters, reflecting the content of the 
+	 * configuration file.
 	 */
 	public Properties getParameters(){
 		return parameters;		
@@ -770,11 +784,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#registerEventsHandlers(java.util.Set)
 	 */
-	public void registerEventsHandlers(Set<IEventsProvider> eventsProviders) {
-		this.eventsProviders.addAll(eventsProviders);
+	public void registerEvents(IWatcherProvider watcherProvider) throws EventRegistrationException {
+		
+		eventProcessor.add(watcherProvider);
 		
 	}
 
+	@Override
+	public Set<EventType> getSupportedEvents() {
+		return eventProcessor.getSupportedEvents();
+	}
 	
 	@RPCMethod(
 		category = "administration",
@@ -790,31 +809,36 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 
 	private void initialize(){
-				
-		this.eventsProviders = new HashSet<IEventsProvider>();
-		this.watchersCache = new HashMap<String, Pair<Query, Boolean>>();
+		
 		this.lookupTable = new HashMap<String, Pair<String, ResourceType>>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
-		
+					
 		Namespaces.setDefault(parameters.getProperty("default_namespace"));
 		
-		this.load();
+		if (onto == null) this.load();
 		
 		this.rebuildLookupTable();
 		
 		memoryManager = new MemoryManager(onto);
 		memoryManager.start();
 		
+		eventProcessor = new EventProcessor(this);
+		
 	}
 
 	
-	/** This protected method is called every time the ontology model changes (ie upon addition or removal of statements in the ontology).<br/>
-	 * It is mainly responsible for testing the various watchPatterns as provided by the set of active {@link IWatcher} against the ontology.<br/>
+	/** This protected method is called every time the ontology model changes 
+	 * (ie upon addition or removal of statements in the ontology).
 	 * 
-	 * onModelChange() relies on a caching mechanism of requests to improve performances. It remains however a serious performance bottleneck.
+	 * It is mainly responsible for testing the various watchPatterns as 
+	 * provided by the set of active {@link IWatcher} against the ontology.
 	 * 
-	 * @param rsName the name of the reified statements whose creation triggered the update. Can be null if it does not apply.
+	 * onModelChange() relies on a caching mechanism of requests to improve 
+	 * performances. It remains however a serious performance bottleneck.
+	 * 
+	 * @param rsName the name of the reified statements whose creation triggered
+	 *  the update. Can be null if it does not apply.
 	 * 
 	 * @see #onModelChange()
 	 */
@@ -824,94 +848,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		modelChanged = true;
 		
-		//iterate over the various registered watchers and notify the subscribers when needed.
-		for (IEventsProvider ep : eventsProviders) {
-			for (IWatcher w : ep.getPendingWatchers()) {
-				
-				//First time we see this watch expression: we convert it to a nice QueryExecution object, ready to be executed against the ontology.
-				if (watchersCache.get(w.getWatchPattern()) == null) {
-					PartialStatement statement;
-					
-					try {
-						statement = createPartialStatement(w.getWatchPattern());
-					} catch (IllegalStatementException e) {
-						Logger.log("Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
-						return;
-					}
-						
-					String resultQuery = "ASK { "+statement.asSparqlRow() +" }";
-						
-					try	{
-						Query query = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-						watchersCache.put(w.getWatchPattern(), Pair.create(query, false));
-						Logger.log("New watch expression added to cache: " + resultQuery + "\n");
-					}
-					catch (QueryParseException e) {
-						Logger.log("Internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
-						return;
-					}
-					
-					
-				}
-				
-				onto.enterCriticalSection(Lock.READ);
-				try	{
-					Pair<Query, Boolean> currentQuery = watchersCache.get(w.getWatchPattern());
-				
-					if (QueryExecutionFactory.create(currentQuery.getLeft(), onto).execAsk()){
-						
-						Logger.log("Event triggered for pattern " + w.getWatchPattern() + "\n");
-						
-						switch(w.getTriggeringType()){
-						case ON_TRUE:
-						case ON_TOGGLE:
-							//if the last statut for this query is NOT true, then, trigger the event.
-							if (!currentQuery.getRight()) {
-								w.notifySubscriber();
-							}
-							break;
-						case ON_TRUE_ONE_SHOT:
-							w.notifySubscriber();
-							ep.removeWatcher(w);
-							watchersCache.remove(currentQuery);
-							break;
-						}
-					} else {
-						switch(w.getTriggeringType()){
-						
-						case ON_FALSE:
-						case ON_TOGGLE:
-							//if the last statut for this query is NOT false, then, trigger the event.
-							if (currentQuery.getRight()) {
-								w.notifySubscriber();
-							}
-							break;
-						case ON_FALSE_ONE_SHOT:
-							w.notifySubscriber();
-							ep.removeWatcher(w);
-							watchersCache.remove(currentQuery);
-							break;
-						}
-						
-					
-					}
-					
-				}
-				catch (QueryExecException e) {
-					Logger.log("Internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
-					throw e;
-				}
-				finally {
-					onto.leaveCriticalSection();
-				}
-				
-			}
-			
-		}
+		eventProcessor.process();
+		
 		
 		if (rsName != null)	memoryManager.watch(rsName);
 			
 	}
+
 	
 	/**
 	 * Simply call {@link #onModelChange(String)} with a  {@code null} string.
@@ -955,23 +898,30 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 			try {
 				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
-				Logger.log("Common sense ontology initialized with "+ oroCommonSenseUri +".\n", VerboseLevel.IMPORTANT);
+				Logger.log("Common sense ontology initialized with "+ 
+						oroCommonSenseUri +".\n", VerboseLevel.IMPORTANT);
 				
 				if (oroRobotInstanceUri != null) 
-					{
-					robotInstancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
-					Logger.log("Robot-specific ontology loaded from " + oroRobotInstanceUri + ".\n", VerboseLevel.IMPORTANT);
-					}
+				{
+				robotInstancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
+				Logger.log("Robot-specific ontology loaded from " + 
+						oroRobotInstanceUri + ".\n", VerboseLevel.IMPORTANT);
+				}
 				
 				if (oroScenarioUri != null) 
 				{
 				scenarioModel = FileManager.get().loadModel(oroScenarioUri);
-				Logger.log("Scenario-specific ontology loaded from " + oroScenarioUri + ".\n", VerboseLevel.IMPORTANT);
+				Logger.log("Scenario-specific ontology loaded from " + 
+						oroScenarioUri + ".\n", VerboseLevel.IMPORTANT);
 				}
 				
 				
 			} catch (NotFoundException nfe) {
-				Logger.log("Could not find one of these files:\n\t- " + oroCommonSenseUri + ",\n\t- " + oroRobotInstanceUri + " or\n\t- " + oroScenarioUri + ".\nExiting.", VerboseLevel.FATAL_ERROR);
+				Logger.log("Could not find one of these files:\n" +
+						"\t- " + oroCommonSenseUri + 
+						",\n\t- " + oroRobotInstanceUri + 
+						" or\n\t- " + oroScenarioUri + 
+						".\nExiting.", VerboseLevel.FATAL_ERROR);
 				System.exit(1);
 			}
 			//Ontology model and reasonner type
@@ -987,16 +937,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			Logger.cr();
 			Logger.log("Ontology successfully loaded.\n", VerboseLevel.IMPORTANT);
-			if (robotInstancesModel != null) Logger.log("\t- Robot-specific knowledge loaded and merged.\n");
-			if (scenarioModel != null) Logger.log("\t- Scenario-specific knowledge loaded and merged.\n");
+			
+			if (robotInstancesModel != null) 
+				Logger.log("\t- Robot-specific knowledge loaded and merged.\n");
+			
+			if (scenarioModel != null)
+				Logger.log("\t- Scenario-specific knowledge loaded and merged.\n");
+			
 			Logger.log("\t- " + onto_model_reasonner_name + " initialized.\n");
 			Logger.cr();
 			
 			
 		} catch (ReasonerException re){
+			Logger.log("Fatal error at ontology initialization: error with the reasonner\n", VerboseLevel.FATAL_ERROR);
 			re.printStackTrace();
 			System.exit(1);
 		} catch (JenaException je){
+			Logger.log("Fatal error at ontology initialization: error with Jena\n", VerboseLevel.FATAL_ERROR);
 			je.printStackTrace();
 			System.exit(1);
 		}
@@ -1006,7 +963,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 
 	/**
-	 * Rebuild the map that binds all the concepts to their labels and type (instance, class, property...). This map is used for fast lookup of concept, and rebuild only when (the model has changed AND an lookup failed) OR (a concept has been removed AND a lookup is starting).
+	 * Rebuild the map that binds all the concepts to their labels and type 
+	 * (instance, class, property...). This map is used for fast lookup of 
+	 * concept, and rebuild only when (the model has changed AND an lookup failed) 
+	 * OR (a concept has been removed AND a lookup is starting).
 	 * 
 	 *  @see {@link #lookup(String)}
 	 */
@@ -1099,7 +1059,5 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 	}
-
-
 
 }

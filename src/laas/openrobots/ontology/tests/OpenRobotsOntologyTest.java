@@ -53,6 +53,7 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
@@ -62,6 +63,11 @@ import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
+import laas.openrobots.ontology.modules.events.IEventConsumer;
+import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.events.IWatcherProvider;
+import laas.openrobots.ontology.modules.events.InternalWatcher;
+import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.query.ResultSet;
@@ -77,31 +83,6 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
 /**
  * This class holds unit tests that cover most of the {@code oro-server} features.<br/>
  * For the tests to be executed, the {@code oro_test.owl} ontology is required, and must be referenced by the {@code oro_test.conf} configuration file.<br/>
- * Currently implemented:
- * <ul>
- * <li> Basic tests
- * <ul>
- *  <li> {@link #testSave() testSave}: serialization of the ontology.</li>
- *  <li> {@link #testCheck() testCheck}: check that some facts are correctly asserted/infered in the ontology.</li>
- * 	<li> {@link #testQuery() testQuery}: simple query on the test ontology.</li>
- *  <li> {@link #testGetInfos() testGetInfos}: informations retrieval on a resource.</li>
- *  <li> {@link #testGetInfosDefaultNs() testGetInfosDefaultNs}: informations retrieval on a resource test namespace defaulting.</li>
- *  <li> {@link #testAddStmnt() testAddStmnt}: insertion of a simple statement.</li>
- *  <li> {@link #testAddStmntWithLiteral() testAddStmntWithLiteral}: insertion of a statement containing literals.</li>
- *  <li> {@link #testLiterals() testLiterals}: test support for various possible way of representing literals.</li>
- *  <li> {@link #testRemoveAndClear() testRemoveAndClear}: removal of statements from the ontology.</li>
- *  <li> {@link #testConsistency() testConsistency}: ontology consistency.</li>
- *  <li> {@link #testMatching()}: exact statements matching.</li>
- *  <li> {@link #testApproximateNumericMatching()}: approximate numerical statements matching.</li>
- * </ul>
- * </li>
- * <li> More advanced tests
- *  <ul>
- *  <li> {@link #testInference() testInference}: test basic inference mechanisms.</li>
- *  </ul>
- * </li>
- * </ul>
- * 
  * 
  * @author Severin Lemaignan severin.lemaignan@laas.fr
  *
@@ -1367,6 +1348,5 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
-
 	
 }

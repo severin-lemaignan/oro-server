@@ -40,6 +40,39 @@
 
 Provides the cognitive event manager module.<br/>
 
+<h3>Overview of the events usage</h3>
+
+<p>
+Events are triggered by so-called <i>Watchers</i> (classes that implement the 
+{@link laas.openrobots.ontology.modules.events.IWatcher} interface).
+<p/>
+
+<p>
+A watcher stores the type of event (cf {@link laas.openrobots.ontology.modules.events.IWatcher.EventType}) along with the
+pattern (the form of the pattern depends on the type of event, as documented here:
+{@link laas.openrobots.ontology.modules.events.IWatcher.EventType}).
+</p>
+
+<p>
+For convenience, some standard watchers are already implemented as abstract class
+and can easily be specialized with specific patterns (cf {@link laas.openrobots.ontology.modules.events.InternalWatcher}, 
+{@NewInstanceWatcher}).
+</p>
+
+<p>
+For a class to be allowed to register events, it must implement the {@link laas.openrobots.ontology.modules.events.IWatcherProvider}
+interface (or extend the abstract class {@link laas.openrobots.ontology.modules.events.GenericWatcherProvider}).
+</p>
+
+<p>
+The events can eventually be registered to an {@linkplain laas.openrobots.ontology.backends.IOntologyBackend ontology 
+backend} by calling {@link laas.openrobots.ontology.backends.IOntologyBackend.registerEvents(IWatcherProvider)}.
+</p>
+
+<p>
+Examples can be found in the {@link laas.openrobots.ontology.tests.EventsTest} test-suite.
+</p>
+
 @since 0.3.2
 
 </body>
