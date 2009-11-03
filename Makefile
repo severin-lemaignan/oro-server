@@ -69,6 +69,9 @@ clean :
 
 doc:
 	$(JAVADOC) -sourcepath $(SRC_DIR) \
+	-encoding "UTF-8" \
+	-charset "UTF-8" \
+	-docencoding "UTF-8" \
 	-overview $(SRC_DIR)/overview/overview.html \
 	-classpath $(CLASSPATH) \
 	-d $(DOC_DIR) \
@@ -83,8 +86,7 @@ doc:
 	-link http://jena.sourceforge.net/javadoc \
 	-J-Xmx180m \
 	-stylesheetfile $(SRC_DIR)/javadoc.css \
-	-subpackages $(BASE_PACKAGE) \
-	-encoding utf8
+	-subpackages $(BASE_PACKAGE)
 
 install-doc: doc
 	cd doc && ${CP} -r . ${PREFIX}/share/doc/oro-server
