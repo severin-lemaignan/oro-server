@@ -55,15 +55,19 @@ import java.util.Set;
 import java.util.Vector;
 
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.exceptions.*;
+import laas.openrobots.ontology.exceptions.EventRegistrationException;
+import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.Pair;
-import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.EventProcessor;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -80,8 +84,25 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.query.*;
-import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecException;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.QueryParseException;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Selector;
+import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
 import com.hp.hpl.jena.reasoner.ReasonerException;
@@ -254,13 +275,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			if (memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT) //LONGTERM memory
 			{
-				Logger.log("Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]...");
+				Logger.log("Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]\n");
 				
 				onto.enterCriticalSection(Lock.WRITE);
 				onto.add(statement);
 				onto.leaveCriticalSection();
 				
 				//notify the events subscribers.
+				//TODO: optimize this call in case of a serie of "add" -> onModelChange to be moved to a separate thread?
 				onModelChange();
 			}
 			else
@@ -296,8 +318,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}			
-
-		Logger.log("done.\n");
 	}
 
 	
@@ -742,7 +762,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	@Override
 	public void remove(Statement stmt) {
-		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]");
+		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]\n");
 		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
