@@ -3,9 +3,7 @@ package laas.openrobots.ontology.modules.alterite;
 import java.util.Properties;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
-import org.mindswap.pellet.utils.VersionInfo;
 
-import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -34,12 +32,6 @@ public class AgentModel {
 		this.model = model;
 	}
 	
-	public AgentModel(String id) {
-		super();
-		this.id = id;
-		this.model = createAgentModel(OroServer.serverParameters);
-	}
-	
 	public AgentModel(String id, Properties parameters) {
 		super();
 		this.id = id;
@@ -50,6 +42,8 @@ public class AgentModel {
 	private IOntologyBackend createAgentModel(Properties parameters) 
 	{
 		OntModel onto = null;
+		
+		if (parameters == null) return null;
 		
 		String oroCommonSenseUri = parameters.getProperty("oro_common_sense");
 		String oroAgentInstanceUri = parameters.getProperty("oro_agent_instance");

@@ -223,9 +223,9 @@ public class OroServer implements IServiceProvider {
     						VerboseLevel.IMPORTANT);
     	Logger.cr();
 
-		/***********************************************************************
-		 *               BACKENDS and SERVICES REGISTRATION                    *
-		 **********************************************************************/
+/*******************************************************************************
+ *                   BACKENDS and SERVICES REGISTRATION                        *
+ ******************************************************************************/
 
 		//add the services offered by the OroServer class
 		addNewServiceProviders(this);
@@ -234,7 +234,7 @@ public class OroServer implements IServiceProvider {
 		oro = new OpenRobotsOntology(serverParameters);
 		
 		addNewServiceProviders(oro);
-		
+
 		/********************* SERVICES REGISTRATION **************************/
 		
 		IServiceProvider baseModule = new BaseModule(oro);

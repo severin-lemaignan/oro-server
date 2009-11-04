@@ -54,6 +54,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -155,6 +156,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 *          Constructors               *
 	 **************************************/
 	
+	public OpenRobotsOntology(){
+		this(OroServer.serverParameters);
+	}
+	
 	/**
 	 * Constructor which takes a config file as parameter.<br/>
 	 * The constructor first opens the ontology, then loads it into memory and 
@@ -178,6 +183,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @param parameters The set of parameters, read from the server configuration file.
 	 */
 	public OpenRobotsOntology(Properties parameters){
+		if (parameters == null) throw new IllegalArgumentException();
 		this.parameters = parameters;
 		initialize();
 	}
@@ -189,11 +195,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * wrap it.
 	 */
 	public OpenRobotsOntology(OntModel onto){
-		if (onto == null) throw new IllegalArgumentException();
-		this.onto = onto;
-		initialize();
+		this(onto, OroServer.serverParameters);
 	}
 
+	public OpenRobotsOntology(OntModel onto, Properties parameters){
+		
+		if (onto == null) throw new IllegalArgumentException();
+		this.onto = onto;
+		
+		if (parameters == null) throw new IllegalArgumentException();
+		this.parameters = parameters;
+		
+		initialize();
+	}
+	
 	/***************************************
 	 *       Accessors and helpers         *
 	 **************************************/

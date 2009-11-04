@@ -1359,22 +1359,26 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
-		AlteriteModule alterite = new AlteriteModule(oro);
+		AlteriteModule alterite = null;
 		
 		try {
-			oro.registerEvents(alterite);
+			alterite = new AlteriteModule(oro);
 			fail("The agent class doesn't exist yet: we can not register the event!");
 		} catch (EventRegistrationException e) {}
 
 		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT);
 		
 		try {
-			oro.registerEvents(alterite);
+			alterite = new AlteriteModule(oro);
 		} catch (EventRegistrationException e) {
 			fail("The agent class now exist: we should be able to register the AgentWatcher event!");
 		}
 		
 		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
+		
+		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT);
+		
+		assertEquals("Only myself is an agent!", 2, alterite.listAgents().size());
 		
 		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT);
 		
@@ -1382,7 +1386,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		for (String s : alterite.listAgents())
 			System.out.println(s);
 		
-		assertEquals("myself + all the animals are now agents!", 4, alterite.listAgents().size());
+		assertEquals("myself + all the animals are now agents!", 5, alterite.listAgents().size());
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

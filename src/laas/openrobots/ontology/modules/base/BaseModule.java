@@ -59,7 +59,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
-			desc="adds one or several statements (triplets S-P-O) to the ontology, in long term memory."
+			desc="adds one or several statements (triplets S-P-O) to the robot model, in long term memory."
 	)
 	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
@@ -126,7 +126,7 @@ public class BaseModule implements IServiceProvider {
 	 * @see #remove(Statement)
 	 */
 	@RPCMethod(
-			desc="adds one or several statements (triplets S-P-O) to the ontology associated with a memory profile."
+			desc="adds one or several statements (triplets S-P-O) to the robot model associated with a memory profile."
 	)
 	public void add(Set<String> rawStmts, String memProfile) throws IllegalStatementException
 	{
