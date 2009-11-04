@@ -10,3 +10,7 @@ oro-server 0.8.0 target
 - implement "consistency-safe" operations (add, removal...)
 - implement automatic set generation based on similarities
 
+
+oro-server background todos
+---------------------------
+find -name "*.java" -exec grep -i todo {} \; | wc -l
