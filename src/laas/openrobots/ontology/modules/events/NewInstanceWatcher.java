@@ -27,6 +27,7 @@ public class NewInstanceWatcher implements IWatcher {
 		Set<String> set = new HashSet<String>();
 		set.add(classToWatch);
 		this.classToWatch = set;
+		objToNotify = o;
 	}
 	
 

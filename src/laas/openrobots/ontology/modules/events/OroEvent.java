@@ -1,17 +1,27 @@
 package laas.openrobots.ontology.modules.events;
 
+import java.util.HashSet;
 import java.util.Set;
 
+import laas.openrobots.ontology.helpers.Helpers;
+
+import com.hp.hpl.jena.ontology.OntResource;
+
+//TODO: rewrite (with subclasses?) this dumb OroEvent class.
 public class OroEvent {
 
-	Set<String> matchedId;
-	boolean status = false;
+	private Set<String> matchedId;
+	private boolean status = false;
 	
 	private IWatcher originalWatcher;
 		
-	public OroEvent(IWatcher originalWatcher, Set<String> matchedId) {
+	public OroEvent(IWatcher originalWatcher, Set<OntResource> matchedId) {
 		super();
-		this.matchedId = matchedId;
+		this.matchedId = new HashSet<String>();
+		
+		for (OntResource r : matchedId)
+			this.matchedId.add(Helpers.getId(r));
+		
 		this.originalWatcher = originalWatcher;
 	}
 	
