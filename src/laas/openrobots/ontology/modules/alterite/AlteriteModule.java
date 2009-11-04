@@ -1,6 +1,7 @@
 package laas.openrobots.ontology.modules.alterite;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,11 +21,15 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	
 	public AlteriteModule(IOntologyBackend oro) {
 		agents = new HashMap<String, AgentModel>();
+		eventsPatterns = new HashSet<IWatcher>();
 		
 		//Add myself as the first agent.
 		agents.put("myself", new AgentModel("myself", oro));
 		
-		initializeWatchers();
+		//Register a new event that waits of appearance of new agents.
+		//Each time a new agent appears, the this.consumeEvent() method is called.
+		IWatcher w = new AgentWatcher(this);
+		eventsPatterns.add(w);
 	}
 	
 	public void add(String id){
@@ -38,7 +43,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	@RPCMethod (
 			category = "agents",
 			desc = "Returns the set of agents I'm aware of (ie, for whom I have " +
-					"a cognitive model."
+					"a cognitive model)."
 			)
 	public Set<String> listAgents() {
 		return agents.keySet();
@@ -57,13 +62,10 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 
 	@Override
 	public void consumeEvent(OroEvent e) {
-		if (e.getMatchingId() != null)
-			add(e.getMatchingId());
+		for (String s : e.getMatchingIds())
+			add(s);
 		
 	}
 	/**************************************************************************/
-	private void initializeWatchers() {
-		IWatcher w = new AgentWatcher(this);
-		eventsPatterns.add(w);
-	}
+
 }

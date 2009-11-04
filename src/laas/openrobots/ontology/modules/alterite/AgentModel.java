@@ -40,6 +40,12 @@ public class AgentModel {
 		this.model = createAgentModel(OroServer.serverParameters);
 	}
 	
+	public AgentModel(String id, Properties parameters) {
+		super();
+		this.id = id;
+		this.model = createAgentModel(parameters);
+	}
+	
 	
 	private IOntologyBackend createAgentModel(Properties parameters) 
 	{

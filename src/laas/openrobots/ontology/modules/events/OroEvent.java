@@ -3,7 +3,7 @@ package laas.openrobots.ontology.modules.events;
 import java.util.HashSet;
 import java.util.Set;
 
-import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
 
 import com.hp.hpl.jena.ontology.OntResource;
 
@@ -20,7 +20,7 @@ public class OroEvent {
 		this.matchedId = new HashSet<String>();
 		
 		for (OntResource r : matchedId)
-			this.matchedId.add(Helpers.getId(r));
+			this.matchedId.add(Namespaces.toLightString(r));
 		
 		this.originalWatcher = originalWatcher;
 	}

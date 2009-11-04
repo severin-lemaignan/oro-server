@@ -36,55 +36,25 @@
 
 package laas.openrobots.ontology.tests;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.text.ParseException;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Vector;
 
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
-import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
-import laas.openrobots.ontology.exceptions.NotComparableException;
-import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
-import laas.openrobots.ontology.helpers.Helpers;
-import laas.openrobots.ontology.helpers.Namespaces;
-import laas.openrobots.ontology.modules.base.BaseModule;
-import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.GenericWatcherProvider;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
-import laas.openrobots.ontology.modules.events.IWatcher;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.InternalWatcher;
 import laas.openrobots.ontology.modules.events.NewInstanceWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RSIterator;
-import com.hp.hpl.jena.rdf.model.ReifiedStatement;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.shared.Lock;
-import com.hp.hpl.jena.shared.NotFoundException;
-import com.hp.hpl.jena.shared.PropertyNotFoundException;
-
 /**
- * This class holds unit tests that cover most of the {@code oro-server} features.<br/>
- * For the tests to be executed, the {@code oro_test.owl} ontology is required, and must be referenced by the {@code oro_test.conf} configuration file.<br/>
+ * This class holds unit tests that cover the events feature in {@code oro-server}.<br/>
  * 
  * @author Severin Lemaignan severin.lemaignan@laas.fr
  *

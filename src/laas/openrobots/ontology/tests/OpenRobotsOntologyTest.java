@@ -61,6 +61,7 @@ import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.diff.DiffModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
@@ -1345,6 +1346,43 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Average time per differences comparison:" + totalTimeDiff / 4 + "ms");
 		System.out.println("[UNITTEST] ***** Average time per similarities comparison:" + totalTimeSim / 4 + "ms");
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This test checks that the Alterite module works as expected.
+	 * @throws IllegalStatementException 
+	 */
+	public void testAlteriteModule() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		AlteriteModule alterite = new AlteriteModule(oro);
+		
+		try {
+			oro.registerEvents(alterite);
+			fail("The agent class doesn't exist yet: we can not register the event!");
+		} catch (EventRegistrationException e) {}
+
+		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT);
+		
+		try {
+			oro.registerEvents(alterite);
+		} catch (EventRegistrationException e) {
+			fail("The agent class now exist: we should be able to register the AgentWatcher event!");
+		}
+		
+		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
+		
+		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT);
+		
+		System.out.println("Oooh! A lot of new agents!");
+		for (String s : alterite.listAgents())
+			System.out.println(s);
+		
+		assertEquals("myself + all the animals are now agents!", 4, alterite.listAgents().size());
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

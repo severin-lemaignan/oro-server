@@ -1,6 +1,5 @@
 package laas.openrobots.ontology.modules.events;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,7 +10,6 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
-import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 
@@ -22,11 +20,8 @@ import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QueryParseException;
-import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.shared.Lock;
-import com.hp.hpl.jena.shared.NotFoundException;
-import com.sun.org.apache.xml.internal.utils.NameSpace;
 
 public class EventProcessor {
 	
