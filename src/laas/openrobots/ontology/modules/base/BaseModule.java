@@ -146,19 +146,6 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	/**
-	 * Remove all statements matching the partial statement.
-	 * 
-	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
-	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
-	 * @see {@link #clear(PartialStatement)} for an example.
-	 * @see PartialStatement
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public void clear(String partialStmt) throws IllegalStatementException {		
-		oro.clear(oro.createPartialStatement(partialStmt));
-	}
-	
-	/**
 	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
 	 * 
 	 * @param stmts A vector of strings representing the statements to remove from the ontology.
@@ -170,6 +157,19 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void remove(Set<String> stmts) throws IllegalStatementException {
 		for (String stmt : stmts) remove(stmt);		
+	}
+		
+	/**
+	 * Remove all statements matching the partial statement.
+	 * 
+	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
+	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
+	 * @see {@link #clear(PartialStatement)} for an example.
+	 * @see PartialStatement
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	public void clear(String partialStmt) throws IllegalStatementException {		
+		oro.clear(oro.createPartialStatement(partialStmt));
 	}
 	
 	@RPCMethod(
