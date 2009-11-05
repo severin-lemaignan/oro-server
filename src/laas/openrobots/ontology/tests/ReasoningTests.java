@@ -63,7 +63,7 @@ public class ReasoningTests extends TestCase {
 		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT);
+				onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding a statement " + i);
 				e.printStackTrace();
@@ -138,7 +138,7 @@ public class ReasoningTests extends TestCase {
 		long max = 10000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				oro.add(oro.createStatement("individual" + i +" age 10^^xsd:int"), MemoryProfile.DEFAULT);
+				oro.add(oro.createStatement("individual" + i +" age 10^^xsd:int"), MemoryProfile.DEFAULT, false);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding statement "+i);
 				e.printStackTrace();

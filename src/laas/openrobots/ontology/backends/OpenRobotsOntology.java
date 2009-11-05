@@ -283,31 +283,34 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#add(com.hp.hpl.jena.rdf.model.Statement, laas.openrobots.ontology.modules.memory.MemoryProfile)
 	 */
 	@Override
-	public void add(Statement statement, MemoryProfile memProfile)
+	public boolean add(Statement statement, MemoryProfile memProfile, boolean safe)
 	{
 		
 		try {
+
+			Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]");
 			
-			if (memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT) //LONGTERM memory
-			{
-				Logger.log("Adding new statement in long term memory ["+Namespaces.toLightString(statement)+"]\n");
-				
-				onto.enterCriticalSection(Lock.WRITE);
-				onto.add(statement);
-				onto.leaveCriticalSection();
-				
-				//notify the events subscribers.
-				//TODO: optimize this call in case of a serie of "add" -> onModelChange to be moved to a separate thread?
-				onModelChange();
+			onto.enterCriticalSection(Lock.WRITE);
+			
+			onto.add(statement);
+			
+			//If we are in safe mode, we check that the ontology is not inconsistent.
+			if (safe) {
+				try {
+				checkConsistency();
+				} catch (InconsistentOntologyException ioe)
+				{
+					onto.remove(statement);	
+					onto.leaveCriticalSection();
+					Logger.log("...I won't add it because it leads to inconsistencies!\n");
+					return false;
+				}
 			}
-			else
+			
+			Logger.cr();
+				
+			if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
 			{
-				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]...");
-				
-				onto.enterCriticalSection(Lock.WRITE);
-				
-				onto.add(statement);
-				
 				//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
 				String rsName = "rs_" + Math.abs(statement.hashCode()); 
 				
@@ -318,12 +321,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
 				onto.add(metaStmt);
 				onto.add(metaStmt2);
-				onto.leaveCriticalSection();
+				
 				
 				//notify the events subscribers.
 				onModelChange(rsName);
-				
 			}
+			else
+			{
+				//notify the events subscribers.
+				//TODO: optimize this call in case of a serie of "add" -> onModelChange to be moved to a separate thread?
+				onModelChange();	
+			}
+			
+			onto.leaveCriticalSection();
 			
 		}
 		catch (Exception e)
@@ -332,7 +342,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			e.printStackTrace();
 			Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
-		}			
+		}
+		
+		return true;
 	}
 
 	
@@ -400,7 +412,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#checkConsistency()
 	 */
 	@Override
-	public Boolean checkConsistency() throws InconsistentOntologyException {
+	public void checkConsistency() throws InconsistentOntologyException {
 		
 		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
@@ -416,8 +428,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 			throw new InconsistentOntologyException(cause);
 		}
-		
-		return true;
 		
 	}
 	

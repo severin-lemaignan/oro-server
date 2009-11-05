@@ -63,7 +63,19 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT);
+		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, false);
+	}
+	
+	@RPCMethod(
+			desc="try to add news statements in long term memory, if they don't lead to inconsistencies (return false if at least one stmt wasn't added)."
+	)
+	public boolean safeAdd(Set<String> rawStmts) throws IllegalStatementException
+	{
+		boolean r = true;
+		for (String rawStmt : rawStmts){
+			r &= oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, true);
+		}
+		return r;
 	}
 
 	/**
@@ -130,7 +142,19 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts, String memProfile) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile));
+		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), false);
+	}
+	
+	@RPCMethod(
+			desc="try to add news statements with a specific memory profile, if they don't lead to inconsistencies (return false if at least one stmt wasn't added)."
+	)
+	public boolean safeAdd(Set<String> rawStmts, String memProfile) throws IllegalStatementException
+	{
+		boolean r = true;
+		for (String rawStmt : rawStmts){
+			r &= oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
+		}
+		return r;
 	}
 	
 	/**

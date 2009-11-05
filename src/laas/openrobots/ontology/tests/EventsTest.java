@@ -154,18 +154,18 @@ public class EventsTest extends TestCase {
 		assertFalse("Initially, the event shouldn't be triggered", et.hasBeenTriggered);
 		
 		//triggered a model update
-		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Chicken have not yet teeth! we should triggered once the 'ON_FALSE_ONE_SHOT event!", et.hasBeenTriggered);
 		//reset the flag
 		et.hasBeenTriggered = false;
 		
 		//re-triggered a model update
-		oro.add(oro.createStatement("paris prefers listening_to_music"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("paris prefers listening_to_music"), MemoryProfile.DEFAULT, false);
 		
 		assertFalse("Chicken have not yet teeth but we already triggered the event!", et.hasBeenTriggered);
 		
-		oro.add(oro.createStatement("chicken has teeth"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("chicken has teeth"), MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Chicken now should have teeth :-(", et.hasBeenTriggered);
 		//reset the flag
@@ -175,7 +175,7 @@ public class EventsTest extends TestCase {
 		
 		assertFalse("No events should be triggered there :-(", et.hasBeenTriggered);
 		
-		oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Event has not been triggered :-(", et.hasBeenTriggered);
 		//reset the flag
@@ -225,18 +225,18 @@ public class EventsTest extends TestCase {
 		assertFalse("Initially, the event shouldn't be triggered", et.hasBeenTriggered);
 		
 		//trigger a model update
-		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT, false);
 		
 		assertFalse("No new monkey, no reason to trigger the event", et.hasBeenTriggered);
 				
 		//re-trigger a model update
-		oro.add(oro.createStatement("coco rdf:type Monkey"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("coco rdf:type Monkey"), MemoryProfile.DEFAULT, false);
 		
 		assertTrue("We just added Coco, but it wasn't detected", et.hasBeenTriggered);
 		//reset the flag
 		et.hasBeenTriggered = false;
 		
-		oro.add(oro.createStatement("bumbo climbsOn old_oak"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("bumbo climbsOn old_oak"), MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Bumbo should be inferred to be a monkey since it climbs on trees!", et.hasBeenTriggered);
 		//reset the flag

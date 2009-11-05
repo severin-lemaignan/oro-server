@@ -120,9 +120,12 @@ public interface IOntologyBackend extends IServiceProvider {
 	 *   
 	 * @param statement The new statement.
 	 * @param memProfile The memory profile associated to this statement.
+	 * @param safe If true, the statement is added only if it does not 
+	 * @return True is the statement has been actually added to the model 
+	 * (actually useful only in conjunction with the {@code safe} parameter enabled).
 	 */
-	public abstract void add(Statement statement, MemoryProfile memProfile);
-
+	public abstract boolean add(Statement statement, MemoryProfile memProfile, boolean safe);
+		
 	/**
 	 * Checks if a statement is asserted or can be inferred from the ontology. If the method returns false, IT DOES NOT mean that the statement itself is false. Most probably, the fact expressed by the statement is simply not known.
 	 * 
@@ -149,7 +152,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
 	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
 	 */
-	public abstract Boolean checkConsistency()
+	public abstract void checkConsistency()
 			throws InconsistentOntologyException;
 
 	/**

@@ -322,7 +322,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long startTime = System.currentTimeMillis();
 		
 		try {
-			onto.add(onto.createStatement("oro:horse rdf:type oro:Animal"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("oro:horse rdf:type oro:Animal"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -389,7 +389,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			onto.add(onto.createStatement("oro:fish oro:isFemale \"true\"^^xsd:boolean"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("oro:fish oro:isFemale \"true\"^^xsd:boolean"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -414,6 +414,31 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 
 	/**
+	 * This test tests the "safe" add that avoid leading the ontology in a 
+	 * inconsistent state.
+	 */
+	public void testSafeAddStmnt() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Safe insertion of statements *****");
+		
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		
+		try {
+			assertTrue("A horse is innocent!", onto.add(onto.createStatement("horse rdf:type oro:Animal"), MemoryProfile.DEFAULT, true));
+			assertFalse("A horse is not a plant!", onto.add(onto.createStatement("horse rdf:type Plant"), MemoryProfile.DEFAULT, true));
+			assertTrue("The statement should be present", onto.check(onto.createStatement("horse rdf:type Animal")));
+			assertFalse("The statement shouldn't be inserted", onto.check(onto.createStatement("horse rdf:type Plant")));
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+		}
+
+		
+			
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test add statements to the ontology with different memory models and checks that everything behave as expected (for instance, short term statements must be removed after a while). 
 	 * @throws InterruptedException 
 	 */
@@ -427,14 +452,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 		MemoryProfile.timeBase = 100; //we accelerate 10 times the behaviour of the memory container.
 	
 		try {
-			onto.add(onto.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
 
 		try {
-			onto.add(onto.createStatement("snail eats grass"), MemoryProfile.EPISODIC);
+			onto.add(onto.createStatement("snail eats grass"), MemoryProfile.EPISODIC, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
@@ -904,7 +929,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 				
 		try {
-			onto.add(onto.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
@@ -926,7 +951,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		try {
-			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT, false);
 			oro.checkConsistency();
 			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!");
 		} catch (IllegalStatementException e) {
@@ -1076,7 +1101,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			onto.add(onto.createStatement("sheep eats grass"), MemoryProfile.DEFAULT);
+			onto.add(onto.createStatement("sheep eats grass"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -1121,9 +1146,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//Add a statement
 		try {
 			//oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
-			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT); //we can infer that sheepy is an animal
-			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT);
-			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
+			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -1210,9 +1235,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Add a statement
 		try {
-			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT); //we can infer that sheepy is an animal
-			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT);
-			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
+			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -1366,7 +1391,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("The agent class doesn't exist yet: we can not register the event!");
 		} catch (EventRegistrationException e) {}
 
-		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
 		
 		try {
 			alterite = new AlteriteModule(oro);
@@ -1376,11 +1401,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
 		
-		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT, false);
 		
 		assertEquals("Only myself is an agent!", 2, alterite.listAgents().size());
 		
-		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT);
+		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
 		
 		System.out.println("Oooh! A lot of new agents!");
 		for (String s : alterite.listAgents())

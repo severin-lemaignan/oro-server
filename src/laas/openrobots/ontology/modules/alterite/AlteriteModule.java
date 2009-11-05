@@ -87,6 +87,9 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 
 	@Override
 	public void consumeEvent(OroEvent e) {
+		if (OroServer.BLINGBLING)
+			Logger.log("22, v'la les agents!\n", VerboseLevel.WARNING);
+		
 		for (String s : e.getMatchingIds())
 			add(s);
 		
@@ -102,6 +105,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	 * @see {@link BaseModule#add(Set)}
 	 */
 	@RPCMethod(
+			category = "agents",
 			desc="adds one or several statements (triplets S-P-O) to a specific agent model, in long term memory."
 	)
 	public void addForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
@@ -110,6 +114,8 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	}
 
 	/** Add statements in a specific agent cognitive model with a specific memory model.
+	 * Statements are added in "safe mode", ie, only if they don't cause an 
+	 * inconsistency in the agent model.
 	 * 
 	 * @param id The id of the agent
 	 * @param rawStmts a set of statements
@@ -128,7 +134,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile));
+		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
 	}
 	
 	@RPCMethod(
