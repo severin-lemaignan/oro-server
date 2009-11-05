@@ -191,8 +191,6 @@ public class OroServer implements IServiceProvider {
     	//Check if the application is connected to a console. We don't want to
     	//color outputs in a logfile for instance.
     	HAS_A_TTY = System.console() == null ? false : true;
-    	
-    	
 
     	if (args.length < 1 || args.length > 1)
     		confFile = DEFAULT_CONF;

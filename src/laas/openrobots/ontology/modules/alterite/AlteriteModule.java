@@ -134,7 +134,10 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
+		for (String rawStmt : rawStmts) {
+			Logger.log(id + ": ");
+			oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
+		}
 	}
 	
 	@RPCMethod(
@@ -145,7 +148,10 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	{
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		for (String rawStmt : rawStmts) oro.remove(oro.createStatement(rawStmt));
+		for (String rawStmt : rawStmts) {
+			Logger.log(id + ": ");
+			oro.remove(oro.createStatement(rawStmt));
+		}
 	}
 
 	@RPCMethod(
@@ -156,6 +162,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		
+		Logger.log(id + ": ", VerboseLevel.IMPORTANT);
 		oro.save(path);
 		
 	}

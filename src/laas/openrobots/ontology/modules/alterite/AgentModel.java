@@ -113,6 +113,7 @@ public class AgentModel {
 		
 		//Add a first assertion: in this model, 'myself' is the agent.
 		try {
+			Logger.log(id + ": ");
 			agentModel.add(agentModel.createStatement("myself owl:sameAs " + id), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			Logger.log("Unexpected error while creating a new cognitive model " +

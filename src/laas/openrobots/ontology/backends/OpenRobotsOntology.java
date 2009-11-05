@@ -336,9 +336,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto.leaveCriticalSection();
 			
 		}
+		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+			Logger.log("The last added statement lead the ontology in an inconsistent state!\n ", VerboseLevel.WARNING);
+		}
 		catch (Exception e)
 		{
-			Logger.log("\nCouldn't add the statement for an unknown reason. \n Details:\n ", VerboseLevel.ERROR);
+			Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.ERROR);
 			e.printStackTrace();
 			Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
 			System.exit(1);

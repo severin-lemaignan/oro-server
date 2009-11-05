@@ -261,7 +261,16 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    				if (m.getParameterTypes().length == 0) m.invoke(o); else m.invoke(o, args);
 	    	    				invokationDone = true;
 	    	    			}
-	    	    			if (m.getReturnType() == String.class || m.getReturnType() == Double.class || m.getReturnType() == Integer.class || m.getReturnType() == Boolean.class || m.getReturnType() == Float.class) {
+	    	    			if (	m.getReturnType() == String.class ||
+	    	    					m.getReturnType() == Double.class || 
+	    	    					m.getReturnType() == double.class ||
+	    	    					m.getReturnType() == Integer.class ||
+	    	    					m.getReturnType() == int.class ||
+	    	    					m.getReturnType() == Boolean.class ||
+	    	    					m.getReturnType() == boolean.class ||
+	    	    					m.getReturnType() == Float.class ||
+	    	    					m.getReturnType() == float.class) 
+	    	    			{
 	    	    				result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
 	    	    				invokationDone = true;
 	    	    			} else {
