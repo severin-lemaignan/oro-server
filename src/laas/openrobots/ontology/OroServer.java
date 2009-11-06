@@ -248,7 +248,9 @@ public class OroServer implements IServiceProvider {
 		
 		// Check we have registred services and list them
 		if (registredServices.size() == 0)
-			throw new OntologyServerException("No service registred by the ontology server! I've no reason to continue, so I'm stopping now.");
+			throw new OntologyServerException("No service registred by the " +
+					"ontology server! I've no reason to continue, so I'm " +
+					"stopping now.");
 		
 		if (HAS_A_TTY) {
 		Logger.log("Following services are registred:\n", VerboseLevel.EMPHASIZE);
@@ -271,13 +273,17 @@ public class OroServer implements IServiceProvider {
 			try {
 				c.initializeConnector();
 			} catch (OntologyConnectorException e) {
-				Logger.log("Couldn't initialize a connector: " + e.getLocalizedMessage() + ". Ignoring it.\n", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("Couldn't initialize a connector: " + 
+						e.getLocalizedMessage() + 
+						". Ignoring it.\n", 
+						VerboseLevel.SERIOUS_ERROR);
 				connectors.remove(c);
 			}
 		}
 		
 		if (connectors.size() == 0) {
-			Logger.log("None of the connectors could be started! Killing myself now.\n", VerboseLevel.FATAL_ERROR);
+			Logger.log("None of the connectors could be started! Killing myself" +
+					" now.\n", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
 		}
 

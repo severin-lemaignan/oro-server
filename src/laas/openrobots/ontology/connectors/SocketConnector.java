@@ -112,6 +112,7 @@ public class SocketConnector implements IConnector, Runnable {
 	 */
 	int KEEP_ALIVE_SOCKET_DURATION;
 	
+	public static final String DEFAULT_PORT = "6969";
 	public static final String MESSAGE_TERMINATOR = "#end#";
 	
 	int port;
@@ -166,7 +167,7 @@ public class SocketConnector implements IConnector, Runnable {
 					} catch (InterruptedException e) {}
 					
 					if (System.currentTimeMillis() - timeLastActivity > (KEEP_ALIVE_SOCKET_DURATION * 1000)) {
-						Logger.log("Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.", VerboseLevel.WARNING);
+						Logger.log("Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.\n", VerboseLevel.WARNING);
 						keepOnThisWorker = false;
 						break;
 		    		}
@@ -488,7 +489,7 @@ public class SocketConnector implements IConnector, Runnable {
 			Properties params,
 			HashMap<String, IService> registredServices) {
 		
-		port = Integer.parseInt(params.getProperty("port", "6969")); //defaulted to port 6969 if no port provided in the configuration file.
+		port = Integer.parseInt(params.getProperty("port", DEFAULT_PORT)); //defaulted to port DEFAULT_PORT if no port provided in the configuration file.
 		KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(params.getProperty("keep_alive_socket_duration", "60")); //defaulted to 1 min if no duration is provided in the configuration file.
 		
 		this.registredServices = registredServices;
@@ -498,8 +499,7 @@ public class SocketConnector implements IConnector, Runnable {
 	public void finalizeConnector() throws OntologyConnectorException {
 		//Objects created in run method are finalized when 
 		//program terminates and thread exits
-		keepOn = false;
-		
+	
 		if (server != null) {
 			try{
 			        server.close();
@@ -507,6 +507,8 @@ public class SocketConnector implements IConnector, Runnable {
 			        throw new OntologyConnectorException("Could not close the socket server!");
 			}
 		}
+		
+		keepOn = false;
 
 	}
 
@@ -533,12 +535,14 @@ public class SocketConnector implements IConnector, Runnable {
 	    while(keepOn){
 	      ClientWorker w;
 	      try{
-	        w = new ClientWorker(server.accept());
+    	    w = new ClientWorker(server.accept());
 	        Thread t = new Thread(w, w.getName());
 	        t.start();
 	      } catch (IOException e) {
-	    	  Logger.log("Accept failed on port " + port + "\n", VerboseLevel.FATAL_ERROR);
-	        System.exit(-1);
+	    	  if (!server.isClosed()) {
+	    		  	Logger.log("Accept failed on port " + port + "\n", VerboseLevel.FATAL_ERROR);
+	    	  		System.exit(1);
+	    	  }
 	      }
 	    }
 
