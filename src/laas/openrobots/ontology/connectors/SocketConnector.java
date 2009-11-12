@@ -203,6 +203,8 @@ public class SocketConnector implements IConnector, Runnable {
 		        if (request.size() != 0) {
 		        	String res = handleRequest(request);
 		        
+		        	Logger.log("<< Send response: " + res + "\n", VerboseLevel.DEBUG);
+		        	
 		        	out.println(res);
 		        }
 
@@ -215,6 +217,8 @@ public class SocketConnector implements IConnector, Runnable {
 			  
 			  String result = "error\n\n";
 			  String queryName = request.get(0);
+			  
+			  Logger.log(">> Got incoming request: " + queryName + "\n", VerboseLevel.DEBUG);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
 	    		Logger.log("Closing communication with client " + getName());

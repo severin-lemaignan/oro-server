@@ -36,10 +36,15 @@
 
 package laas.openrobots.ontology.helpers;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 import laas.openrobots.ontology.OroServer;
 
 public class Logger {
 
+    static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+    
 	/**
 	 * Outputs server standard messages.
 	 * 
@@ -54,6 +59,22 @@ public class Logger {
 	}
 	
 	/**
+	 * Outputs server standard messages.
+	 * 
+	 * Calls {@link #log(String, VerboseLevel, boolean)} with a {@link VerboseLevel#INFO}
+	 * level of verbosity.
+	 * 
+	 * @param msg The message to display.
+	 * @param withPrefix Set it to false when a looging info is expected to
+	 * continue the last line of log and you don't want a prefix (like the date) 
+	 * to be added.
+	 * @see #log(String, VerboseLevel)
+	 */
+	public static void log(String msg, boolean withPrefix) {
+		log(msg, VerboseLevel.INFO, withPrefix);
+	}
+	
+	/**
 	 * Outputs server messages, formatting them according to their importance.
 	 * 
 	 * @param msg The message to display.
@@ -61,23 +82,42 @@ public class Logger {
 	 * @see VerboseLevel The list of verbosity levels.
 	 */
 	public static void log(String msg, VerboseLevel level) {
+		log(msg, level, true);
+	}
+		
+	/**
+	 * Outputs server messages, formatting them according to their importance.
+	 * 
+	 * @param msg The message to display.
+	 * @param level The level of importance of the message.
+	 * @param withPrefix Set it to false when a looging info is expected to
+	 * continue the last line of log and you don't want a prefix (like the date) 
+	 * to be added.
+	 * @see VerboseLevel The list of verbosity levels.
+	 */
+	public static void log(String msg, VerboseLevel level, boolean withPrefix) {
 		
 		//Displays only message with a superior level of verbosity.
 		if (level.ordinal() > OroServer.VERBOSITY.ordinal())
 			return;
 		
+		String prefix = "";
+		if (withPrefix)
+			 prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
+		
+	    
 		switch(level) {
 			case FATAL_ERROR:
 			case SERIOUS_ERROR:				
 				if (!OroServer.BLINGBLING)
-					printInRed(OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg);
+					printInRed(prefix + (OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg));
 				else
 					printInRed("U looser! :P " + msg);
 				break;
 				
 			case ERROR:
 				if (!OroServer.BLINGBLING)
-					printInRed(msg);
+					printInRed(prefix + msg);
 				else {
 					blingblingPower();
 					printInRed(msg + " lol!!");
@@ -87,7 +127,7 @@ public class Logger {
 			
 			case WARNING:
 				if (!OroServer.BLINGBLING)
-					printInPurple(OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg);
+					printInPurple(prefix + (OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg));
 				else {
 					blingblingPower();
 					printInPurple("(°_°) " + msg);
@@ -96,7 +136,7 @@ public class Logger {
 				
 			case IMPORTANT:
 				if (!OroServer.BLINGBLING)
-						printInGreen(OroServer.HAS_A_TTY ? msg : "[!!] " + msg);
+						printInGreen(prefix + (OroServer.HAS_A_TTY ? msg : "[!!] " + msg));
 				else {
 					blingblingPower();
 					printInGreen("(^_^) " + msg);
@@ -105,16 +145,16 @@ public class Logger {
 				break;
 			
 			case EMPHASIZE:
-				printInRed(msg);
+				printInRed(prefix + msg);
 				break;
 				
 			case INFO:
-				System.out.print(msg);
+				System.out.print(prefix + msg);
 				break;
 			
 			case DEBUG:
 			case VERBOSE:
-				printInBlue("[DEBUG] " + msg);
+				printInBlue(prefix + ("[DEBUG] " + msg));
 				break;
 		
 		}

@@ -227,11 +227,11 @@ public class BaseModule implements IServiceProvider {
 			oro.checkConsistency();
 		}
 		catch (InconsistentOntologyException e){
-			Logger.log("ontology inconsistent!\n", VerboseLevel.WARNING);
+			Logger.log("ontology inconsistent!\n", VerboseLevel.WARNING, false);
 			throw e;
 		}
 		
-		Logger.log("no problems.\n", VerboseLevel.IMPORTANT);
+		Logger.log("no problems.\n", VerboseLevel.IMPORTANT, false);
 		return true;
 		
 	}
@@ -245,7 +245,7 @@ public class BaseModule implements IServiceProvider {
 	)
 	public Set<String> query(String key, String q) throws QueryParseException, QueryExecException
 	{
-		Logger.log("Processing query...");
+		Logger.log("Processing query:\n" + q + "\n");
 		
 		Set<String> result = new HashSet<String>();
 
@@ -271,8 +271,6 @@ public class BaseModule implements IServiceProvider {
 			if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
 				result.add(Namespaces.toLightString(node));
 		}
-		
-		Logger.log("done.");
 		
 		return result;
 	}
@@ -491,7 +489,7 @@ public class BaseModule implements IServiceProvider {
 	)
 	public Set<String> getInfos(String lex_resource) throws NotFoundException {
 		
-		Logger.log("Looking for statements about " + lex_resource + "...");
+		Logger.log("Looking for statements about " + lex_resource + ".\n");
 		
 		Set<String> result = new HashSet<String>();
 		
@@ -526,8 +524,6 @@ public class BaseModule implements IServiceProvider {
 						stmt.getPredicate().getLocalName() + " " +
 						objString);
 		}
-
-		Logger.log("done.\n");
 		
 		return result;
 	}
@@ -547,7 +543,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		Logger.log("Looking up for superclasses of " + type + "...");
+		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
@@ -557,8 +553,6 @@ public class BaseModule implements IServiceProvider {
 		
 		for (OntClass c : oro.getSuperclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		Logger.log("done.\n");
 		
 		return result;
 	}
@@ -578,7 +572,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		Logger.log("Looking for direct superclasses of " + type + "...");
+		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
@@ -588,8 +582,6 @@ public class BaseModule implements IServiceProvider {
 		
 		for (OntClass c : oro.getSuperclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		Logger.log("done.\n");
 		
 		return result;
 	}
@@ -609,7 +601,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		Logger.log("Looking up for subclasses of " + type + "...");
+		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
@@ -619,8 +611,6 @@ public class BaseModule implements IServiceProvider {
 		
 		for (OntClass c : oro.getSubclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		Logger.log("done.\n");
 		
 		return result;
 	}
@@ -640,7 +630,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Map<String, String> result = new HashMap<String, String>();
 		
-		Logger.log("Looking for direct subclasses of " + type + "...");
+		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
@@ -650,8 +640,6 @@ public class BaseModule implements IServiceProvider {
 		
 		for (OntClass c : oro.getSubclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		Logger.log("done.\n");
 		
 		return result;
 	}
