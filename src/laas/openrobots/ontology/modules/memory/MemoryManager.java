@@ -52,7 +52,7 @@ public class MemoryManager extends Thread {
 			try {
 				Thread.sleep(KNOWLEDGE_GARBAGE_COLLECTION_FREQ);
 			} catch (InterruptedException e) {
-				Logger.log("The memory manager thread has been interrupted!!", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("The memory manager thread has been interrupted!!\n", VerboseLevel.SERIOUS_ERROR);
 				break;
 			}
 			
@@ -86,7 +86,7 @@ public class MemoryManager extends Thread {
 		            {
 		            //the reified statement	has no createdOn property. We skip it.
 		            } catch (ParseException e) {
-						Logger.log("The creation date of [" + rs.getStatement() + "] could not be parsed!", VerboseLevel.SERIOUS_ERROR);
+						Logger.log("The creation date of [" + Namespaces.toLightString(rs.getStatement()) + "] could not be parsed!\n", VerboseLevel.SERIOUS_ERROR);
 					}
 		        }
 		        
@@ -98,7 +98,7 @@ public class MemoryManager extends Thread {
 			onto.enterCriticalSection(Lock.WRITE);
 			try {
 				for (ReifiedStatement s : stmtToRemove) {
-					Logger.log("Cleaning old statement [" + s.getStatement() +"].");
+					Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
 					s.getStatement().removeReification();
 					s.getStatement().remove();
 					s.removeProperties();					
