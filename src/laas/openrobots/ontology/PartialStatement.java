@@ -43,7 +43,6 @@ import com.hp.hpl.jena.rdf.model.Alt;
 import com.hp.hpl.jena.rdf.model.Bag;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ObjectF;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;
@@ -333,11 +332,6 @@ public class PartialStatement implements Statement {
 	}
 
 	@Override
-	public Object getObject(ObjectF f) {
-		return baseStmt.getObject(f);
-	}
-
-	@Override
 	public Statement getProperty(Property p) {
 		return baseStmt.getProperty(p);
 	}
@@ -345,11 +339,6 @@ public class PartialStatement implements Statement {
 	@Override
 	public Resource getResource() {
 		return baseStmt.getResource();
-	}
-
-	@Override
-	public Resource getResource(ResourceF f) {
-		return baseStmt.getResource(f);
 	}
 
 	@Override
@@ -401,6 +390,11 @@ public class PartialStatement implements Statement {
 	@Override
 	public Triple asTriple() {
 		throw new com.hp.hpl.jena.shared.CannotCreateException("Partial statements can not be viewed as triple.");
+	}
+
+	@Override
+	public Resource getResource(ResourceF f) {
+		return baseStmt.getResource(f);
 	}
 
 }
