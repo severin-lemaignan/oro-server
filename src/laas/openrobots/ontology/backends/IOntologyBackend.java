@@ -19,17 +19,16 @@ import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
-import laas.openrobots.ontology.service.RPCMethod;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -45,24 +44,49 @@ public interface IOntologyBackend extends IServiceProvider {
 
 
 	/**
-	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.Property property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
+	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.OntProperty property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
 	 * This is a shortcut for {@code OpenRobotOntology.getModel().createProperty(Namespaces.format(lex_property))}
 	 * @param lex_property the lexical form of the property (eg {@code "rdf:type"}).
 	 * @return the corresponding Jena property.
-	 * @see com.hp.hpl.jena.rdf.model.Property
-	 * @see com.hp.hpl.jena.rdf.model.Model#createProperty(String)
+	 * @see com.hp.hpl.jena.rdf.model.OntModel#createOntProperty(String)
 	 */
-	public abstract Property createProperty(String lex_property);
+	public abstract OntProperty createProperty(String lex_property);
 
 	/**
-	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.Resource resource} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
-	 * This is a shortcut for {@code OpenRobotOntology.getModel().createResource(Namespaces.format(lex_resource))}
+	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.OntResource resource} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
+	 * This is a shortcut for {@code OpenRobotOntology.getModel().createResource(Namespaces.format(lex_resource))}.
+	 * 
+	 * If a resource with the same lexical form already exist, it is reused. The
+	 * {@link #getResource(String)} method can be used to retrieve resource
+	 * without creating a new one if it doesn't exist.
+	 * 
 	 * @param lex_resource the lexical form of the resource.
 	 * @return the corresponding Jena resource.
-	 * @see com.hp.hpl.jena.rdf.model.Resource
-	 * @see com.hp.hpl.jena.rdf.model.Model#createResource(String)
+	 * @see #getResource(String)
+	 * @see com.hp.hpl.jena.rdf.model.OntModel#createOntResource(String)
 	 */
-	public abstract Resource createResource(String lex_resource);
+	public abstract OntResource createResource(String lex_resource);
+	
+	/**
+	 * Try to retrieve a resource from the ontology, based on its lexical form.
+	 * 
+	 * @param lex_resource The URI of a resource in the ontology.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(OntResource)
+	 * @see #createResource(String)
+	 */
+	public abstract OntResource getResource(String lex_resource) throws NotFoundException;
+	
+	/**
+	 * Returns the set of inferred and asserted statement involving a resource as a Jena Model..
+	 * 
+	 * @param resource A Jena resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
+	 * @see #getSubmodel(String)
+	 */
+	public abstract Model getSubmodel(Resource node) throws NotFoundException;
 
 	/**
 	 * This static method acts as a Statement factory. It does some pre-processing to convert a string to a valid statement relative to the given ontology.<br/>
@@ -239,26 +263,6 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract Hashtable<Resource, Double> guess(String varName,
 			Vector<PartialStatement> partialStatements, double threshold)
 			throws UnmatchableException;
-
-	/**
-	 * Try to retrieve a resource from the ontology, based on its lexical form.
-	 * 
-	 * @param lex_resource The URI of a resource in the ontology.
-	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
-	 * @see #getSubmodel(OntResource)
-	 */
-	public abstract Resource getResource(String lex_resource) throws NotFoundException;
-	
-	/**
-	 * Returns the set of inferred and asserted statement involving a resource as a Jena Model..
-	 * 
-	 * @param resource A Jena resource.
-	 * @return a RDF model containing all the statements related the the given resource.
-	 * @throws NotFoundException thrown if the resource doesn't exist in the ontology.
-	 * @see #getSubmodel(String)
-	 */
-	public abstract Model getSubmodel(Resource node) throws NotFoundException;
 
 	public abstract Set<OntClass> getSuperclassesOf(OntClass type,
 			boolean onlyDirect) throws NotFoundException;

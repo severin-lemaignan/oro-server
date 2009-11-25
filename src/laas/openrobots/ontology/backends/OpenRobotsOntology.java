@@ -84,6 +84,7 @@ import com.hp.hpl.jena.ontology.ObjectProperty;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
@@ -215,15 +216,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
-	public Property createProperty(String lex_property){
-		return onto.createProperty(Namespaces.expand(lex_property));
+	public OntProperty createProperty(String lex_property){
+		return onto.createOntProperty(Namespaces.expand(lex_property));
 	}
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#createResource(java.lang.String)
 	 */
-	public Resource createResource(String lex_resource){
-		return onto.createResource(Namespaces.expand(lex_resource));
+	public OntResource createResource(String lex_resource){
+		return onto.createOntResource(Namespaces.expand(lex_resource));
 	}
 
 	/* (non-Javadoc)
@@ -575,7 +576,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#getResource(String)
 	 */
 	@Override
-	public Resource getResource(String lex_resource) throws NotFoundException {
+	public OntResource getResource(String lex_resource) throws NotFoundException {
 		
 		lex_resource = Namespaces.format(lex_resource);
 		
@@ -583,7 +584,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// This check is only useful to throw an exception...
 		
 		onto.enterCriticalSection(Lock.READ);
-		Resource node = onto.getOntResource(lex_resource);
+		OntResource node = onto.getOntResource(lex_resource);
 		onto.leaveCriticalSection();
 		
 		if (node == null){
