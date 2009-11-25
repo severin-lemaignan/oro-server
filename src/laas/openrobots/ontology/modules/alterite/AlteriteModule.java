@@ -54,7 +54,14 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		IWatcher w = new AgentWatcher(this);
 		eventsPatterns.add(w);
 		
-		oro.registerEvents(this);
+		try {
+			oro.registerEvents(this);
+		}
+		catch (EventRegistrationException ere)
+		{
+			Logger.log("Alterite module won't work because the \"new agent\" event " +
+					"couldn't be registered.\n", VerboseLevel.WARNING);
+		}
 	}
 	
 	public void add(String id){
