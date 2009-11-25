@@ -1,6 +1,7 @@
-package laas.openrobots.ontology.modules.diff;
+package laas.openrobots.ontology.modules.categorization;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -100,7 +101,7 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
  *
  * @since 0.6.4
  */
-public class DiffModule implements IServiceProvider {
+public class CategorizationModule implements IServiceProvider {
 	
 	IOntologyBackend oro;
 	
@@ -115,7 +116,7 @@ public class DiffModule implements IServiceProvider {
 	
 	Property type;
 	
-	public DiffModule(IOntologyBackend oro) {
+	public CategorizationModule(IOntologyBackend oro) {
 		super();
 		this.oro = oro;
 		type = oro.getModel().getProperty(Namespaces.format("rdf:type"));
@@ -172,7 +173,7 @@ public class DiffModule implements IServiceProvider {
 	 *
 	 * 
 	 * @return the closest common ancestors of concept A and concept B
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 */
 	private Set<OntClass> commonAncestors(){
 			
@@ -236,7 +237,7 @@ public class DiffModule implements IServiceProvider {
 	 * S4B = S3 ∩ superclasses(B)
 	 * 
 	 * @return The first differents ancestors of concept A and B.
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 */
 	private Set<Set<Statement>> firstDifferentAncestors(){
 		//**********************************************************************
@@ -302,7 +303,14 @@ public class DiffModule implements IServiceProvider {
 	/** Returns the computed differences between two concepts, relying on
 	 * asserted and inferred fact in the ontology.
 	 * 
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * @param conceptA First concept to compare
+	 * @param conceptB Second concept to compare
+	 * @return Computed differences between two concepts as a set of sets of
+	 *  stringified statements: for each different property (including type), a 
+	 *  set of statement that explain for each concept its relation (for 
+	 *  instance, {@code [[a type Animal, b type Car], [a type WhiteAnimal, b 
+	 *  type WhiteCar]]})
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 * @see #getDifferences(String, String) Same "stringified" method. 
 	 */
 	public Set<Set<String>> getDifferences(OntResource conceptA, OntResource conceptB) throws NotComparableException {
@@ -370,12 +378,12 @@ public class DiffModule implements IServiceProvider {
 	 * 
 	 * @param conceptA The first concept to compare
 	 * @param conceptB The second concept to compare
-	 * @return the computed differences between two concepts as a set of sets of
+	 * @return computed differences between two concepts as a set of sets of
 	 *  stringified statements: for each different property (including type), a 
 	 *  set of statement that explain for each concept its relation.
 	 * @throws NotFoundException
 	 * @throws NotComparableException
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 * @see #getDifferences(OntResource, OntResource)
 	 */
 	@RPCMethod(
@@ -401,7 +409,16 @@ public class DiffModule implements IServiceProvider {
 	/** Returns the computed similarities between two concepts, relying on
 	 * asserted and inferred fact in the ontology.
 	 * 
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * Only <i>relevant</i> features are returned. For instance, only the closest
+	 * common ancestor is returned, not all the shared hierarchy of two concepts.
+	 * 
+	 * @param conceptA First concept to compare
+	 * @param conceptB Second concept to compare
+	 * @return computed similarities between two concepts as a set of 
+	 *  stringified partial statements: for each similar property (including 
+	 *  type), a string of form "? prop obj" is returned.
+	 * that are relevant common features of the two compared concepts.
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 * @see #getSimilarities(String, String) Same "stringified" method.
 	 */
 	public Set<String> getSimilarities(OntResource conceptA, OntResource conceptB) throws NotComparableException {
@@ -448,7 +465,7 @@ public class DiffModule implements IServiceProvider {
 	 *  type), a string of form "? prop obj" is returned.
 	 * @throws NotFoundException
 	 * @throws NotComparableException
-	 * @see DiffModule Detailled explanations with a diagram.
+	 * @see CategorizationModule Detailled explanations with a diagram.
 	 * @see #getSimilarities(OntResource, OntResource)
 	 */
 	@RPCMethod(
@@ -467,4 +484,21 @@ public class DiffModule implements IServiceProvider {
 		
 		return getSimilarities(resA, resB);
 	}
+	
+	/***************** CATEGORIES *********************/
+	
+	/**
+	 * Try to build a categories from a set of individuals.
+	 * 
+	 * This method does a fair amount of processing to compute possible categories
+	 * in a set of individuals :
+	 * <ol>
+	 * 	<li></li>
+	 *  <li></li>
+	 * </ol>
+	 */
+	public Map<OntClass, Set<Individual>> makeCategories(Set<OntResource> resources) throws NotComparableException {
+		return null;	
+	}
+	
 }

@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -63,7 +64,7 @@ import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
-import laas.openrobots.ontology.modules.diff.DiffModule;
+import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.IWatcherProvider;
@@ -71,6 +72,9 @@ import laas.openrobots.ontology.modules.events.InternalWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
+import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RSIterator;
@@ -1141,7 +1145,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Similarities test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
-		DiffModule diffModule = new DiffModule(oro);
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
 		
 		//Add a statement
 		try {
@@ -1160,7 +1164,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//check that we can not compare instances and classes.
 		try {
-			similarities = diffModule.getSimilarities("baboon", "Monkey");
+			similarities = categorizationModule.getSimilarities("baboon", "Monkey");
 			fail("We shouldn't be allowed to compare instances and classes!");
 		} catch (NotFoundException e) {
 			e.printStackTrace();
@@ -1172,7 +1176,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println(" * Similarities between the cow and the sheep");
 		try {
-			similarities = diffModule.getSimilarities("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
+			similarities = categorizationModule.getSimilarities("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1185,7 +1189,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println(" * Similarities between the cow and the gorilla");
 		try {
-			similarities = diffModule.getSimilarities("cow", "gorilla");	//Both the cow and the gorilla are males of 12.
+			similarities = categorizationModule.getSimilarities("cow", "gorilla");	//Both the cow and the gorilla are males of 12.
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1204,7 +1208,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("Similarities between the baboon and another baboon");
 		try {
-			similarities = diffModule.getSimilarities("baboon", "baboon2");
+			similarities = categorizationModule.getSimilarities("baboon", "baboon2");
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1231,7 +1235,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: Differences test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
-		DiffModule diffModule = new DiffModule(oro);
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
 		
 		//Add a statement
 		try {
@@ -1249,7 +1253,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//check that we can not compare instances and classes.
 		try {
-			differences = diffModule.getDifferences("baboon", "Monkey");
+			differences = categorizationModule.getDifferences("baboon", "Monkey");
 			fail("We shouldn't be allowed to compare instances and classes!");
 		} catch (NotFoundException e) {
 			e.printStackTrace();
@@ -1261,7 +1265,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println(" * Differences between the cow and the sheep");
 		try {
-			differences = diffModule.getDifferences("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
+			differences = categorizationModule.getDifferences("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1277,7 +1281,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println(" * Differences between the cow and the gorilla");
 		try {
-			differences = diffModule.getDifferences("cow", "gorilla");
+			differences = categorizationModule.getDifferences("cow", "gorilla");
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1294,7 +1298,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println(" * Differences between the baboon and another baboon");
 		try {
-			differences = diffModule.getDifferences("baboon", "baboon2");
+			differences = categorizationModule.getDifferences("baboon", "baboon2");
 		} catch (NotFoundException e) {
 			fail(e.getMessage());
 		} catch (NotComparableException e) {
@@ -1328,7 +1332,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		Set<String> sim3 = null;
 		Set<String> sim4 = null;
 		
-		DiffModule diffModule = new DiffModule(oro);
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
 		
 		long totalTimeDiff = 0;
 		long totalTimeSim = 0;
@@ -1336,17 +1340,17 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		
 		try {
-			diff1 = diffModule.getDifferences("f", "j");
-			diff2 = diffModule.getDifferences("f", "k");
-			diff3 = diffModule.getDifferences("f", "e");
-			diff4 = diffModule.getDifferences("f", "f");
+			diff1 = categorizationModule.getDifferences("f", "j");
+			diff2 = categorizationModule.getDifferences("f", "k");
+			diff3 = categorizationModule.getDifferences("f", "e");
+			diff4 = categorizationModule.getDifferences("f", "f");
 			
 			totalTimeDiff = (System.currentTimeMillis()-startTime);
 			
-			sim1 = diffModule.getSimilarities("f", "j");
-			sim2 = diffModule.getSimilarities("f", "k");
-			sim3 = diffModule.getSimilarities("f", "e");
-			sim4 = diffModule.getSimilarities("f", "f");
+			sim1 = categorizationModule.getSimilarities("f", "j");
+			sim2 = categorizationModule.getSimilarities("f", "k");
+			sim3 = categorizationModule.getSimilarities("f", "e");
+			sim4 = categorizationModule.getSimilarities("f", "f");
 			
 			totalTimeSim = (System.currentTimeMillis()- startTime - totalTimeDiff);
 			
@@ -1372,6 +1376,117 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Average time per differences comparison:" + totalTimeDiff / 4 + "ms");
 		System.out.println("[UNITTEST] ***** Average time per similarities comparison:" + totalTimeSim / 4 + "ms");
 		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This tests ability for the cognitive kernel to extract categories from a
+	 * set of concept.
+	 */
+	public void testCategorization() {
+
+		System.out.println("[UNITTEST] ***** TEST: Categorization test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
+		
+		Set<OntResource> resources = new HashSet<OntResource>();
+		
+		resources.add(oro.getResource("apple"));
+		resources.add(oro.getResource("baboon"));
+		resources.add(oro.getResource("banana_tree"));
+		resources.add(oro.getResource("cow"));
+		resources.add(oro.getResource("gorilla"));
+		resources.add(oro.getResource("grass"));
+		
+		//First try, with the instances defined in the testsuite ontology.
+		Map<OntClass, Set<Individual>> categories = null;
+		try {
+			categories = categorizationModule.makeCategories(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		
+		
+		
+		//Add a statement
+		try {
+			//oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
+			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+				
+		Set<String> similarities = null;
+		
+		//**********************************************************************
+		
+		//check that we can not compare instances and classes.
+		try {
+			similarities = categorizationModule.getSimilarities("baboon", "Monkey");
+			fail("We shouldn't be allowed to compare instances and classes!");
+		} catch (NotFoundException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+		}
+		
+		//**********************************************************************
+		
+		System.out.println(" * Similarities between the cow and the sheep");
+		try {
+			similarities = categorizationModule.getSimilarities("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
+		} catch (NotFoundException e) {
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+
+		assertTrue("The cow and the sheep should be identified as animals that eat grass", similarities.contains("? rdf:type Animal") && similarities.contains("? eats grass") && similarities.size() == 2);
+		
+		//**********************************************************************
+		
+		System.out.println(" * Similarities between the cow and the gorilla");
+		try {
+			similarities = categorizationModule.getSimilarities("cow", "gorilla");	//Both the cow and the gorilla are males of 12.
+		} catch (NotFoundException e) {
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		Iterator<String> itSim = similarities.iterator();
+		while(itSim.hasNext())
+		{
+			String currentRes = itSim.next();
+			System.out.println(currentRes);
+		}
+		assertTrue("Both the cow and the gorilla are male animals of 12.", similarities.contains("? rdf:type Animal") && similarities.contains("? age 12") && similarities.contains("? isFemale false") && similarities.size() == 3);
+		
+		//**********************************************************************
+		
+		System.out.println("Similarities between the baboon and another baboon");
+		try {
+			similarities = categorizationModule.getSimilarities("baboon", "baboon2");
+		} catch (NotFoundException e) {
+			fail(e.getMessage());
+		} catch (NotComparableException e) {
+			fail();
+		}
+	
+		itSim = similarities.iterator();
+		while(itSim.hasNext())
+		{
+			String currentRes = itSim.next();
+			System.out.println(currentRes);
+		}
+		assertTrue("The 2 baboons should be identified as monkeys", similarities.contains("? rdf:type Monkey") && similarities.size() == 1);
+		
+				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	

@@ -64,7 +64,7 @@ import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
-import laas.openrobots.ontology.modules.diff.DiffModule;
+import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.service.IService;
@@ -238,7 +238,7 @@ public class OroServer implements IServiceProvider {
 		IServiceProvider baseModule = new BaseModule(oro);
 		addNewServiceProviders(baseModule);
 		
-		IServiceProvider diffModule = new DiffModule(oro);
+		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
 		
 		if (serverParameters.getProperty("enable_alterite", "true").equalsIgnoreCase("true")) {
