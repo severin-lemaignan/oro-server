@@ -5,7 +5,10 @@ PREFIX ?= /usr/local
 
 BUILD_DIR = build
 SRC_DIR = src
-DOC_DIR = doc
+DOC_DIR = ${PREFIX}/share/doc/oro-server
+
+#holds diagrams, etc.
+MEDIA_DIR = media
 
 BASE_PACKAGE = laas.openrobots.ontology
 ENTRYPOINT = $(BASE_PACKAGE).OroServer
@@ -26,7 +29,7 @@ CP?= cp
 
 ########## Variables for Javadoc documentation ##########
 WINDOWTITLE = 'ORO: the OpenRobots Ontology - Server documentation'
-HEADER = '<b>ORO: the OpenRobots Ontology</b><br/><font size="-1">Server documentation</font>'
+HEADER = '<b>ORO: the OpenRobots Ontology</b><br/><font size="-1">Server documentation - build on $(shell date +%F)</font>'
 BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><br><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2009</font>'
 GROUPCORE = "Core Packages" "$(BASE_PACKAGE)*"
 GROUPMODULES  = "Modules Packages" "$(BASE_PACKAGE).modules*"
@@ -67,7 +70,8 @@ distclean: clean doc-clean
 clean :
 	$(CLEAN) $(BUILD_DIR)
 
-doc:
+install-doc:
+	$(INSTALL) -d ${DOC_DIR}
 	$(JAVADOC) -sourcepath $(SRC_DIR) \
 	-encoding "UTF-8" \
 	-charset "UTF-8" \
@@ -87,9 +91,7 @@ doc:
 	-J-Xmx180m \
 	-stylesheetfile $(SRC_DIR)/javadoc.css \
 	-subpackages $(BASE_PACKAGE)
-
-install-doc: doc
-	cd doc && ${CP} -r . ${PREFIX}/share/doc/oro-server
+	$(INSTALL) -t $(DOC_DIR) $(MEDIA_DIR)/*
 
 doc-clean:
 	$(CLEAN) $(DOC_DIR)
