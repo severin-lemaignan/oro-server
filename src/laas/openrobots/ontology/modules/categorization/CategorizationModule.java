@@ -1,6 +1,7 @@
 package laas.openrobots.ontology.modules.categorization;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -177,8 +178,19 @@ public class CategorizationModule implements IServiceProvider {
 	 */
 	private Set<OntClass> commonAncestors(){
 			
-		if (sameClass) return indivA.listOntClasses(true).toSet();
-		
+		//If both concept are from the same class, we simply return the parent
+		//classes of one of the concept, only filtering anonymous classes.
+		if (sameClass) {
+			Set<OntClass> result = indivA.listOntClasses(true).toSet();
+			
+			Iterator<OntClass> it = result.iterator();
+			
+			while (it.hasNext())
+				if (it.next().isAnon()) it.remove();
+				
+			return result;
+		}
+			
 		//keep the intersection oftypes of A and B.
 		Set<OntClass> commonAncestors = new HashSet<OntClass>(typesB);
 		commonAncestors.retainAll(typesA);
@@ -193,6 +205,7 @@ public class CategorizationModule implements IServiceProvider {
 		
 		commonAncestors.remove(modelA.getResource(Namespaces.format("owl:Nothing")));
 		
+				
 		if (commonAncestors.size() == 1) //owl:Thing
 			return commonAncestors;
 		
@@ -200,13 +213,17 @@ public class CategorizationModule implements IServiceProvider {
 		
 		
 		//**********************************************************************
+				
+		Iterator<OntClass> it = commonAncestors.iterator();
 		
-		Set<OntClass> result = new HashSet<OntClass>(commonAncestors);
+		while (it.hasNext()) {
+			OntClass c = it.next();
 		
-		for (OntClass c : commonAncestors) {
-			
-			if (result.size() == 1)
-				return result;
+			//Removes anonymous classes
+			if (c.isAnon()) {
+				it.remove();
+				continue;
+			}
 			
 			//We need to retrieve the class c IN the main ontology model to be
 			//able to get the subclasses.
@@ -219,11 +236,11 @@ public class CategorizationModule implements IServiceProvider {
 			subClassesC.retainAll(commonAncestors);
 			
 			if (!subClassesC.isEmpty())
-				result.remove(c);				
+				it.remove();		
 			
 		}
-
-		return result;		
+		
+		return commonAncestors;		
 	}
 
 	/** Returns the first different ancestors class of concept A and B.
