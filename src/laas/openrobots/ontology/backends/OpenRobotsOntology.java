@@ -814,7 +814,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			desc="exports the current ontology model to an OWL file. The provided path must be writable by the server."
 	)
 	public void save(String path) throws OntologyServerException {
-		Logger.log("Saving ontology to " + path +"...", VerboseLevel.IMPORTANT);
+		Logger.log("Saving ontology to " + path +".\n", VerboseLevel.IMPORTANT);
 		FileOutputStream file;
 		try {
 			file = new FileOutputStream(path);
@@ -824,8 +824,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.enterCriticalSection(Lock.READ);
 		onto.write(file);
 		onto.leaveCriticalSection();
-		
-		Logger.log("done.\n");
 		
 	}
 
@@ -985,7 +983,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto.leaveCriticalSection();
 			
 			Logger.cr();
-			Logger.log("Ontology successfully loaded.\n", VerboseLevel.IMPORTANT);
+			Logger.log("Ontology successfully loaded (using Jena " + com.hp.hpl.jena.Jena.VERSION + ").\n", VerboseLevel.IMPORTANT);
 			
 			if (robotInstancesModel != null) 
 				Logger.log("\t- Robot-specific knowledge loaded and merged.\n");

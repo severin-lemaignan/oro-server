@@ -254,7 +254,7 @@ public class OroServer implements IServiceProvider {
 		
 		if (HAS_A_TTY) {
 		Logger.log("Following services are registred:\n", VerboseLevel.EMPHASIZE);
-		Logger.log(niceMethodsList());
+		Logger.log(niceMethodsList(), false);
 		}
 		
 		Logger.cr();
