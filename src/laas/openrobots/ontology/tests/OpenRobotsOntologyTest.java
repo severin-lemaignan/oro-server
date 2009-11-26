@@ -36,6 +36,7 @@
 
 package laas.openrobots.ontology.tests;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
@@ -123,13 +124,26 @@ public class OpenRobotsOntologyTest extends TestCase {
 	public void testSave() {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
+		String filename = "./test.owl";
+		
 		System.out.println("[UNITTEST] ***** TEST: Serializing the ontology to disk *****");
 		try {
-			oro.save("./test.owl");
+			oro.save(filename);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail();
 		}
+		
+		File file = new File(filename);
+	    
+	    if (!file.exists() || !file.isFile())
+	    	fail();
+	    
+	    //Here we get the actual size
+	    if (file.length() == 0)
+	    	fail("An empty ontology has been written!");
+	    
+	    file.delete();
 	}
 	
 	/**
@@ -1389,6 +1403,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		CategorizationModule categorizationModule = new CategorizationModule(oro);
+
+		Map<OntClass, Set<Individual>> categories = null;
 		
 		Set<OntResource> resources = new HashSet<OntResource>();
 		
@@ -1400,92 +1416,68 @@ public class OpenRobotsOntologyTest extends TestCase {
 		resources.add(oro.getResource("grass"));
 		
 		//First try, with the instances defined in the testsuite ontology.
-		Map<OntClass, Set<Individual>> categories = null;
 		try {
 			categories = categorizationModule.makeCategories(resources);
 		} catch (NotComparableException e) {
 			fail();
 		}
 		
+		assertTrue("The two categories 'Animal' and 'Plant' were expected!", 
+				categories.containsKey(oro.getResource("Animal").asClass()) && 
+				categories.containsKey(oro.getResource("Plant").asClass()));
+
+		//**********************************************************************
 		
+		Set<OntResource> animals = new HashSet<OntResource>();
 		
-		
+		animals.add(oro.getResource("baboon"));
+		animals.add(oro.getResource("cow"));
+		animals.add(oro.getResource("gorilla"));
+				
 		//Add a statement
 		try {
-			//oro.add(oro.createStatement("sheepy rdf:type Sheep"), MemoryProfile.DEFAULT);
-			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
-			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT, false);
-			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
 		}
+		
+		categories.clear();	
+		try {
+			categories = categorizationModule.makeCategories(animals);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Two categories should be returned: 'Monkey' and another one.", 
+				categories.containsKey(oro.getResource("Monkey").asClass()) && 
+				categories.size() == 2);
+		
+		categories.remove(oro.getResource("Monkey").asClass());
+		
+		//the second category is a new class, the class of animals that eat grass.
+		OntClass grassEaters = null;
+		for (OntClass c : categories.keySet())
+			grassEaters = c;
+		
+		//this class should contain 2 individuals
+		assertEquals("Right now, we have only 2 grass eaters.", 
+				grassEaters.listInstances().toSet().size(), 2);
+		
+		//Add a new grass eater
+		try {
+			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		//If the class is correct, we should have now 3 individuals.
+		assertEquals("Now, we should have 3 grass eaters.", 
+				grassEaters.listInstances().toSet().size(), 3);
+		
+		//**********************************************************************
 				
-		Set<String> similarities = null;
-		
-		//**********************************************************************
-		
-		//check that we can not compare instances and classes.
-		try {
-			similarities = categorizationModule.getSimilarities("baboon", "Monkey");
-			fail("We shouldn't be allowed to compare instances and classes!");
-		} catch (NotFoundException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		} catch (NotComparableException e) {
-		}
-		
-		//**********************************************************************
-		
-		System.out.println(" * Similarities between the cow and the sheep");
-		try {
-			similarities = categorizationModule.getSimilarities("cow", "sheepy");	//like the sheep, the cow eats grass and is an animal.
-		} catch (NotFoundException e) {
-			fail(e.getMessage());
-		} catch (NotComparableException e) {
-			fail();
-		}
-
-		assertTrue("The cow and the sheep should be identified as animals that eat grass", similarities.contains("? rdf:type Animal") && similarities.contains("? eats grass") && similarities.size() == 2);
-		
-		//**********************************************************************
-		
-		System.out.println(" * Similarities between the cow and the gorilla");
-		try {
-			similarities = categorizationModule.getSimilarities("cow", "gorilla");	//Both the cow and the gorilla are males of 12.
-		} catch (NotFoundException e) {
-			fail(e.getMessage());
-		} catch (NotComparableException e) {
-			fail();
-		}
-		
-		Iterator<String> itSim = similarities.iterator();
-		while(itSim.hasNext())
-		{
-			String currentRes = itSim.next();
-			System.out.println(currentRes);
-		}
-		assertTrue("Both the cow and the gorilla are male animals of 12.", similarities.contains("? rdf:type Animal") && similarities.contains("? age 12") && similarities.contains("? isFemale false") && similarities.size() == 3);
-		
-		//**********************************************************************
-		
-		System.out.println("Similarities between the baboon and another baboon");
-		try {
-			similarities = categorizationModule.getSimilarities("baboon", "baboon2");
-		} catch (NotFoundException e) {
-			fail(e.getMessage());
-		} catch (NotComparableException e) {
-			fail();
-		}
-	
-		itSim = similarities.iterator();
-		while(itSim.hasNext())
-		{
-			String currentRes = itSim.next();
-			System.out.println(currentRes);
-		}
-		assertTrue("The 2 baboons should be identified as monkeys", similarities.contains("? rdf:type Monkey") && similarities.size() == 1);
-		
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -1501,17 +1493,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		AlteriteModule alterite = null;
 		
-		try {
-			alterite = new AlteriteModule(oro);
-			fail("The agent class doesn't exist yet: we can not register the event!");
-		} catch (EventRegistrationException e) {}
-
 		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
 		
 		try {
 			alterite = new AlteriteModule(oro);
 		} catch (EventRegistrationException e) {
-			fail("The agent class now exist: we should be able to register the AgentWatcher event!");
+			fail("We should be able to register the AgentWatcher event!");
 		}
 		
 		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
