@@ -23,12 +23,14 @@ import com.hp.hpl.jena.util.iterator.Filter;
 
 public class ResourceDescription implements Serializable {
 
-	private final String propertiesToRemove[] = {	"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
-													"http://www.w3.org/2002/07/owl#sameAs", 
-													"http://www.w3.org/2002/07/owl#differentFrom",
-													"http://www.w3.org/2000/01/rdf-schema#label"};
+	private final String propertiesToRemove[] = {	
+			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
+			"http://www.w3.org/2002/07/owl#sameAs", 
+			"http://www.w3.org/2002/07/owl#differentFrom",
+			"http://www.w3.org/2000/01/rdf-schema#label"};
 	
-	private final String resourcesToRemove[] = {	"http://www.w3.org/2002/07/owl#Nothing"};
+	private final String resourcesToRemove[] = {
+			"http://www.w3.org/2002/07/owl#Nothing"};
     
 	private String languageCode = "en"; //default language for labels set to English
 	private OntResource resource;
@@ -143,29 +145,28 @@ public class ResourceDescription implements Serializable {
 		
 		Map<Property, Set<RDFNode>> propertiesList = new HashMap<Property, Set<RDFNode>>();
 		
-		//Clean a bit the list of statements.
-
-	
-		ExtendedIterator<Statement> stmtList = rawStmtList.filterKeep(new Filter<Statement>() {
-													            public boolean accept(Statement stmt) {
-													                Property p = stmt.getPredicate();
-													                RDFNode o = stmt.getObject();
-													                
-													                for (String pToRemove : propertiesToRemove) {
-													                	if (p.getURI().equalsIgnoreCase(pToRemove))
-													                			return false;
-													                }
-													                	
-													                if (o.isURIResource()) {
-													                	for (String rToRemove : resourcesToRemove) {
-														                	if (o.as(Resource.class).getURI().equalsIgnoreCase(rToRemove))
-														                			return false;
-													                	}
-													                }
-													                
-													                return true;
-													            }
-												         });
+		//Clean a bit the list of statements.	
+		ExtendedIterator<Statement> stmtList = rawStmtList.filterKeep(
+				new Filter<Statement>() {
+			            public boolean accept(Statement stmt) {
+			                Property p = stmt.getPredicate();
+			                RDFNode o = stmt.getObject();
+			                
+			                for (String pToRemove : propertiesToRemove) {
+			                	if (p.getURI().equalsIgnoreCase(pToRemove))
+			                			return false;
+			                }
+			                	
+			                if (o.isURIResource()) {
+			                	for (String rToRemove : resourcesToRemove) {
+				                	if (o.as(Resource.class).getURI().equalsIgnoreCase(rToRemove))
+				                			return false;
+			                	}
+			                }
+			                
+			                return true;
+			            }
+		         });
             
 		//lists all the properties for a given subject and add, for each property, the corresponding objects.
 		while (stmtList.hasNext())
@@ -179,6 +180,7 @@ public class ResourceDescription implements Serializable {
 			propertiesList.get(tmp.getPredicate()).add(tmp.getObject());
 		}
 		
+		//Convert it to a string.
 		Iterator<Entry<Property, Set<RDFNode>>> links = propertiesList.entrySet().iterator();
 	    
 		while (links.hasNext()) {
