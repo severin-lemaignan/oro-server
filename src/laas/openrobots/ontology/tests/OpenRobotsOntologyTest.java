@@ -1450,18 +1450,15 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		resources.add(oro.getResource("grass"));
 		
-		//This time, we expect both 'eats' and 'rdf:type' properties to be
-		//returned.
+		//This time, we expect 'rdf:type' property to be returned.
 		try {
 			discriminents = categorizationModule.getDiscriminent(resources);
 		} catch (NotComparableException e) {
 			fail();
 		}
 		
-		assertTrue("Baboons eat grass and gorillas apples ; they are animal and" +
-				"the grass is a plant.",
-				discriminents.size() == 2 &&
-				discriminents.contains(oro.getModel().getProperty(Namespaces.format("eats"))) &&
+		assertTrue("The only common property is the type.",
+				discriminents.size() == 1 &&				
 				discriminents.contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))));
 
 		discriminents.clear();

@@ -1,5 +1,6 @@
 package laas.openrobots.ontology.modules.categorization;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -21,10 +22,12 @@ import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
+import com.hp.hpl.jena.util.iterator.Filter;
 
 /** The DiffModule computes differences and similarities between concepts.
  * 
@@ -104,6 +107,14 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
  */
 public class CategorizationModule implements IServiceProvider {
 	
+	private final String propertiesToRemove[] = {
+			"http://www.w3.org/2002/07/owl#sameAs", 
+			"http://www.w3.org/2002/07/owl#differentFrom",
+			"http://www.w3.org/2000/01/rdf-schema#label"};
+
+	private final String resourcesToRemove[] = {	
+			"http://www.w3.org/2002/07/owl#Nothing"};
+
 	IOntologyBackend oro;
 	
 	Individual indivA;
@@ -423,19 +434,83 @@ public class CategorizationModule implements IServiceProvider {
 	/** Returns a sufficient list of properties that discriminate concepts.
 	 * 
 	 * For instance, let consider the following set of concepts:
-	 * <ul>
-	 *  <li>sheepy is a white animal</li>
-	 *  <li>cowrrine is a brown animal</li>
-	 * </ul>
-	 * In this case, the {@code hasColor} property would be returned. It is
-	 * sufficient to separate the two concepts.
+	 * <pre>
+	 *             +-------+
+	 *             | Thing |
+	 *             +--,'.--+
+	 *             .-'   `-.
+	 *           ,'         `.
+	 *         ,'             `-.
+	 *      .-'                  `.
+	 *+----+--+                 +--+-----+
+	 *| Plant |                 | Animal |
+	 *+---+---+                 +--+++---+
+	 *    |                   _,-"  |  `--.._
+	 *    |                .-'      |        ``--..
+	 * myGrass         myMonkey    myCow        mySheep
+	 *    |               |         / `.            \
+	 *    |               |        /    `-.          \
+	 * hasColor         eats     eats  hasColor   hasColor
+	 *    |               |        |      |          |
+	 *    |               |        |      |          |
+	 *  green          banana    grass   blue       red
+	 * </pre>
 	 * 
-	 * If you add:
-	 * <ul>
-	 *  <li>snowwhite is a white material</li>
-	 * </ul>
-	 * Then the method would return both {@code hasColor} and {@code rdf:type} as 
-	 * discriminating properties.
+	 * <p>
+	 * The method is meant to help the robot to answer ambigious orders like
+	 * <i>Give me the thing!</i>: we need a way to disambiguate the different
+	 * possible individuals in the {@code Thing} class.
+	 * </p>
+	 * 
+	 * <p>
+	 * The method proceeds as follows:
+	 * <ol>
+	 *  <li>Build a list of properties for each individuals, and sum their occurence:
+	 *<pre>  
+	 *            p1        p2        p3
+	 *-------------------------------------
+	 *myGrass:   {hasClass, hasColor}
+	 *myMonkey:  {hasClass,           eats}
+	 *myCow:     {hasClass, hasColor, eats}
+	 *mySheep:   {hasClass, hasColor}
+	 *-------------------------------------
+	 *      |p|=  4         3         2
+	 *</pre></li>
+	 *  <li>For each property, count the number of groups it forms (ie, the number
+	 *  of disctint values) </li>
+	 *  <pre>
+	 *         | p1:hasClass | p2:hasColor | p3:eats
+	 *---------+-------------+-------------+--------
+	 *myGrass  | Plant       | green       |
+	 *myMonkey | Animal      |             | banana
+	 *myCow    | Animal      | blue        | grass
+	 *mySheep  | Animal      | red         |
+	 *---------+-------------+-------------+--------
+	 *|≠ elem.|= 2             3             2
+	 *</pre>
+	 *  <li>Remove properties that lead to only 1 group (ie, non selective
+	 *  properties)</li>
+	 *  <li>Return the property that has the highest occurence, and then the best
+	 *  selectivity (ie the biggest amount of groups). If several properties are
+	 *  equal, return all of them.</li>
+	 * </ol>
+	 *  </p>
+	 *  
+	 * <p>
+	 * In our example, we would return {@code hasClass}.
+	 * <br/>
+	 * If we apply the method to the instances of the {@code Animal} class, it
+	 * would return {@code {hasColor, eats}}.</p>
+	 * 
+	 * <p>
+	 * It should be noted that this way of proceeding doesn't respect the OWL
+	 * open world assumption: in OWA, the cow and the sheep could possibly eat 
+	 * bananas as well, and thus, the {@code eats} property isn't selective.
+	 * <br/>
+	 * This rule is not enforced on purpose in this implementation: we stand on
+	 * the viewpoint of a human-robot interaction where a robot only reason with
+	 * what he positively knows. 
+	 * </p>
 	 * 
 	 * @param concepts A set of concepts
 	 * @return A sufficient list of properties that discriminate the set of 
@@ -445,11 +520,56 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<OntProperty> result = new HashSet<OntProperty>();
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
 		
-		oro.getModel().leaveCriticalSection();
+		
+		for (OntResource c : concepts) {
+			
+		}
+		
 		
 		return null;
+	}
+	
+	private Map<Property, Set<RDFNode>> getProperties(OntResource c) {
+		
+		Map<Property, Set<RDFNode>> propertiesList = new HashMap<Property, Set<RDFNode>>();
+		
+		//Clean a bit the list of statements.	
+		ExtendedIterator<Statement> stmtList = c.listProperties().filterKeep(
+			new Filter<Statement>() {
+	            public boolean accept(Statement stmt) {
+	                Property p = stmt.getPredicate();
+	                RDFNode o = stmt.getObject();
+	                
+	                for (String pToRemove : propertiesToRemove) {
+	                	if (p.getURI().equalsIgnoreCase(pToRemove))
+	                			return false;
+	                }
+	                	
+	                if (o.isURIResource()) {
+	                	for (String rToRemove : resourcesToRemove) {
+		                	if (o.as(Resource.class).getURI().equalsIgnoreCase(rToRemove))
+		                			return false;
+	                	}
+	                }
+	                
+	                return true;
+	            }
+			});
+		
+		//lists all the properties for a given subject and add, for each property, the corresponding objects.
+		while (stmtList.hasNext())
+		{
+						
+			Statement tmp = stmtList.next();
+			
+			if(!propertiesList.containsKey(tmp.getPredicate()))
+				propertiesList.put(tmp.getPredicate(), new HashSet<RDFNode>());
+			
+			propertiesList.get(tmp.getPredicate()).add(tmp.getObject());
+		}
+		
+		return propertiesList;
 	}
 	
 	/***************** SIMILARITIES *********************/
