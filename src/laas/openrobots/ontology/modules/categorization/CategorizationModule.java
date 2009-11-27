@@ -420,6 +420,37 @@ public class CategorizationModule implements IServiceProvider {
 		return getDifferences(resA, resB);
 	}
 	
+	/** Returns a sufficient list of properties that discriminate concepts.
+	 * 
+	 * For instance, let consider the following set of concepts:
+	 * <ul>
+	 *  <li>sheepy is a white animal</li>
+	 *  <li>cowrrine is a brown animal</li>
+	 * </ul>
+	 * In this case, the {@code hasColor} property would be returned. It is
+	 * sufficient to separate the two concepts.
+	 * 
+	 * If you add:
+	 * <ul>
+	 *  <li>snowwhite is a white material</li>
+	 * </ul>
+	 * Then the method would return both {@code hasColor} and {@code rdf:type} as 
+	 * discriminating properties.
+	 * 
+	 * @param concepts A set of concepts
+	 * @return A sufficient list of properties that discriminate the set of 
+	 * concepts.
+	 */
+	public Set<OntProperty> getDiscriminent(Set<OntResource> concepts) throws NotComparableException {
+		
+		Set<OntProperty> result = new HashSet<OntProperty>();
+		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
+		oro.getModel().leaveCriticalSection();
+		
+		return null;
+	}
 	
 	/***************** SIMILARITIES *********************/
 	

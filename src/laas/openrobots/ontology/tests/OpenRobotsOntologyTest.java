@@ -75,6 +75,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -1394,6 +1395,107 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This tests ability for the cognitive kernel to find discriniment features
+	 * in a set of concepts.
+	 */
+	public void testDiscriminent() {
+
+		System.out.println("[UNITTEST] ***** TEST: Categorization test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
+
+		Set<OntProperty> discriminents = null;
+		
+		Set<OntResource> resources = new HashSet<OntResource>();
+				
+		resources.add(oro.getResource("baboon"));
+		resources.add(oro.getResource("gorilla"));
+		
+		//In this case, we should find any way to discriminate these instances.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertNotNull(discriminents);
+		
+		assertEquals("No way to differenciate baboon from gorillas!",
+				discriminents.size(), 0);
+
+		//**********************************************************************
+		
+		try {
+			oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		//In this case, we should find any way to discriminate these instances.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Baboons eat grass and gorillas apples!",
+				discriminents.size() == 1 &&
+				discriminents.contains(oro.getModel().getProperty(Namespaces.format("eats"))));
+
+		discriminents.clear();
+		
+		//**********************************************************************
+		
+		resources.add(oro.getResource("grass"));
+		
+		//This time, we expect both 'eats' and 'rdf:type' properties to be
+		//returned.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Baboons eat grass and gorillas apples ; they are animal and" +
+				"the grass is a plant.",
+				discriminents.size() == 2 &&
+				discriminents.contains(oro.getModel().getProperty(Namespaces.format("eats"))) &&
+				discriminents.contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))));
+
+		discriminents.clear();
+		
+		//**********************************************************************
+		
+		try {
+			oro.add(oro.createStatement("baboon hasColor grey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("gorilla hasColor black"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("grass hasColor green"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		//Now, the concepts can be differenciated by the color. Only 'hasColor'
+		//should be returned.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Every object as a different color, isn't?",
+				discriminents.size() == 1 &&
+				discriminents.contains(oro.getModel().getProperty(Namespaces.format("hasColor"))));
+		
+		//**********************************************************************
+				
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This tests ability for the cognitive kernel to extract categories from a
 	 * set of concept.
 	 */
@@ -1422,6 +1524,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
+		assertNotNull(categories);
+		
 		assertTrue("The two categories 'Animal' and 'Plant' were expected!", 
 				categories.containsKey(oro.getResource("Animal").asClass()) && 
 				categories.containsKey(oro.getResource("Plant").asClass()));
@@ -1436,7 +1540,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		//Add a statement
 		try {
-			oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
+			oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
