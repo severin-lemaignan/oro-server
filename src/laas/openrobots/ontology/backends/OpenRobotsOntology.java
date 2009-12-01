@@ -236,7 +236,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Property predicate;
 		RDFNode object;
 		
-		ArrayList<String> tokens_statement = Helpers.tokenize(statement.trim(), ' ');
+		List<String> tokens_statement = Helpers.tokenize(statement.trim(), ' ');
 				
 		if (tokens_statement.size() != 3)
 			throw new IllegalStatementException(

@@ -36,7 +36,7 @@
 
 package laas.openrobots.ontology;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Alt;
@@ -66,7 +66,7 @@ import laas.openrobots.ontology.helpers.Namespaces;
  */
 public class PartialStatement implements Statement {
 
-	private ArrayList<String> stmtTokens;
+	private List<String> stmtTokens;
 	
 	private StatementImpl baseStmt;
 	
@@ -151,7 +151,7 @@ public class PartialStatement implements Statement {
 	 */
 	static public boolean isPartialStatement(String lex)
 	{
-		ArrayList<String> stmtTokens = Helpers.tokenize(lex.trim(), ' ');
+		List<String> stmtTokens = Helpers.tokenize(lex.trim(), ' ');
 		
 		if (stmtTokens.size() != 3)
 			return false;

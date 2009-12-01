@@ -41,7 +41,14 @@ import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import laas.openrobots.ontology.OroServer;
@@ -225,7 +232,7 @@ public class Helpers {
 	 * @param str A string to tokenize.
 	 * @return A list of tokens
 	 */
-	public static ArrayList<String> tokenize (String str, char delimiter) {
+	public static List<String> tokenize (String str, char delimiter) {
 		ArrayList<String> tokens = new ArrayList<String>();
 		
 		int countSBrackets = 0;
@@ -269,4 +276,56 @@ public class Helpers {
 		return tokens;
 		
 	}
+	
+	/**
+	 * This static method takes a map and return the list of the key sorted by
+	 * their values in ascending order.
+	 * @param <K> The type of the map keys
+	 * @param <V> The type of the map values
+	 * @param m The map whose key must by sorted
+	 * @return A list of key, sorted by their values in ascending order.
+	 */
+    public static <K, V> List<K> sortByValue(final Map<K, V> m) {
+        List<K> keys = new ArrayList<K>();
+        keys.addAll(m.keySet());
+        Collections.sort(keys, new Comparator<K>() {
+            public int compare(K o1, K o2) {
+                V v1 = m.get(o1);
+                V v2 = m.get(o2);
+                if (v1 == null) {
+                    return (v2 == null) ? 0 : 1;
+                }
+                else if (v1 instanceof Comparable) {
+                    return ((Comparable<V>) v1).compareTo(v2);
+                }
+                else {
+                    return 0;
+                }
+            }
+        });
+        return keys;
+    }
+    
+    /**
+     * Creates a new map, using the values of the initial one as keys for the new
+     * one, and keys of the initial one as a set of values for the new one.
+	 * @param <K> The type of the map keys
+	 * @param <V> The type of the map values
+     * @param m The initial map.
+     * @return A new map built by inversing the keys and values of the initial one.
+     * For each new key, a set is built for all the values (ie, the former keys).
+     */
+    public static <K, V> Map<V, Set<K>> reverseMap(final Map<K, V> m) {
+    	Map<V, Set<K>> res = new HashMap<V, Set<K>>();
+    	
+    	for (K k : m.keySet()) {
+    		if (!res.containsKey(m.get(k)))
+    			res.put(m.get(k), new HashSet<K>());
+    		res.get(m.get(k)).add(k);	
+    	}
+    	
+    	
+    	return res;
+    }
+
 }
