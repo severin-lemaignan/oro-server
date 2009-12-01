@@ -40,7 +40,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -56,6 +58,7 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -116,12 +119,53 @@ public class OpenRobotsOntologyTest extends TestCase {
 	
 		System.out.println("[UNITTEST] ***** TEST: Testing helper functions *****");
 		
+		System.out.println("Tokenization...");
 		// with a comma separator, the string below should be tokenized in "{}", "f\'\", " \}", " [r ,t,\]" ",r ] ", "a" (5 tokens)
 		// with a space as separator, the string below should be tokenized in "{},f\'\,", "\},", "[r ,t,\]" ",r ]", ",a" (4 tokens)
 		String strToTokenize = "{},f\\\'\\, \\}, [r ,t,\\]\" \",r ] ,a";
 		assertEquals("Wrong tokenization using commas.", 5, Helpers.tokenize(strToTokenize, ',').size());
 		assertEquals("Wrong tokenization using spaces.", 4, Helpers.tokenize(strToTokenize, ' ').size());
+		
+		System.out.println("OK.\nStringification...");
+		
+		assertEquals("\"toto\"", Helpers.stringify("toto"));
+		assertEquals("\"toto et \"tata\"\"", Helpers.stringify("toto et \"tata\""));
+		assertEquals("3.1415", Helpers.stringify(3.1415));
+		assertEquals("true", Helpers.stringify(true));
+		
+		List<String> t1 = new ArrayList<String>();
+		t1.add("toto");
+		t1.add("tata");
+		assertEquals("[\"toto\",\"tata\"]", Helpers.stringify(t1));
+		
+		Set<String> t2 = new HashSet<String>();
+		t2.add("toto");
+		t2.add("titi");
+		String res = Helpers.stringify(t2);
+		assertTrue(res.equals("[\"toto\",\"titi\"]") || res.equals("[\"titi\",\"toto\"]"));
+		
+		Map<Integer, String> t3 = new HashMap<Integer, String>();
+		t3.put(1, "toto");
+		t3.put(2, "tata");
+		assertEquals("{1:\"toto\",2:\"tata\"}", Helpers.stringify(t3));
+		
+		List<String> t1bis = new ArrayList<String>();
+		t1bis.add("tutu");		
+		
+		Set<List<String>> t4 = new HashSet<List<String>>();
+		t4.add(t1);
+		t4.add(t1bis);
+		res = Helpers.stringify(t4);
+		assertTrue(res.equals("[[\"toto\",\"tata\"],[\"tutu\"]]") || res.equals("[[\"tutu\"],[\"toto\",\"tata\"]]"));
+		
+		Map<Set<String>, List<String>> t5 = new HashMap<Set<String>, List<String>>();
+		t5.put(t2, t1);
+		res = Helpers.stringify(t5);
+		assertTrue(res.equals("{[\"toto\",\"titi\"]:[\"toto\",\"tata\"]}") || res.equals("{[\"titi\",\"toto\"]:[\"toto\",\"tata\"]}"));
+		
+		System.out.println("OK.");
 	}
+	
 	
 	public void testSave() {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);

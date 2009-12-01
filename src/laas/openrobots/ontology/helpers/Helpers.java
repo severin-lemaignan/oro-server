@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
@@ -327,5 +328,106 @@ public class Helpers {
     	
     	return res;
     }
+    
+    /**
+     * This simple method return true is a given object implements a given
+     * interface.
+     * It uses the Java reflection API.
+     *  
+     * @param o Any object
+     * @param i An interface
+     * @return true if the object implements the interface.
+     */
+    public static <T, I> boolean implementsInterface(T o, Class<I> i) {
+    	for (Class<?> c : o.getClass().getInterfaces()) {
+    		if (c.equals(i))
+    			return true;
+    	}
+    	return false;
+    }
+    
+    /**
+     * Convert primitive and collection objects to a JSON-like string.
+     * 
+     * The conversion should be correct in standard cases, but it doesn't handle
+     * corner cases.
+     * @param o The object to convert
+     * @return A JSON-like string representating the object.
+     * @see {@link http://json.org} The JSON website
+     */
+    public static <T> String stringify(T o) {
+    	if (o == null)
+    		return "null";
+    	else if (Helpers.implementsInterface(o, Set.class))
+			return setToString((Set) o);
+		else if (Helpers.implementsInterface(o, List.class))
+			return listToString((List) o);
+		else if (Helpers.implementsInterface(o, Map.class))
+			return mapToString((Map) o);
+		else if (o.getClass().getSuperclass().equals(Number.class) ||
+				o.getClass().equals(Boolean.class) ||
+				o.getClass().equals(Character.class))
+			return o.toString();    			
+		else return protectValue(o.toString());
+
+	}
+    
+    private static <V> String listToString(List<V> list) {
+		String str = "[";
+
+		for (V v : list)
+			str += stringify(v) + ",";
+		
+		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
+		
+		return str;
+	}
+
+
+    private static <V> String setToString(Set<V> list) {
+		String str = "[";
+		
+		for (V v : list)
+			str += stringify(v) + ",";
+		
+		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
+		
+		return str;
+	}
+
+    private static <K, V> String mapToString(Map<K, V> map) {
+		String str = "{";
+		for (Entry<K, V> es : map.entrySet()) {
+			str += stringify(es.getKey()) + ":" + stringify(es.getValue()) + ",";
+		}
+		
+		str = (str.equals("{") ? str : str.substring(0, str.length() - 1)) + "}";
+		
+		return str;
+	}
+		  
+	/** Remove leading and trailing quotes and whitespace if needed. 
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static String cleanValue(String value) {
+		String res = value.trim();
+		if ((res.startsWith("\"") && res.endsWith("\"")) || (res.startsWith("'") && res.endsWith("'")))
+			res = res.substring(1, res.length() - 1);
+		
+		return res;
+	}
+	
+	/** Protect a string by escaping the quotes and surrounding the string with quotes.
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static String protectValue(String value) {
+		String res = value.replaceAll("\"", "\\\"");
+		    		
+		return "\"" + res + "\"";
+	}
 
 }

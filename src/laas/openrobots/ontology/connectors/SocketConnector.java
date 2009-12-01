@@ -293,21 +293,21 @@ public class SocketConnector implements IConnector, Runnable {
 		    	    					invokationDone = true;
 		    	    					break;
 		    	    				}
-		    	    				
+		    	    				//TODO : Lot of cleaning to do here
 		    	    				if (rType == Map.class) {
-		    	    					result += mapToString(((Map<?, ?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    	    					result += Helpers.stringify(((Map<?, ?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
 		    	    					invokationDone = true;
 		    	    					break;
 		    	    				}
 		    	    				
 		    	    				if (rType == Set.class) {
-		    	    					result += setToString(((Set<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    	    					result += Helpers.stringify(((Set<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
 		    	    					invokationDone = true;
 		    	    					break;
 		    	    				}
 		    	    				
 		    	    				if (rType == List.class) {
-		    	    					result += listToString(((List<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    	    					result += Helpers.stringify(((List<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
 		    	    					invokationDone = true;
 		    	    					break;
 		    	    				}
@@ -363,70 +363,14 @@ public class SocketConnector implements IConnector, Runnable {
 	    		return result + "\n" + MESSAGE_TERMINATOR;
 	    	}
 		  }
-	    	
-    	private <V> String listToString(List<V> list) {
-    		String str = "[";
-    		for (V v : list) {
-    			//TODO: insert double quote only if it's not parsable to a boolean or a number.
-    			str += protectValue(v.toString()) + ",";
-    		}
-    		
-    		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
-    		
-    		return str;
-    	}
-
-    	private <V> String setToString(Set<V> list) {
-    		String str = "[";
-    		for (V v : list) {
-    			str += protectValue(v.toString()) + ",";
-    		}
-    		
-    		str = (str.equals("[") ? str : str.substring(0, str.length() - 1)) + "]";
-    		
-    		return str;
-    	}
-
-    	private <K, V> String mapToString(Map<K, V> map) {
-    		String str = "{";
-    		for (Entry<K, V> es : map.entrySet()) {
-    			str += protectValue(es.getKey().toString()) + ":" + protectValue(es.getValue().toString()) + ",";
-    		}
-    		
-    		str = (str.equals("{") ? str : str.substring(0, str.length() - 1)) + "}";
-    		
-    		return str;
-    	}
-			  
-    	/** Remove leading and trailing quotes and whitespace if needed. 
-    	 * 
-    	 * @param value
-    	 * @return
-    	 */
-    	private String cleanValue(String value) {
-    		String res = value.trim();
-    		if ((res.startsWith("\"") && res.endsWith("\"")) || (res.startsWith("'") && res.endsWith("'")))
-    			res = res.substring(1, res.length() - 1);
-    		
-    		return res;
-    	}
-    	
-    	/** Protect a string by escaping the quotes and surrounding the string with quotes.
-    	 * 
-    	 * @param value
-    	 * @return
-    	 */
-    	private String protectValue(String value) {
-    		String res = value.replaceAll("\"", "\\\"");
-    		    		
-    		return "\"" + res + "\"";
-    	}
+	    
+		
     	
 		  private Object deserialize(String val, Class<?> type) {
 				//not typed because of Method::invoke requirements <- that's what I call a bad excuse
 				
 					if (type == String.class)
-						return cleanValue(val);
+						return Helpers.cleanValue(val);
 							
 					if (type == Integer.class)
 						return Integer.parseInt(val);
@@ -465,8 +409,8 @@ public class SocketConnector implements IConnector, Runnable {
 						Map<String, String> result = new HashMap<String, String>();
 						
 						for (String s : Helpers.tokenize(val, ','))
-							result.put(	cleanValue(s.trim().split(":", 2)[0]), 
-										cleanValue(s.trim().split(":", 2)[1]));
+							result.put(	Helpers.cleanValue(s.trim().split(":", 2)[0]), 
+									Helpers.cleanValue(s.trim().split(":", 2)[1]));
 						
 						return result;
 					}					
@@ -474,14 +418,14 @@ public class SocketConnector implements IConnector, Runnable {
 					else if (isValidSet && Set.class.isAssignableFrom(type)){
 						Set<String> result = new HashSet<String>();
 						for (String s : Helpers.tokenize(val, ','))
-							result.add(cleanValue(s));
+							result.add(Helpers.cleanValue(s));
 						return result;
 					}					
 					//if the string looks like a set and a list of a list is indeed expected...
 					else if (isValidSet && List.class.isAssignableFrom(type)){
 						List<String> result = new ArrayList<String>();
 						for (String s : Helpers.tokenize(val, ','))
-							result.add(cleanValue(s));
+							result.add(Helpers.cleanValue(s));
 						return result;
 					}
 					
