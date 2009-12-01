@@ -1,10 +1,13 @@
 package laas.openrobots.ontology.modules.categorization;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
@@ -108,6 +111,7 @@ import com.hp.hpl.jena.util.iterator.Filter;
 public class CategorizationModule implements IServiceProvider {
 	
 	private final String propertiesToRemove[] = {
+			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
 			"http://www.w3.org/2002/07/owl#sameAs", 
 			"http://www.w3.org/2002/07/owl#differentFrom",
 			"http://www.w3.org/2000/01/rdf-schema#label"};
@@ -431,9 +435,10 @@ public class CategorizationModule implements IServiceProvider {
 		return getDifferences(resA, resB);
 	}
 	
-	/** Returns a sufficient list of properties that discriminate concepts.
+	/** Returns a list of properties that helps to differentiate individuals.
 	 * 
-	 * For instance, let consider the following set of concepts:
+	 * For instance, let consider the following ontology, with four instances 
+	 * (plant1, animal1, animal2, animal3) :
 	 * <pre>
 	 *             +-------+
 	 *             | Thing |
@@ -447,7 +452,7 @@ public class CategorizationModule implements IServiceProvider {
 	 *+---+---+                 +--+++---+
 	 *    |                   _,-"  |  `--.._
 	 *    |                .-'      |        ``--..
-	 * myGrass         myMonkey    myCow        mySheep
+	 *  plant1         animal1    animal2        animal3
 	 *    |               |         / `.            \
 	 *    |               |        /    `-.          \
 	 * hasColor         eats     eats  hasColor   hasColor
@@ -457,9 +462,23 @@ public class CategorizationModule implements IServiceProvider {
 	 * </pre>
 	 * 
 	 * <p>
-	 * The method is meant to help the robot to answer ambigious orders like
+	 * Let's imagine the robot wants to answer an ambigious order like
 	 * <i>Give me the thing!</i>: we need a way to disambiguate the different
 	 * possible individuals in the {@code Thing} class.
+	 * </p>
+	 * 
+	 * <p>
+	 * The method return two things: 
+	 * <ul>
+	 * <li>a first set of properties that <b>totaly discriminate</b> the set of 
+	 * individual. It means that if we get the value of this property, we can 
+	 * distinguish the individuals. Quite often, this set is empty because the
+	 * set can not be splitted by a single property.</li>
+	 * <li>a second set that contains the best property that can be 
+	 * used to split the set of individuals (of the set of best properties if 
+	 * several properties have the same efficency). If the first set is not empty,
+	 * the second set should obviously contain the same property/ies.</li>
+	 * </ul>
 	 * </p>
 	 * 
 	 * <p>
@@ -469,10 +488,10 @@ public class CategorizationModule implements IServiceProvider {
 	 *<pre>  
 	 *            p1        p2        p3
 	 *-------------------------------------
-	 *myGrass:   {hasClass, hasColor}
-	 *myMonkey:  {hasClass,           eats}
-	 *myCow:     {hasClass, hasColor, eats}
-	 *mySheep:   {hasClass, hasColor}
+	 *plant1:    {hasClass, hasColor}
+	 *animal1:   {hasClass,           eats}
+	 *animal2:   {hasClass, hasColor, eats}
+	 *animal3:   {hasClass, hasColor}
 	 *-------------------------------------
 	 *      |p|=  4         3         2
 	 *</pre></li>
@@ -481,10 +500,10 @@ public class CategorizationModule implements IServiceProvider {
 	 *  <pre>
 	 *         | p1:hasClass | p2:hasColor | p3:eats
 	 *---------+-------------+-------------+--------
-	 *myGrass  | Plant       | green       |
-	 *myMonkey | Animal      |             | banana
-	 *myCow    | Animal      | blue        | grass
-	 *mySheep  | Animal      | red         |
+	 *plant1   | Plant       | green       |
+	 *animal1  | Animal      |             | banana
+	 *animal2  | Animal      | blue        | grass
+	 *animal3  | Animal      | red         |
 	 *---------+-------------+-------------+--------
 	 *|≠ elem.|= 2             3             2
 	 *</pre>
@@ -494,18 +513,17 @@ public class CategorizationModule implements IServiceProvider {
 	 *  selectivity (ie the biggest amount of groups). If several properties are
 	 *  equal, return all of them.</li>
 	 * </ol>
-	 *  </p>
-	 *  
-	 * <p>
+	 *   
 	 * In our example, we would return {@code hasClass}.
-	 * <br/>
+	 * </p>
+	 * <p>
 	 * If we apply the method to the instances of the {@code Animal} class, it
 	 * would return {@code {hasColor, eats}}.</p>
 	 * 
 	 * <p>
 	 * It should be noted that this way of proceeding doesn't respect the OWL
-	 * open world assumption: in OWA, the cow and the sheep could possibly eat 
-	 * bananas as well, and thus, the {@code eats} property isn't selective.
+	 * open world assumption: in OWA, the animal2 and the animal3 could possibly
+	 * eat bananas as well, and thus, the {@code eats} property isn't selective.
 	 * <br/>
 	 * This rule is not enforced on purpose in this implementation: we stand on
 	 * the viewpoint of a human-robot interaction where a robot only reason with
@@ -516,25 +534,154 @@ public class CategorizationModule implements IServiceProvider {
 	 * @return A sufficient list of properties that discriminate the set of 
 	 * concepts.
 	 */
-	public Set<OntProperty> getDiscriminent(Set<OntResource> concepts) throws NotComparableException {
+	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
 		
-		Set<OntProperty> result = new HashSet<OntProperty>();
+		Integer nbIndividuals = individuals.size();
+		boolean isTotalDiscriminent = true;
 		
+		Set<Property> mostDiscriminantProperties = new HashSet<Property>();
 		
+		Map<Property, Integer> listOfProperties = new HashMap<Property, Integer>();
+		Map<Property, Set<RDFNode>> listOfPropertiesValues = new HashMap<Property, Set<RDFNode>>();
 		
-		for (OntResource c : concepts) {
+		//**********************************************************************
+		//Build the list of properties with the number of individuals that use them
+		// and the list of properties with the set of different values they have.
+		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
+		for (OntResource i : individuals) {
+			Map<Property, Set<RDFNode>> newProperties = getProperties(i);
+						
 			
+			for(Property p : newProperties.keySet()) {
+				if (listOfProperties.containsKey(p))
+					listOfProperties.put(p, listOfProperties.get(p) + 1);
+				else
+					listOfProperties.put(p, 1);
+				
+				//We store objects that are different amongst all individuals
+				if (!listOfPropertiesValues.containsKey(p))
+					listOfPropertiesValues.put(p, new HashSet<RDFNode>());							
+				listOfPropertiesValues.get(p).addAll(newProperties.get(p));
+			}
 		}
 		
+		oro.getModel().leaveCriticalSection();
 		
-		return null;
+		//**********************************************************************
+		//Remove properties that lead to only 1 group (ie, non selective properties)
+		//(only for properties shared by more than one individual)
+		for (Property p : listOfPropertiesValues.keySet()) {
+			if (listOfPropertiesValues.get(p).size() == 1 && listOfProperties.get(p) > 1)
+				listOfProperties.remove(p);
+		}
+		
+		//**********************************************************************
+		//Sort the properties first by number of individuals that share this 
+		//property, then by selectivity - ie, the number of different groups
+		//the property can discriminate. Keep only the best.
+		if (!listOfProperties.isEmpty()) {
+					
+			TreeMap<Integer, Set<Property>> listOfmostSharedProperties = 
+				new TreeMap<Integer, Set<Property>>(Helpers.reverseMap(listOfProperties));
+			
+			//the last set of properties is the one shared by the max of individuals 
+			Set<Property> mostSharedProperties = listOfmostSharedProperties.lastEntry().getValue();
+			
+			if (listOfmostSharedProperties.lastKey() != nbIndividuals)
+				isTotalDiscriminent = false;
+				
+
+			//for (Integer i : mostSharedProperties.keySet())
+			//	System.out.println(i + " -> " + mostSharedProperties.get(i));
+			
+			//If we have more than one property shared by the max of individual,
+			//we select the subset that split the best the set of individuals. 
+			if (mostSharedProperties.size() > 1) {
+				
+				TreeMap<Integer, Set<Property>> listOfMostDiscriminantProperty = new TreeMap<Integer, Set<Property>>();
+				
+				for (Property p : mostSharedProperties) {
+						if (!listOfMostDiscriminantProperty.containsKey(listOfPropertiesValues.get(p).size()))
+							listOfMostDiscriminantProperty.put(listOfPropertiesValues.get(p).size(), new HashSet<Property>());
+						
+						listOfMostDiscriminantProperty.get(listOfPropertiesValues.get(p).size()).add(p);
+				}
+				
+				//the last set of properties is the most selective one. 
+				mostDiscriminantProperties = listOfMostDiscriminantProperty.lastEntry().getValue();
+				
+				if (listOfMostDiscriminantProperty.lastKey() != nbIndividuals)
+					isTotalDiscriminent = false;
+			}
+			//only one property is the most shared. We simply check if it 
+			//completely split the set. 
+			else 
+			{
+				for (Property p : mostSharedProperties)
+					if (listOfPropertiesValues.get(p).size() != nbIndividuals)
+						isTotalDiscriminent = false;
+				
+				mostDiscriminantProperties = mostSharedProperties;
+			}
+
+		}
+
+		System.out.println("Most discriminant properties: " + mostDiscriminantProperties + (isTotalDiscriminent ? " (total discriminant)" : " (partial discriminant)"));
+		
+		List<Set<Property>> res = new ArrayList<Set<Property>>();
+		
+		if (isTotalDiscriminent)
+			res.add(mostDiscriminantProperties);
+		else
+			res.add(new HashSet<Property>());
+		
+		res.add(mostDiscriminantProperties);
+		
+		return res;
+
+	}
+	
+	@RPCMethod(
+			category = "concept comparison", 
+			desc = "returns a list of properties that helps to differentiate individuals."
+	)	
+	public List<Set<String>> discriminate(Set<String> rawConcepts) throws NotFoundException, NotComparableException {
+		
+		List<Set<String>> stringifiedRes = new ArrayList<Set<String>>();
+		
+		Set<OntResource> concepts = new HashSet<OntResource>();
+		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
+			for (String s : rawConcepts) {
+				OntResource r = oro.getModel().getOntResource(Namespaces.format(s));
+				if (r == null) throw new NotFoundException("Concept " + s + " doesn't exist in the ontology.");
+				concepts.add(r);
+			}
+
+		oro.getModel().leaveCriticalSection();
+
+		
+		List<Set<Property>> res = getDiscriminent(concepts);
+		
+		for (Set<Property> sp : res) {
+			Set<String> ss = new HashSet<String>();
+			for (Property p : sp)
+				ss.add(Namespaces.toLightString(p));
+			stringifiedRes.add(ss);
+		}			
+		
+		return stringifiedRes;
 	}
 	
 	private Map<Property, Set<RDFNode>> getProperties(OntResource c) {
 		
 		Map<Property, Set<RDFNode>> propertiesList = new HashMap<Property, Set<RDFNode>>();
 		
-		//Clean a bit the list of statements.	
+		//Clean a bit the list of statements. We remove as well the type of the
+		//resource. It will be added back a bit later.
 		ExtendedIterator<Statement> stmtList = c.listProperties().filterKeep(
 			new Filter<Statement>() {
 	            public boolean accept(Statement stmt) {
@@ -557,6 +704,8 @@ public class CategorizationModule implements IServiceProvider {
 	            }
 			});
 		
+		
+		//System.out.println("\nResource " + c);
 		//lists all the properties for a given subject and add, for each property, the corresponding objects.
 		while (stmtList.hasNext())
 		{
@@ -567,7 +716,13 @@ public class CategorizationModule implements IServiceProvider {
 				propertiesList.put(tmp.getPredicate(), new HashSet<RDFNode>());
 			
 			propertiesList.get(tmp.getPredicate()).add(tmp.getObject());
+			
+			//System.out.println(tmp.getPredicate() + " -> " + tmp.getObject());
 		}
+		
+		Set<RDFNode> cType = new HashSet<RDFNode>();
+		cType.add(c.getRDFType(true));
+		propertiesList.put(type, cType);
 		
 		return propertiesList;
 	}

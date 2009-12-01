@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -1405,11 +1406,19 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		CategorizationModule categorizationModule = new CategorizationModule(oro);
 
-		Set<OntProperty> discriminents = null;
+		List<Set<Property>> discriminents = null;
 		
 		Set<OntResource> resources = new HashSet<OntResource>();
-				
-		resources.add(oro.getResource("baboon"));
+		
+		
+		try {
+			oro.add(oro.createStatement("capucin rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		resources.add(oro.getResource("capucin"));
 		resources.add(oro.getResource("gorilla"));
 		
 		//In this case, we should find any way to discriminate these instances.
@@ -1421,13 +1430,13 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertNotNull(discriminents);
 		
-		assertEquals("No way to differenciate baboon from gorillas!",
-				discriminents.size(), 0);
+		assertEquals("No way to differenciate a capucin from a gorilla!",0,
+				discriminents.get(0).size());
 
 		//**********************************************************************
 		
 		try {
-			oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("capucin eats grass"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -1440,9 +1449,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
-		assertTrue("Baboons eat grass and gorillas apples!",
-				discriminents.size() == 1 &&
-				discriminents.contains(oro.getModel().getProperty(Namespaces.format("eats"))));
+		assertTrue("Capucins eat grass and gorillas apples!",
+				discriminents.get(0).size() == 1 &&
+				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("eats"))));
 
 		discriminents.clear();
 		
@@ -1457,16 +1466,17 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
-		assertTrue("The only common property is the type.",
-				discriminents.size() == 1 &&				
-				discriminents.contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))));
+		assertTrue("The only common property is the type. But it's not a total discriminant.",
+				discriminents.get(0).size() == 0 &&
+				discriminents.get(1).size() == 1 &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))));
 
 		discriminents.clear();
 		
 		//**********************************************************************
 		
 		try {
-			oro.add(oro.createStatement("baboon hasColor grey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("capucin hasColor grey"), MemoryProfile.DEFAULT, false);
 			oro.add(oro.createStatement("gorilla hasColor black"), MemoryProfile.DEFAULT, false);
 			oro.add(oro.createStatement("grass hasColor green"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
@@ -1483,8 +1493,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		assertTrue("Every object as a different color, isn't?",
-				discriminents.size() == 1 &&
-				discriminents.contains(oro.getModel().getProperty(Namespaces.format("hasColor"))));
+				discriminents.get(0).size() == 1 &&
+				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("hasColor"))));
 		
 		//**********************************************************************
 				
