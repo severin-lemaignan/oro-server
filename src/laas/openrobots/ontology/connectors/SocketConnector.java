@@ -221,7 +221,7 @@ public class SocketConnector implements IConnector, Runnable {
 			  Logger.log(">> Got incoming request: " + queryName + "\n", VerboseLevel.DEBUG);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
-	    		Logger.log("Closing communication with client " + getName());
+	    		Logger.log("Closing communication with client " + getName() + ".\n");
 	    		
 	    		keepOnThisWorker = false;
 	    		

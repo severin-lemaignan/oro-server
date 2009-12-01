@@ -531,8 +531,12 @@ public class CategorizationModule implements IServiceProvider {
 	 * </p>
 	 * 
 	 * @param concepts A set of concepts
-	 * @return A sufficient list of properties that discriminate the set of 
-	 * concepts.
+	 * @return A list of two sets: first, a set of properties - if they exist -
+	 * that are individually sufficient to differentiate all the individuals
+	 * in the provided set from the values (objects) of these properties. Then a 
+	 * set of properties that are sufficient OR NOT to distinguish the individuals.
+	 * If they are sufficient, it's the same as the first set. Else, it's the most
+	 * discriminating properties.
 	 */
 	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
 		
