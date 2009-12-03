@@ -1,0 +1,31 @@
+*******************************************
+* Installation instruction for oro-server *
+*******************************************
+
+Dependencies
+------------
+
+You need the latest Jena and Pellet librairies.
+
+By default, the Makefile expect following paths:
+$PREFIX/java/jena/lib
+$PREFIX/java/pellet/lib
+
+You can override these defaults by setting the $JENA_LIBS and $PELLET_LIBS
+with your custom paths.
+
+
+Installation
+------------
+
+> make PREFIX=[your prefix] install
+
+For the documentation:
+
+> make PREFIX=[your prefix] install-doc
+
+
+Details, examples, barbapapa
+----------------------------
+
+https://www.laas.fr/~slemaign/wiki/doku.php?id=ontologiesonline
