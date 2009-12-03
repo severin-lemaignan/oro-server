@@ -977,6 +977,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
+			//TODO: Workaround for http://clark-parsia.trac.cvsdude.com/pellet-devel/ticket/356
+			onto.setStrictMode(false);
+			
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
 			if (scenarioModel != null) onto.add(scenarioModel);

@@ -209,6 +209,13 @@ public class Helpers {
 		
 		try {
 			
+			if (resource.isClass() && resource.isIndividual()) {
+				Logger.log("Impossible to determine the type of the resource." +
+						"Maybe you are using a OWL-Full reasonner or you disabled " +
+						"the strict mode.\n", VerboseLevel.SERIOUS_ERROR);
+						return ResourceType.UNDEFINED;
+			}
+			
 			if (resource.isClass())
 				type = ResourceType.CLASS;
 			else if (resource.isIndividual())
