@@ -98,7 +98,7 @@ public class Logger {
 	public static void log(String msg, VerboseLevel level, boolean withPrefix) {
 		
 		//Displays only message with a superior level of verbosity.
-		if (level.ordinal() > OroServer.VERBOSITY.ordinal())
+		if (!verbosityMin(level))
 			return;
 		
 		String prefix = "";
@@ -158,6 +158,20 @@ public class Logger {
 				break;
 		
 		}
+	}
+	
+	/**
+	 * Tests if a given level of verbosity is superior or egal to the current,
+	 * application-wide, level of verbosity.
+	 * 
+	 * @param level A level of verbosity
+	 * @return true if the server is configured to be at least as verbose as the
+	 * given level of verbosity.
+	 */
+	public static boolean verbosityMin(VerboseLevel level) {
+		if (level.ordinal() > OroServer.VERBOSITY.ordinal())
+			return false;
+		return true;
 	}
 
 	public static void cr(){
