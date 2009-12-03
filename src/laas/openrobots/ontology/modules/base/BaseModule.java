@@ -409,7 +409,7 @@ public class BaseModule implements IServiceProvider {
 		while (rawResult.hasNext())
 		{
 			QuerySolution row = rawResult.nextSolution();
-			result.add(Namespaces.toLightString(row.getResource(varName)));
+			result.add(Namespaces.toLightString(row.get(varName)));
 		}
 		
 		return result;

@@ -94,7 +94,8 @@ public class Namespaces {
 	}
 
 	/**
-	 * Returns a list of commons namespace prefixes (currently, OWL, RDF, RDFS, XSD, LAAS OpenRobots), in SPARQL format, to be included in SPARQL queries.
+	 * Returns a list of commons namespace prefixes (currently, OWL, RDF, RDFS, 
+	 * XSD, LAAS OpenRobots), in SPARQL format, to be included in SPARQL queries.
 	 * @return The {@code PREFIX} part of a SPARQL request. 
 	 */
 	public static String prefixes()
@@ -113,7 +114,9 @@ public class Namespaces {
 	}
 	
 	/**
-	 * Convert namespace shortcut in their expanded form (which includes a trailing {@code #}).<br/>
+	 * Convert namespace shortcut in their expanded form (which includes a 
+	 * trailing {@code #}).<br/>
+	 * 
 	 * For instance:<br/>
 	 * {@code Namespaces.getNamespace("oro")} returns {@code http://www.owl-ontologies.com/openrobots.owl#}
 	 * @param ns One of the known namespace shortcut ("owl" for OWL namespace, "rdf" and "rdfs" for RDF, "xsd" for XML Schema, "oro" for OpenRobots)
@@ -182,6 +185,8 @@ public class Namespaces {
 	 */
 	public static String contract(String uri)
 	{
+		if (uri == null) return "";
+		
 		int step1 = uri.indexOf("^^");
 		int step2 = uri.indexOf("#");
 		
@@ -206,14 +211,19 @@ public class Namespaces {
 	{
 		if (res.isAnon()) return "anonymousNode_" + res.toString();
 		
-		if (res.isResource() && ((Resource)res).getURI() != null) return contract(((Resource)res).getURI());
+		if (res.isResource() && ((Resource)res).getURI() != null) 
+			return contract(((Resource)res).getURI());
 		
 		if (res.isLiteral())
 		{
 			Literal lit = (Literal)res;
 			if (lit.getDatatype() == XSDDatatype.XSDdouble ||
 				lit.getDatatype() == XSDDatatype.XSDint ||
-				lit.getDatatype() == XSDDatatype.XSDboolean) return lit.getLexicalForm();
+				lit.getDatatype() == XSDDatatype.XSDboolean)
+				return lit.getLexicalForm();
+			
+			if (lit.getDatatype() == null) //plain literal
+				return lit.getLexicalForm();
 			
 			return "'" + lit.getLexicalForm() + "'^^" + contract((lit).getDatatypeURI());
 		}
