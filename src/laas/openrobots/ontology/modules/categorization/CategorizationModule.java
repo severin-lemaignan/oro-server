@@ -13,7 +13,9 @@ import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
@@ -114,7 +116,10 @@ public class CategorizationModule implements IServiceProvider {
 			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
 			"http://www.w3.org/2002/07/owl#sameAs", 
 			"http://www.w3.org/2002/07/owl#differentFrom",
-			"http://www.w3.org/2000/01/rdf-schema#label"};
+			"http://www.w3.org/2002/07/owl#topDataProperty",
+			"http://www.w3.org/2002/07/owl#bottomDataProperty",
+			"http://www.w3.org/2000/01/rdf-schema#label",
+			"http://www.w3.org/2000/01/rdf-schema#comment"};
 
 	private final String resourcesToRemove[] = {	
 			"http://www.w3.org/2002/07/owl#Nothing"};
@@ -160,7 +165,6 @@ public class CategorizationModule implements IServiceProvider {
 		//get the list of types for concept A (filtering anonymous classes)
 		typesA.clear();
 		ExtendedIterator<OntClass> tmpA = indivA.listOntClasses(false);
-		
 		while (tmpA.hasNext()){
 			OntClass c = tmpA.next();
 			if (!c.isAnon())
@@ -540,6 +544,19 @@ public class CategorizationModule implements IServiceProvider {
 	 */
 	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
 		
+		
+		/*//DEBUG BLOCK
+		System.out.println("***********************");
+		for (Statement s : oro.getModel().listStatements().toSet())
+			System.out.println(Namespaces.toLightString(s));
+		System.out.println("***********************");
+		for (Statement s : oro.getModel().getRawModel().listStatements().toSet())
+			System.out.println(Namespaces.toLightString(s));
+		System.out.println("***********************");
+		
+		System.exit(0);
+		*/
+		
 		Integer nbIndividuals = individuals.size();
 		boolean isTotalDiscriminent = true;
 		
@@ -547,6 +564,8 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Map<Property, Integer> listOfProperties = new HashMap<Property, Integer>();
 		Map<Property, Set<RDFNode>> listOfPropertiesValues = new HashMap<Property, Set<RDFNode>>();
+		
+		Logger.log("Running the getDiscriminent algorithm:\n",VerboseLevel.VERBOSE);
 		
 		//**********************************************************************
 		//Build the list of properties with the number of individuals that use them
@@ -572,6 +591,18 @@ public class CategorizationModule implements IServiceProvider {
 		}
 		
 		oro.getModel().leaveCriticalSection();
+
+		if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
+			Logger.log("Property -> nb occurences:\n",VerboseLevel.DEBUG);
+			for (Property p : listOfProperties.keySet())
+				Logger.log(p + " -> " + listOfProperties.get(p) + "\n", VerboseLevel.DEBUG);
+			
+			Logger.cr();
+			Logger.log("Property -> found values:\n",VerboseLevel.DEBUG);
+			for (Property p : listOfPropertiesValues.keySet())
+				Logger.log(p + " -> " + listOfPropertiesValues.get(p) + "\n", VerboseLevel.DEBUG);
+			Logger.cr();
+		}
 		
 		//**********************************************************************
 		//Remove properties that lead to only 1 group (ie, non selective properties)
@@ -579,6 +610,13 @@ public class CategorizationModule implements IServiceProvider {
 		for (Property p : listOfPropertiesValues.keySet()) {
 			if (listOfPropertiesValues.get(p).size() == 1 && listOfProperties.get(p) > 1)
 				listOfProperties.remove(p);
+		}
+	
+		if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
+			Logger.log("Remaining properties after removal of non-selective ones:\n",VerboseLevel.DEBUG);
+			for (Property p : listOfProperties.keySet())
+				Logger.log(" -> " + p + "\n", VerboseLevel.DEBUG);
+			Logger.cr();
 		}
 		
 		//**********************************************************************
@@ -595,10 +633,11 @@ public class CategorizationModule implements IServiceProvider {
 			
 			if (listOfmostSharedProperties.lastKey() != nbIndividuals)
 				isTotalDiscriminent = false;
-				
-
-			//for (Integer i : mostSharedProperties.keySet())
-			//	System.out.println(i + " -> " + mostSharedProperties.get(i));
+			
+			if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
+				Logger.log("Selected set of properties after sorting the most shared ones:\n",VerboseLevel.DEBUG);
+				Logger.log(mostSharedProperties + "\n", VerboseLevel.DEBUG);
+			}
 			
 			//If we have more than one property shared by the max of individual,
 			//we select the subset that split the best the set of individuals. 
@@ -629,10 +668,16 @@ public class CategorizationModule implements IServiceProvider {
 				
 				mostDiscriminantProperties = mostSharedProperties;
 			}
+			
+			if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
+				Logger.log("Final set of properties after sorting the discriminating ones:\n",VerboseLevel.DEBUG);
+				Logger.log(mostDiscriminantProperties + "\n", VerboseLevel.DEBUG);
+				Logger.cr();
+			}
 
 		}
 
-		System.out.println("Most discriminant properties: " + mostDiscriminantProperties + (isTotalDiscriminent ? " (total discriminant)" : " (partial discriminant)"));
+		Logger.log("Most discriminant properties: " + mostDiscriminantProperties + (isTotalDiscriminent ? " (total discriminant)\n" : " (partial discriminant)\n"), VerboseLevel.INFO);
 		
 		List<Set<Property>> res = new ArrayList<Set<Property>>();
 		
@@ -707,8 +752,7 @@ public class CategorizationModule implements IServiceProvider {
 	                return true;
 	            }
 			});
-		
-		
+				
 		//System.out.println("\nResource " + c);
 		//lists all the properties for a given subject and add, for each property, the corresponding objects.
 		while (stmtList.hasNext())
@@ -724,12 +768,32 @@ public class CategorizationModule implements IServiceProvider {
 			//System.out.println(tmp.getPredicate() + " -> " + tmp.getObject());
 		}
 		
+		//Now, we want to mark properties that have subproperties in the set
+		//for later filtering.
+		//To do that, first we need to retrieve the OntProperty (ie, the Properties
+		// attached to the model + reasonner)
+		Set<OntProperty> listOfProperties = new HashSet<OntProperty>();
+		for (Property p : propertiesList.keySet())
+			listOfProperties.add(oro.createProperty(p.getURI()));
+		
+		//Then, for each OntProperty, we check if one of its subproperty also
+		//belongs to the set. In this case, we discard it.
+		for (OntProperty p : listOfProperties)
+			for (OntProperty p2 : p.listSubProperties(true).toSet())
+				if (listOfProperties.contains(p2)) {
+					propertiesList.remove(p);
+					break;
+				}
+
+		
+		//We add the type of the resource.
 		Set<RDFNode> cType = new HashSet<RDFNode>();
 		cType.add(c.getRDFType(true));
 		propertiesList.put(type, cType);
 		
 		return propertiesList;
 	}
+
 	
 	/***************** SIMILARITIES *********************/
 	
