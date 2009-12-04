@@ -1547,6 +1547,108 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This tests croner cases for the discrinimate method.
+	 */
+	public void testAdvancedDiscriminent() {
+
+		System.out.println("[UNITTEST] ***** TEST: Advanced getDiscriminent test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		CategorizationModule categorizationModule = new CategorizationModule(oro);
+
+		List<Set<Property>> discriminents = null;
+		
+		Set<OntResource> resources = new HashSet<OntResource>();
+				
+		try {
+			oro.add(oro.createStatement("capucin rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("capucin climbsOn sunflower"), MemoryProfile.DEFAULT, false);
+			
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		resources.add(oro.getResource("capucin"));
+		resources.add(oro.getResource("baboon"));
+		
+		//In this case, we should find any way to discriminate these instances.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Capucin and Baboon climbs on different things, and climbsOn " +
+				"is more accurate than isOn.",
+				discriminents.get(0).size() == 1 &&
+				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("climbsOn"))));
+
+		discriminents.clear();
+		
+		//**********************************************************************
+				
+		//climbsOn is a sub-property of isOn
+		try {
+			oro.add(oro.createStatement("bonobo rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("bonobo isOn sunflower"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		resources.add(oro.getResource("bonobo"));
+		
+		//In this case, we should find any way to discriminate these instances.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("The best discriminents should be climbsOn AND isOn",
+				discriminents.get(0).size() == 0 &&
+				discriminents.get(1).size() == 2 &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("isOn"))) &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("climbsOn"))));
+
+		discriminents.clear();
+		
+		//**********************************************************************
+		
+		resources.remove(oro.getResource("bonobo"));
+		
+		//climbsOn is a sub-property of isOn
+		try {
+			oro.add(oro.createStatement("gibbon rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("gibbon isOn radish"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		resources.add(oro.getResource("gibbon"));
+
+		
+		//This time, we expect 'isOn' super-property to be returned.
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("The only common property is 'isOn'.",
+				discriminents.get(0).size() == 1 &&
+				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("isOn"))));
+
+		
+		//**********************************************************************
+				
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This tests ability for the cognitive kernel to extract categories from a
 	 * set of concept.
 	 */

@@ -542,6 +542,7 @@ public class CategorizationModule implements IServiceProvider {
 	 * If they are sufficient, it's the same as the first set. Else, it's the most
 	 * discriminating properties.
 	 */
+	//TODO WE DON'T HANDLE CORRECTLY NON-FUNCTIONNAL PROPERTIES!!
 	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
 		
 		
@@ -561,9 +562,14 @@ public class CategorizationModule implements IServiceProvider {
 		boolean isTotalDiscriminent = true;
 		
 		Set<Property> mostDiscriminantProperties = new HashSet<Property>();
-		
+				
 		Map<Property, Integer> listOfProperties = new HashMap<Property, Integer>();
 		Map<Property, Set<RDFNode>> listOfPropertiesValues = new HashMap<Property, Set<RDFNode>>();
+		
+		//Stores the list of properties for each individuals
+		Map<OntResource, Set<Property>> listOfPropertiesByOwners = 
+								new HashMap<OntResource, Set<Property>>();
+
 		
 		Logger.log("Running the getDiscriminent algorithm:\n",VerboseLevel.VERBOSE);
 		
@@ -575,7 +581,8 @@ public class CategorizationModule implements IServiceProvider {
 		
 		for (OntResource i : individuals) {
 			Map<Property, Set<RDFNode>> newProperties = getProperties(i);
-						
+			
+			listOfPropertiesByOwners.put(i, newProperties.keySet());
 			
 			for(Property p : newProperties.keySet()) {
 				if (listOfProperties.containsKey(p))
@@ -587,6 +594,7 @@ public class CategorizationModule implements IServiceProvider {
 				if (!listOfPropertiesValues.containsKey(p))
 					listOfPropertiesValues.put(p, new HashSet<RDFNode>());							
 				listOfPropertiesValues.get(p).addAll(newProperties.get(p));
+
 			}
 		}
 		
@@ -624,14 +632,36 @@ public class CategorizationModule implements IServiceProvider {
 		//property, then by selectivity - ie, the number of different groups
 		//the property can discriminate. Keep only the best.
 		if (!listOfProperties.isEmpty()) {
-					
-			TreeMap<Integer, Set<Property>> listOfmostSharedProperties = 
-				new TreeMap<Integer, Set<Property>>(Helpers.reverseMap(listOfProperties));
+			
+			TreeMap<Integer, Set<Property>> normalizedListOfProperties = new TreeMap<Integer, Set<Property>>();
+			
+			for (Map.Entry<Property, Integer> e : listOfProperties.entrySet()) {
+				Integer key = Math.min(e.getValue(), 
+						listOfPropertiesValues.get(e.getKey()).size());
+				
+				if (!normalizedListOfProperties.containsKey(key))
+					normalizedListOfProperties.put(key, new HashSet<Property>());
+				
+				normalizedListOfProperties.get(key).add(e.getKey());
+			}
+			
+			if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
+				Logger.log("Normalized list of properties [min(nbOccurences, nbValues) -> Property]:\n",VerboseLevel.DEBUG);
+				for (Integer i : normalizedListOfProperties.keySet())
+					Logger.log(i + " -> " + normalizedListOfProperties.get(i) + "\n", VerboseLevel.DEBUG);
+				Logger.cr();
+			}
+			
+			//TreeMap<Integer, Set<Property>> listOfmostSharedProperties = 
+			//	new TreeMap<Integer, Set<Property>>(Helpers.reverseMap(listOfProperties));
 			
 			//the last set of properties is the one shared by the max of individuals 
-			Set<Property> mostSharedProperties = listOfmostSharedProperties.lastEntry().getValue();
+			Set<Property> mostSharedProperties = normalizedListOfProperties.lastEntry().getValue();
 			
-			if (listOfmostSharedProperties.lastKey() != nbIndividuals)
+			//but, because of the superproperties, some properties may actually 
+			//be shared by
+			
+			if (normalizedListOfProperties.lastKey() != nbIndividuals)
 				isTotalDiscriminent = false;
 			
 			if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
@@ -646,16 +676,29 @@ public class CategorizationModule implements IServiceProvider {
 				TreeMap<Integer, Set<Property>> listOfMostDiscriminantProperty = new TreeMap<Integer, Set<Property>>();
 				
 				for (Property p : mostSharedProperties) {
-						if (!listOfMostDiscriminantProperty.containsKey(listOfPropertiesValues.get(p).size()))
-							listOfMostDiscriminantProperty.put(listOfPropertiesValues.get(p).size(), new HashSet<Property>());
+						if (!listOfMostDiscriminantProperty.containsKey(
+										listOfPropertiesValues.get(p).size()))
+							listOfMostDiscriminantProperty.put(
+										listOfPropertiesValues.get(p).size(), new HashSet<Property>());
 						
 						listOfMostDiscriminantProperty.get(listOfPropertiesValues.get(p).size()).add(p);
 				}
 				
-				//the last set of properties is the most selective one. 
-				mostDiscriminantProperties = listOfMostDiscriminantProperty.lastEntry().getValue();
+				//we keep all properties that have the maximum n of different 
+				//values.
+				//From n = nb(Individuals) and over, we add all properties.
+				//(n may be > nb(Individuals) for superproperties or 
+				//non-functionnal properties.
+				if (listOfMostDiscriminantProperty.lastEntry().getKey() <= 
+						individuals.size())
+					mostDiscriminantProperties = 
+						listOfMostDiscriminantProperty.lastEntry().getValue();
+				else
+					for (Integer i : listOfMostDiscriminantProperty.keySet())					
+						if (i >= individuals.size())
+							mostDiscriminantProperties.addAll(listOfMostDiscriminantProperty.get(i));
 				
-				if (listOfMostDiscriminantProperty.lastKey() != nbIndividuals)
+				if (listOfMostDiscriminantProperty.lastKey() < nbIndividuals)
 					isTotalDiscriminent = false;
 			}
 			//only one property is the most shared. We simply check if it 
@@ -670,14 +713,43 @@ public class CategorizationModule implements IServiceProvider {
 			}
 			
 			if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
-				Logger.log("Final set of properties after sorting the discriminating ones:\n",VerboseLevel.DEBUG);
+				Logger.log("Final set of properties after sorting the " +
+						"discriminating ones:\n",VerboseLevel.DEBUG);
 				Logger.log(mostDiscriminantProperties + "\n", VerboseLevel.DEBUG);
 				Logger.cr();
 			}
 
 		}
+		
+		//last filtering: if several properties are selected, we check that they
+		//have no super-/sub-property relation.
+		if (mostDiscriminantProperties.size() > 1) {
+			
+			//Find the resources involved in the remaining properties
+			Set<OntResource> invovledIndividuals = new HashSet<OntResource>();
+			for (Property p : mostDiscriminantProperties)
+				for (OntResource i : listOfPropertiesByOwners.keySet())
+					if (listOfPropertiesByOwners.get(i).contains(p))
+						invovledIndividuals.add(i);
+			
+			Set<Property> listOfPropertiesToRemove = new HashSet<Property>(mostDiscriminantProperties);
+			
+			for (OntResource i : invovledIndividuals) {
+				Set<Property> intersection = new HashSet<Property>(listOfPropertiesByOwners.get(i));
+				intersection.retainAll(mostDiscriminantProperties);
+				listOfPropertiesToRemove.retainAll(getRemovableSuperProperties(intersection));
+			}
+			
+			Logger.log("List of super-properties that can be removed : \n", VerboseLevel.DEBUG);
+			Logger.log(listOfPropertiesToRemove.isEmpty() ? "None\n" : (listOfPropertiesToRemove + "\n"), VerboseLevel.DEBUG);
+			
+			mostDiscriminantProperties.removeAll(listOfPropertiesToRemove);
+			
+		}
 
-		Logger.log("Most discriminant properties: " + mostDiscriminantProperties + (isTotalDiscriminent ? " (total discriminant)\n" : " (partial discriminant)\n"), VerboseLevel.INFO);
+		Logger.log("Most discriminant properties: " + mostDiscriminantProperties
+				+ (isTotalDiscriminent ? " (total discriminant)\n" : " (partial" +
+						" discriminant)\n"), VerboseLevel.INFO);
 		
 		List<Set<Property>> res = new ArrayList<Set<Property>>();
 		
@@ -696,7 +768,8 @@ public class CategorizationModule implements IServiceProvider {
 			category = "concept comparison", 
 			desc = "returns a list of properties that helps to differentiate individuals."
 	)	
-	public List<Set<String>> discriminate(Set<String> rawConcepts) throws NotFoundException, NotComparableException {
+	public List<Set<String>> discriminate(Set<String> rawConcepts) 
+							throws NotFoundException, NotComparableException {
 		
 		List<Set<String>> stringifiedRes = new ArrayList<Set<String>>();
 		
@@ -723,6 +796,30 @@ public class CategorizationModule implements IServiceProvider {
 		}			
 		
 		return stringifiedRes;
+	}
+	
+	private Set<Property> getRemovableSuperProperties(Set<Property> propertiesList) {
+		
+		Set<Property> res = new HashSet<Property>();
+		
+		//Now, we want to mark properties that have subproperties in the set
+		//for later filtering.
+		//To do that, first we need to retrieve the OntProperty (ie, the Properties
+		// attached to the model + reasonner)
+		Set<OntProperty> listOfProperties = new HashSet<OntProperty>();
+		for (Property p : propertiesList)
+			listOfProperties.add(oro.createProperty(p.getURI()));
+		
+		//Then, for each OntProperty, we check if one of its subproperty also
+		//belongs to the set. In this case, we discard it.
+		for (OntProperty p : listOfProperties)
+			for (OntProperty p2 : p.listSubProperties(true).toSet())
+				if (listOfProperties.contains(p2)) {
+					res.add(p);
+					break;
+				}
+		
+		return res;
 	}
 	
 	private Map<Property, Set<RDFNode>> getProperties(OntResource c) {
@@ -768,23 +865,6 @@ public class CategorizationModule implements IServiceProvider {
 			//System.out.println(tmp.getPredicate() + " -> " + tmp.getObject());
 		}
 		
-		//Now, we want to mark properties that have subproperties in the set
-		//for later filtering.
-		//To do that, first we need to retrieve the OntProperty (ie, the Properties
-		// attached to the model + reasonner)
-		Set<OntProperty> listOfProperties = new HashSet<OntProperty>();
-		for (Property p : propertiesList.keySet())
-			listOfProperties.add(oro.createProperty(p.getURI()));
-		
-		//Then, for each OntProperty, we check if one of its subproperty also
-		//belongs to the set. In this case, we discard it.
-		for (OntProperty p : listOfProperties)
-			for (OntProperty p2 : p.listSubProperties(true).toSet())
-				if (listOfProperties.contains(p2)) {
-					propertiesList.remove(p);
-					break;
-				}
-
 		
 		//We add the type of the resource.
 		Set<RDFNode> cType = new HashSet<RDFNode>();
