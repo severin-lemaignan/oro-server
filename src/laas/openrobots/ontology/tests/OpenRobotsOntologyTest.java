@@ -1762,7 +1762,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT, false);
 		
-		assertEquals("Only myself is an agent!", 2, alterite.listAgents().size());
+		assertEquals("Now we are two: myself and gerard", 2, alterite.listAgents().size());
 		
 		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
 		

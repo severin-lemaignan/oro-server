@@ -355,35 +355,18 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	
 	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#check(com.hp.hpl.jena.rdf.model.Statement)
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#check(com.hp.hpl.jena.rdf.model.Statement, boolean)
 	 */
 	@Override
 	public boolean check(Statement statement) {
 			
 		onto.enterCriticalSection(Lock.READ);
+
+			if (onto.contains(statement)) return true;
 		
-		//trivial to answer true is the statement has been asserted.
-		if (onto.contains(statement)) return true;
+		onto.leaveCriticalSection();
 		
-		String resultQuery = "ASK { <" + statement.getSubject().getURI() +"> <" + statement.getPredicate().getURI() + "> <" + statement.getObject().toString() + "> }";
-		
-		try	{
-			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-		
-			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
-			return myQueryExecution.execAsk();
-		}
-		catch (QueryParseException e) {
-			Logger.log("internal error during query parsing while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
-			throw e;
-		}
-		catch (QueryExecException e) {
-			Logger.log("internal error during query execution while trying to check a statement! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
-			throw e;
-		}
-		finally {
-			onto.leaveCriticalSection();
-		}
+		return false;
 
 	}
 	

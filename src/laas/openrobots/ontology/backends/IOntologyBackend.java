@@ -151,23 +151,44 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract boolean add(Statement statement, MemoryProfile memProfile, boolean safe);
 		
 	/**
-	 * Checks if a statement is asserted or can be inferred from the ontology. If the method returns false, IT DOES NOT mean that the statement itself is false. Most probably, the fact expressed by the statement is simply not known.
+	 * Checks if a statement is asserted or can be inferred from the ontology. 
+	 * The check is done in an open world (everything is true except if it's 
+	 * explicitely false).
+	 * 
+	 * For instance, if only the following statement is asserted:
+	 * <pre>
+	 * bottle hasColor green
+	 * </pre>
+	 * {@code check("bottle hasColor orange")} would return {@code true}.
+	 * 
+	 * If the two following statements are added to the ontology:
+	 * <pre>
+	 * green owl:isDifferentFrom orange
+	 * hasColor rdf:type owl:functionalProperty
+	 * </pre>
+	 * then {@code check("bottle hasColor orange")} would return {@code 
+	 * false}.
 	 * 
 	 * @param statement the statement to be evaluated
-	 * @return true if the statement is asserted in or can be inferred from the ontology
+	 * @return true if the statement is asserted in or can be inferred from the 
+	 * ontology
 	 */
 	public abstract boolean check(Statement statement);
-
-	/** Checks if a pattern represented as a partial statement matches at least one asserted of inferred statement.<br/>
+	
+	/** Checks if a pattern represented as a partial statement matches at least 
+	 * one asserted of inferred statement.<br/>
 	 * 
 	 * For instance:
 	 * <ul>
-	 * 	<li>A pattern like {@code [?object rdf:type Bottle]} would match all instances of the class {@code Bottle}.</li>
-	 *  <li>{@code [anAgent sees ?something]} would match all objects seen by instance "{@code anAgent}".</li>
+	 * 	<li>A pattern like {@code [?object rdf:type Bottle]} would match all 
+	 * 		instances of the class {@code Bottle}.</li>
+	 *  <li>{@code [anAgent sees ?something]} would match all objects seen by 
+	 *  	instance "{@code anAgent}".</li>
 	 * </ul>
 	 * 
 	 * @param statement the partial pattern to be evaluated
-	 * @return true if the pattern matches at least one asserted or inferred statement of the ontology
+	 * @return true if the pattern matches at least one asserted or inferred 
+	 * statement of the ontology.
 	 * @see #find(String, Vector)
 	 */
 	public abstract boolean check(PartialStatement statement);
