@@ -1,15 +1,10 @@
 package laas.openrobots.ontology.modules.alterite;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.shared.Lock;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -97,7 +92,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		if (OroServer.BLINGBLING)
 			Logger.log("22, v'la les agents!\n", VerboseLevel.WARNING);
 		
-		for (String s : e.getMatchingIds())
+		for (String s : e.getEventContext().split("\n"))
 			add(s);
 		
 	}

@@ -179,7 +179,7 @@ public class EventProcessor {
 			
 			Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 			
-			OroEvent e = new OroEvent(holder.getWatcher(), true);
+			OroEvent e = new OroEventImpl();
 			
 			switch(holder.watcher.getTriggeringType()){
 				case ON_TRUE:
@@ -196,7 +196,7 @@ public class EventProcessor {
 					break;
 			}
 		} else {
-			OroEvent e = new OroEvent(holder.getWatcher(), false);
+			OroEvent e = new OroEventImpl();
 			
 			switch(holder.watcher.getTriggeringType()){					
 				case ON_FALSE:
@@ -238,7 +238,7 @@ public class EventProcessor {
 		assert (!(instances.isEmpty() && futureResources.size() > holder.lastMatchedResources.size()));
 		
 		//New instances have been added
-		OroEvent e = new OroEvent(holder.getWatcher(), instances);
+		OroEvent e = new OroEventNewInstances(instances);
 		
 		switch (holder.watcher.getTriggeringType()) {
 		case ON_TRUE:

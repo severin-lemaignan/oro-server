@@ -132,7 +132,7 @@ public class EventsTest extends TestCase {
 
 		@Override
 		public void consumeEvent(OroEvent e) {
-			System.out.println("Unbelivable ! " + e.getWatcher().getWatchPattern() + "!");
+			System.out.println("Unbelivable ! An event was triggered!");
 			hasBeenTriggered = true;			
 		}
 		
@@ -200,9 +200,8 @@ public class EventsTest extends TestCase {
 
 		@Override
 		public void consumeEvent(OroEvent e) {
-			System.out.print("Unbelivable ! New " + e.getWatcher().getWatchPattern() + ":");
-			for (String s : e.getMatchingIds())
-				System.out.print("\t" + s + "\n");
+			System.out.print("Unbelivable ! New Monkey:");
+			System.out.print("\t" + e.getEventContext());
 				
 			hasBeenTriggered = true;			
 		}

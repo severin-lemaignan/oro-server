@@ -1,54 +1,25 @@
 package laas.openrobots.ontology.modules.events;
 
-import java.util.HashSet;
-import java.util.Set;
+import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 
-import laas.openrobots.ontology.helpers.Namespaces;
+public interface OroEvent {
 
-import com.hp.hpl.jena.ontology.OntResource;
-
-//TODO: rewrite (with subclasses?) this dumb OroEvent class.
-public class OroEvent {
-
-	private Set<String> matchedId;
-	private boolean status = false;
+	/**
+	 * Returns a unique (at least for this instance of the server) identifier
+	 * for the current event.
+	 * 
+	 * @return A unique ID associated to this event.
+	 */
+	public String getEventId();
 	
-	private IWatcher originalWatcher;
-		
-	public OroEvent(IWatcher originalWatcher, Set<OntResource> matchedId) {
-		super();
-		this.matchedId = new HashSet<String>();
-		
-		for (OntResource r : matchedId)
-			this.matchedId.add(Namespaces.toLightString(r));
-		
-		this.originalWatcher = originalWatcher;
-	}
-	
-	public OroEvent(IWatcher originalWatcher, boolean status) {
-		super();
-		this.status = status;
-		this.originalWatcher = originalWatcher;
-	}
+	/**
+	 * Returns the context of the event (for instance, the facts that triggered
+	 * the event) in a serializable form. The actual content depends on the event 
+	 * type, as described here: {@link EventType}
+	 * 
+	 * @return A serializable form of the event context.
+	 * @see EventType
+	 */
+	public String getEventContext();
 
-	public String getMatchingId() {
-		if (matchedId.size() != 1) return null;
-		
-		String res = "";
-		
-		for (String s : matchedId)
-			res = s;
-		
-		return res;
-	}
-	
-	public Set<String> getMatchingIds() {
-		
-		return matchedId;
-	}
-	
-	public IWatcher getWatcher() {
-		
-		return originalWatcher;
-	}
 }

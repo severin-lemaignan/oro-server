@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import laas.openrobots.ontology.modules.alterite.AgentWatcher;
-import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.events.IWatcherProvider.TriggeringType;
 
 /**
