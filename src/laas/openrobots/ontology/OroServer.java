@@ -65,7 +65,7 @@ import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
+import laas.openrobots.ontology.modules.events.EventModule;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.service.IService;
 import laas.openrobots.ontology.service.IServiceProvider;
@@ -238,6 +238,9 @@ public class OroServer implements IServiceProvider {
 		IServiceProvider baseModule = new BaseModule(oro);
 		addNewServiceProviders(baseModule);
 		
+		IServiceProvider eventModule = new EventModule(oro);
+		addNewServiceProviders(eventModule);
+		
 		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
 		
@@ -363,8 +366,6 @@ public class OroServer implements IServiceProvider {
 	)
 	public String help() {
 		
-		if (!HAS_A_TTY) return "Please connect a console to the server to read " +
-				"the online help.";
 		
 		String help = (char)27 + "[34mHello!" + (char)27 + "[32m You are running" +
 			" oro-server v." + VERSION + (char)27 + "[0m\n\nYou'll find below " +

@@ -13,16 +13,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
+import java.util.UUID;
 
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
+import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.modules.events.EventModule;
+import laas.openrobots.ontology.modules.events.IEventConsumer;
+import laas.openrobots.ontology.modules.events.IWatcher;
+import laas.openrobots.ontology.modules.events.OroEvent;
+import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.service.IService;
 
 /** Implements a socket interface to {@code oro-server} RPC methods.<br/>
@@ -69,6 +76,19 @@ import laas.openrobots.ontology.service.IService;
  * #end#
  * </pre>
  * 
+ * <h2>Events</h2>
+ * If an event has been registered (cf {@link EventModule#registerEvent(String, String, Set, IEventConsumer)}),
+ * the server may send the following type of message when the event it triggered.
+ * <pre>
+ * event
+ * [event_id]
+ * [event_return_value]
+ * #end#
+ * </pre>
+ * The {@code event_id} will match the id returned at event registration. The 
+ * return values depend on the type of event. Details are provided on the {@link EventType}
+ * page.
+ * 
  * <h2>Some examples</h2>
  * You can test this example by directly connecting to the server with a tool like <em>telnet</em>.<br/>
  * <br/>
@@ -98,8 +118,36 @@ import laas.openrobots.ontology.service.IService;
  * > [?humans rdf:type Human, myself sees ?humans]
  * > #end#
  * </pre>
- * 
  *
+ * <h3>Registering an event</h3>
+ * The example below registers an trigger upon new instances of humans.
+ * <pre>
+ * > registerEvent
+ * > new_instance	//event type
+ * > on_true		//triggering type
+ * > [Human]
+ * > #end#
+ * </pre>
+ * 
+ * The server answer ok, with a unique ID bound to this so-called "event watcher"
+ * <pre>
+ * > ok
+ * > 4565-4587995-112355-21446
+ * > #end#
+ * </pre>
+ * 
+ * If a new human appears in the ontology, the server send this kind of notification
+ * <pre>
+ * > event
+ * > 4565-4587995-112355-21446
+ * > [ramses]
+ * > #end#
+ * </pre>
+ * 
+ * Please refer to {@link IWatcher.EventType} page for the list of event types and
+ * {@link IWatcher.TriggeringType} for the list of ways the trigger an 
+ * event.
+ * 
  * @since 0.6.0
  * @author slemaign
  *
@@ -126,19 +174,33 @@ public class SocketConnector implements IConnector, Runnable {
 	 * @author slemaign
 	 *
 	 */
-	class ClientWorker implements Runnable {
+	public class ClientWorker implements Runnable, IEventConsumer {
 		  private Socket client;
 		  private String name;
 		  
-		  private Boolean keepOnThisWorker = true;
+		  private boolean keepOnThisWorker = true;
+		  
+		  volatile private boolean incomingEvent = false;
+		  
+		  private List<Pair<UUID, OroEvent>> eventsQueue;
 		  
 		  ClientWorker(Socket client) {
 		   this.client = client;
 		   this.name = "ClientWorker " + client.toString();
+		   
+		   eventsQueue = new ArrayList<Pair<UUID, OroEvent>>();
 		  }
 
 		  public String getName(){
 		  	return name;
+		  }
+		  
+		  public void consumeEvent(UUID watcherId, OroEvent e) {
+			  
+			  incomingEvent = true;
+			  synchronized (this) {
+				  eventsQueue.add(new Pair<UUID, OroEvent>(watcherId, e));				
+			}
 		  }
 		  
 		  public void run() {
@@ -171,6 +233,27 @@ public class SocketConnector implements IConnector, Runnable {
 						keepOnThisWorker = false;
 						break;
 		    		}
+					
+					if (incomingEvent) {
+						incomingEvent = false;
+						
+						Iterator<Pair<UUID, OroEvent>> it = eventsQueue.iterator();
+						
+						while(it.hasNext()) {
+							Pair<UUID, OroEvent> evt = it.next();
+							OroEvent e = evt.getRight();
+							out.println("event");
+							out.println(evt.getLeft());
+							if (e.getEventContext() != "")
+								out.println(e.getEventContext());
+							out.println(MESSAGE_TERMINATOR);
+							
+							eventsQueue.remove(evt);
+							
+							Logger.log("Event " + evt.getLeft() + " notified.\n", VerboseLevel.VERBOSE);
+						}
+						
+					}
 				
 					try{
 			    		line = in.readLine(); //answers null if the stream doesn't contain a "\n"
@@ -233,31 +316,64 @@ public class SocketConnector implements IConnector, Runnable {
 	    		for (String key : registredServices.keySet()){
 	    			
 	    			Method m = registredServices.get(key).getMethod();
-	    			Object o = registredServices.get(key).getObj();
 
-	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName) &&
-	    	    			(
-    	    				(request.size() == 1) ? 
-    	    						m.getParameterTypes().length == 0 :
-    	    						(m.getParameterTypes().length == request.size() - 1)
-    	    				)
-    	    			)
+	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName))
 	    	    	{
 	    	    		methodFound = true;
 	    	    		boolean invokationDone = false;
 	    	    		
 	    	    		try {
 	    	    			
+	    	    			Object o = registredServices.get(key).getObj();
 	    	    			
 	    	    			result = "ok\n";
 	    	    			
 	    	    			Object[] args = new Object[m.getParameterTypes().length];
 	    	    			
-	    	    			int i = 0;	    	    			
+    	    			
+	    	    			if (	request.size() == 1 && 
+	    	    					!(m.getParameterTypes().length == 0))
+	    	    			{
+	    	    				Logger.log("Error while executing the request: method \""+ queryName + "\" expects no parameters.\n", VerboseLevel.ERROR);
+	    	 					result = "error\n" +
+	    	 							"NotImplementedException\n" +
+	    	 							"Method " + queryName + " expects no parameters."; 
+	    	 					return result + "\n" + MESSAGE_TERMINATOR;
+	    	    			}
+
+	    	    			int i = 0;
+	    	    			int shiftSpecialCases = 0;
+	    	    			
 	    	    			if (request.size() > 1) {
 		    	    			for (Class<?> param : m.getParameterTypes()) {
-		    	    				args[i] = deserialize(request.get(i + 1), param);
-		    	    				i++;
+		    	    				
+		    	    				try {
+			    	    				if (param.equals(IEventConsumer.class))	{
+			    	    					args[i] = this;
+			    	    					shiftSpecialCases ++;
+			    	    				}
+			    	    				else {
+			    	    					args[i + shiftSpecialCases] = deserialize(request.get(i + 1), param);
+				    	    				i++;
+			    	    				}
+		    	    				} catch (IndexOutOfBoundsException e)
+		    	    				{
+		    	    					Logger.log("Error while executing the request: missing parameters for method \""+ queryName + "\".\n", VerboseLevel.ERROR);
+			    	 					result = "error\n" +
+			    	 							"NotImplementedException\n" +
+			    	 							"missing parameters for method " + queryName + ".";
+			    	 					return result + "\n" + MESSAGE_TERMINATOR;
+		    	    				}
+		    	    			}
+		    	    			
+		    	    			if (i != request.size() - 1) {
+		    	    				Logger.log("Error while executing the request: too many parameters provided for " +
+		    	    						"method \""+ queryName + "\" (" + i + " were expected).\n", VerboseLevel.ERROR);
+		    	 					result = "error\n" +
+		    	 							"NotImplementedException\n" +
+		    	 							"Too many parameters provided for " +
+		    	    						"method \""+ queryName + "\" (" + i + " were expected).";
+		    	 					return result + "\n" + MESSAGE_TERMINATOR;
 		    	    			}
 	    	    			}
 	    	    			
@@ -354,10 +470,10 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    	}
 	    		}
 	    		if (!methodFound){
-	    			Logger.log("Error while executing the request: method \""+ queryName + "\" (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.\n", VerboseLevel.ERROR);
+	    			Logger.log("Error while executing the request: method \""+ queryName + "not implemented by the ontology server.\n", VerboseLevel.ERROR);
 					result = "error\n" +
 							"NotImplementedException\n" +
-							"Method " + queryName + " (with " + (request.size() - 1) + " parameters) not implemented by the ontology server.";						
+							"Method " + queryName + " not implemented by the ontology server.";						
 	    	    }
 	    		
 	    		return result + "\n" + MESSAGE_TERMINATOR;
