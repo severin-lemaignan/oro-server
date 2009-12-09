@@ -14,7 +14,6 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Namespaces;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -351,8 +350,8 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see IWatcher, IEventsProvider
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract void registerEvents(
-			IWatcherProvider watcherProvider) throws EventRegistrationException;
+	public abstract void registerEvent(
+			IWatcher watcher) throws EventRegistrationException;
 	
 	/**
 	 * Return the list of event types implemented (hence usable) by this backend.

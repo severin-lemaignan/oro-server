@@ -1,53 +1,28 @@
 package laas.openrobots.ontology.modules.events;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import laas.openrobots.ontology.modules.alterite.AgentWatcher;
-import laas.openrobots.ontology.modules.events.IWatcherProvider.TriggeringType;
+
 
 /**
- * This abstract class is intended to be subclassed by all the watchers that 
- * monitors the apparition of new instances of a given type and rely on the 
- * {@link IEventConsumer} interface for notification.
+ * This class specializes {@link GenericWatcher} to easily create event watchers
+ * that monitor new instances of a given class.
  * 
  * See {@link AgentWatcher} for an example.
  * 
- * @see IWatcher
+ * @see GenericWatcher
  * @author slemaign
  *
  */
-public class NewInstanceWatcher implements IWatcher {
-
-	private Set<String> classToWatch;
-	private IEventConsumer objToNotify;
+public class NewInstanceWatcher extends GenericWatcher {
 		
 	public NewInstanceWatcher(String classToWatch, IEventConsumer o) {
-		Set<String> set = new HashSet<String>();
-		set.add(classToWatch);
-		this.classToWatch = set;
-		objToNotify = o;
+		super(	EventType.NEW_INSTANCE, 
+				IWatcher.TriggeringType.ON_TRUE, 
+				new HashSet<String>(),
+				o);
+		
+		this.eventPattern.add(classToWatch);
 	}
-	
-
-	@Override
-	public EventType getPatternType() {
-		return EventType.NEW_INSTANCE;
-	}
-	
-	@Override
-	public TriggeringType getTriggeringType() {
-		return TriggeringType.ON_TRUE;
-	}
-
-	@Override
-	public Set<String> getWatchPattern() {
-		return classToWatch;
-	}
-
-	@Override
-	public void notifySubscriber(OroEvent e) {
-		objToNotify.consumeEvent(e);
-	}
-
 }

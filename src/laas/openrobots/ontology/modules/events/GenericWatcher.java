@@ -1,21 +1,21 @@
 package laas.openrobots.ontology.modules.events;
 
 import java.util.Set;
-
-import laas.openrobots.ontology.modules.events.IWatcherProvider.TriggeringType;
+import java.util.UUID;
 
 public class GenericWatcher implements IWatcher {
 
-	EventType eventType;
-	Set<String> eventPattern;
-	TriggeringType triggeringType;
+	protected EventType eventType;
+	protected Set<String> eventPattern;
+	protected IWatcher.TriggeringType triggeringType;
 	
-	IEventConsumer client;
+	protected IEventConsumer client;
 	
+	protected UUID watcherId; 
 	
 	public GenericWatcher(EventType eventType, 
-						Set<String> eventPattern, 
-						TriggeringType triggeringType, 
+						IWatcher.TriggeringType triggeringType,
+						Set<String> eventPattern,  
 						IEventConsumer client) {
 		super();
 		this.eventType = eventType;
@@ -23,6 +23,8 @@ public class GenericWatcher implements IWatcher {
 		this.triggeringType = triggeringType;
 		
 		this.client = client;
+		
+		this.watcherId = UUID.randomUUID();
 	}
 
 	@Override
@@ -36,14 +38,18 @@ public class GenericWatcher implements IWatcher {
 	}
 	
 	@Override
-	public TriggeringType getTriggeringType() {
+	public IWatcher.TriggeringType getTriggeringType() {
 		return triggeringType;
+	}
+	
+	@Override
+	public UUID getId() {
+		return watcherId;
 	}
 
 	@Override
 	public void notifySubscriber(OroEvent e) {
-		//TODO Improve the return value of an event
-		client.consumeEvent(e);
+		client.consumeEvent(watcherId, e);
 
 	}
 

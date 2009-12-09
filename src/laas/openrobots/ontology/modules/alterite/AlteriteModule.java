@@ -1,10 +1,10 @@
 package laas.openrobots.ontology.modules.alterite;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -17,18 +17,15 @@ import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
-public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEventConsumer {
+public class AlteriteModule implements IServiceProvider, IEventConsumer {
 
 	private Map<String, AgentModel> agents;
-	
-	private Set<IWatcher> eventsPatterns;
-	
+		
 	private Properties serverParameters;
 	
 	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException {
@@ -37,7 +34,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	
 	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws EventRegistrationException {
 		agents = new HashMap<String, AgentModel>();
-		eventsPatterns = new HashSet<IWatcher>();
+
 		
 		this.serverParameters = serverParameters;
 		
@@ -47,10 +44,10 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 		//Register a new event that waits of appearance of new agents.
 		//Each time a new agent appears, the this.consumeEvent() method is called.
 		IWatcher w = new AgentWatcher(this);
-		eventsPatterns.add(w);
+
 		
 		try {
-			oro.registerEvents(this);
+			oro.registerEvent(w);
 		}
 		catch (EventRegistrationException ere)
 		{
@@ -77,18 +74,7 @@ public class AlteriteModule implements IServiceProvider, IWatcherProvider, IEven
 	}
 
 	@Override
-	public Set<IWatcher> getPendingWatchers() {
-		return eventsPatterns;
-	}
-
-	@Override
-	public void removeWatcher(IWatcher watcher) {
-		eventsPatterns.remove(watcher);
-		
-	}
-
-	@Override
-	public void consumeEvent(OroEvent e) {
+	public void consumeEvent(UUID watcherId, OroEvent e) {
 		if (OroServer.BLINGBLING)
 			Logger.log("22, v'la les agents!\n", VerboseLevel.WARNING);
 		

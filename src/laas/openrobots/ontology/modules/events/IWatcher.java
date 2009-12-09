@@ -1,8 +1,8 @@
 package laas.openrobots.ontology.modules.events;
 
 import java.util.Set;
+import java.util.UUID;
 
-import laas.openrobots.ontology.modules.events.IWatcherProvider.TriggeringType;
 
 /** Interface to patterns that may trigger events.
  * 
@@ -22,7 +22,7 @@ import laas.openrobots.ontology.modules.events.IWatcherProvider.TriggeringType;
  * <p>
  * The way the trigger is actually fired depends on the triggering mode, as 
  * returned by {@link #getTriggeringType()}. Supported trigger mode are defined 
- * in {@link TriggeringType}.
+ * in {@link IWatcher.TriggeringType}.
  * </p>
  * 
  * @see laas.openrobots.ontology.modules.events General description of events in oro-server
@@ -53,12 +53,49 @@ public interface IWatcher {
 	 */
 	static public enum EventType {FACT_CHECKING, NEW_INSTANCE};
 	
+	/** Constants that defines the way an event is triggered.
+	 * 
+	 * <p>
+	 * <ul>
+	 *  <li>{@code ON_TRUE}: the event is triggered each time the corresponding 
+	 *  watch expression <em>becomes</em> true.</li>
+	 *  <li>{@code ON_TRUE_ONE_SHOT}: the event is triggered the first time the 
+	 *  corresponding watch expression <em>becomes</em> true. The watcher is 
+	 *  then deleted.</li>
+	 *  <li>{@code ON_FALSE}: the event is triggered each time the corresponding
+	 *   watch expression <em>becomes</em> false.</li>
+	 *  <li>{@code ON_FALSE_ONE_SHOT}: the event is triggered the first time the
+	 *   corresponding watch expression <em>becomes</em> false. The watcher is 
+	 *   then deleted.</li>
+	 *  <li>{@code ON_TOGGLE}: the event is triggered each time the corresponding
+	 *   watch expression <em>becomes</em> true or false.</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * @see laas.openrobots.ontology.modules.events General description of 
+	 * events in oro-server
+	 */
+	static public enum TriggeringType {
+		ON_TRUE, 
+		ON_TRUE_ONE_SHOT, 
+		ON_FALSE, 
+		ON_FALSE_ONE_SHOT, 
+		ON_TOGGLE}
+
 	public Set<String> getWatchPattern();
 	
 	public EventType getPatternType();
 	
-	public TriggeringType getTriggeringType();
+	public IWatcher.TriggeringType getTriggeringType();
 	
 	public void notifySubscriber(OroEvent e);
+
+	/**
+	 * Returns a unique (at least for this instance of the server) identifier
+	 * for the current event watcher.
+	 * 
+	 * @return A unique ID associated to this event watcher.
+	 */
+	public UUID getId();
 
 }

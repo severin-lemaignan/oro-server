@@ -68,7 +68,6 @@ import laas.openrobots.ontology.helpers.Pair;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.EventProcessor;
 import laas.openrobots.ontology.modules.events.IWatcher;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -814,9 +813,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#registerEventsHandlers(java.util.Set)
 	 */
-	public void registerEvents(IWatcherProvider watcherProvider) throws EventRegistrationException {
+	public void registerEvent(IWatcher watcher) throws EventRegistrationException {
 		
-		eventProcessor.add(watcherProvider);
+		eventProcessor.add(watcher);
 		
 	}
 

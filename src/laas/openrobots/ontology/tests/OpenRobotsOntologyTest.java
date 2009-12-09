@@ -37,8 +37,6 @@
 package laas.openrobots.ontology.tests;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -58,7 +56,6 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
-import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -70,16 +67,10 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
-import laas.openrobots.ontology.modules.events.IEventConsumer;
-import laas.openrobots.ontology.modules.events.IWatcher;
-import laas.openrobots.ontology.modules.events.IWatcherProvider;
-import laas.openrobots.ontology.modules.events.InternalWatcher;
-import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -1512,8 +1503,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertTrue("The only common property is the type. But it's not a total discriminant.",
 				discriminents.get(0).size() == 0 &&
-				discriminents.get(1).size() == 1 &&
-				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))));
+				discriminents.get(1).size() == 2 &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("rdf:type"))) &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("eats"))));
 
 		discriminents.clear();
 		

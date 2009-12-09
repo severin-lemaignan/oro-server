@@ -28,23 +28,25 @@ public class EventProcessor {
 	private Set<EventType> supportedEventTypes;
 	IOntologyBackend onto;
 	
+	/**
+	 * The WatcherHolder class is a pre-compiled version of an {@link IWatcher}
+	 * plus some caching mechanisms. 
+	 * @author slemaign
+	 *
+	 */
 	//TODO: rewrite (with subclasses?) this class to be more generic regarding type of events.
 	private class WatcherHolder {
 		public final IWatcher watcher;
-		
-		public final IWatcherProvider watcherProvider;
-		
+				
 		public Query cachedQuery;
 		public OntClass referenceClass;
 		
 		public boolean lastStatus;
 		public Set<OntResource> lastMatchedResources;
 
-		public WatcherHolder(IWatcher watcher,
-				IWatcherProvider watcherProvider) throws EventRegistrationException {
+		public WatcherHolder(IWatcher watcher) throws EventRegistrationException {
 			super();
 			this.watcher = watcher;
-			this.watcherProvider = watcherProvider;
 			
 			lastStatus = false;
 			
@@ -79,7 +81,8 @@ public class EventProcessor {
 					
 				try	{
 					cachedQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-					Logger.log("New watch expression compiled and registered: " + resultQuery + "\n");
+					Logger.log("Event registered: new watch expression: " +  watcher.getWatchPattern() + "\n");
+					Logger.log("SPARQL query: " + resultQuery + "\n", VerboseLevel.DEBUG);
 				}
 				catch (QueryParseException e) {
 					Logger.log("Internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
@@ -111,6 +114,9 @@ public class EventProcessor {
 				
 				//Initialize the list of matching instance from the current state on the ontology.
 				lastMatchedResources = onto.getInstancesOf(referenceClass, false);
+				
+				Logger.log("Event registered: the class " + Namespaces.toLightString(referenceClass) + 
+						" is now monitored for new instances.\n");
 
 				
 			}
@@ -142,7 +148,8 @@ public class EventProcessor {
 				
 		Set<WatcherHolder> watchersToBeRemoved = new HashSet<WatcherHolder>();
 		
-		//iterate over the various registered watchers and notify the subscribers when needed.
+		//iterate over the various registered watchers and notify the subscribers 
+		//when needed.
 		for (WatcherHolder holder : watchers) {
 				
 			onto.getModel().enterCriticalSection(Lock.READ);
@@ -159,7 +166,10 @@ public class EventProcessor {
 				}	
 			}
 			catch (QueryExecException e) {
-				Logger.log("Internal error during query execution while verifiying conditions for event handlers! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("Internal error during query execution while " +
+						"verifiying conditions for event handlers! " +
+						"("+ e.getLocalizedMessage() +").\nPlease contact the " +
+						"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 				throw e;
 			}
 			finally {
@@ -191,7 +201,6 @@ public class EventProcessor {
 					break;
 				case ON_TRUE_ONE_SHOT:
 					holder.watcher.notifySubscriber(e);
-					holder.watcherProvider.removeWatcher(holder.watcher);
 					watchersToBeRemoved.add(holder);
 					break;
 			}
@@ -208,7 +217,6 @@ public class EventProcessor {
 					break;
 				case ON_FALSE_ONE_SHOT:
 					holder.watcher.notifySubscriber(e);
-					holder.watcherProvider.removeWatcher(holder.watcher);
 					watchersToBeRemoved.add(holder);
 					break;
 				}				
@@ -247,7 +255,6 @@ public class EventProcessor {
 			
 		case ON_TRUE_ONE_SHOT:
 			holder.watcher.notifySubscriber(e);
-			holder.watcherProvider.removeWatcher(holder.watcher);
 			watchersToBeRemoved.add(holder);
 			break;		
 		}
@@ -263,15 +270,16 @@ public class EventProcessor {
 		return supportedEventTypes;
 	}
 
-	public void add(IWatcherProvider watcherProvider) throws EventRegistrationException {
+	public void add(IWatcher w) throws EventRegistrationException {
 		
-		for (IWatcher w : watcherProvider.getPendingWatchers()) {
-			if (!supportedEventTypes.contains(w.getPatternType())) {
-				Logger.log("An unsupported type of event (" + w.getPatternType() + ") has been submitted for registration. Discarding it.\n", VerboseLevel.WARNING);
-			}
-			else {
-				watchers.add(new WatcherHolder(w, watcherProvider));
-			}
+		
+		if (!supportedEventTypes.contains(w.getPatternType())) {
+			Logger.log("An unsupported type of event (" + 
+					w.getPatternType() + ") has reach the compilation stage. It" +
+					"shouldn't happen. Discarding it for now.\n", VerboseLevel.SERIOUS_ERROR);
+		}
+		else {
+			watchers.add(new WatcherHolder(w));
 		}
 		
 	}

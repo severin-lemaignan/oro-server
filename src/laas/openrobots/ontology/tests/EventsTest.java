@@ -39,6 +39,7 @@ package laas.openrobots.ontology.tests;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
@@ -46,11 +47,12 @@ import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.modules.events.GenericWatcherProvider;
+import laas.openrobots.ontology.modules.events.GenericWatcher;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
-import laas.openrobots.ontology.modules.events.InternalWatcher;
+import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.NewInstanceWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
+import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 /**
@@ -75,64 +77,13 @@ public class EventsTest extends TestCase {
 	/**
 	 * This tests event framework on "FACT_CHECKING" type of events
 	 */	
-	private class FactCheckingEventTester extends GenericWatcherProvider implements IEventConsumer {
+	private class FactCheckingEventConsumer implements IEventConsumer {
 
 		public boolean hasBeenTriggered = false;
-		
-		public FactCheckingEventTester() {
-			super();
-			
-			watchers.add(
-				new InternalWatcher(this) {
 	
-					public EventType getPatternType() {return EventType.FACT_CHECKING;}
-	
-					public TriggeringType getTriggeringType() {return TriggeringType.ON_TRUE;}
-	
-					public Set<String> getWatchPattern() {
-						Set<String> set = new HashSet<String>();
-						set.add("chicken has teeth");
-						return set;
-						}
-					
-				});			
-			
-			watchers.add(
-					new InternalWatcher(this) {
-		
-						public EventType getPatternType() {return EventType.FACT_CHECKING;}
-		
-						public TriggeringType getTriggeringType() {return TriggeringType.ON_FALSE_ONE_SHOT;}
-		
-						public Set<String> getWatchPattern() {
-							Set<String> set = new HashSet<String>();
-							set.add("chicken has teeth");
-							return set;
-							}
-						
-					});			
-
-			watchers.add(
-					new InternalWatcher(this) {
-		
-						public EventType getPatternType() {return EventType.FACT_CHECKING;}
-		
-						public TriggeringType getTriggeringType() {return TriggeringType.ON_TRUE;}
-		
-						public Set<String> getWatchPattern() {
-							Set<String> set = new HashSet<String>();
-							set.add("?a rdf:type Monkey");
-							set.add("?a eats grass");
-							return set;
-							}
-						
-					});			
-
-		}
-
 		@Override
-		public void consumeEvent(OroEvent e) {
-			System.out.println("Unbelivable ! An event was triggered!");
+		public void consumeEvent(UUID id, OroEvent e) {
+			System.out.println("Unbelivable ! The event " + id + " was triggered!");
 			hasBeenTriggered = true;			
 		}
 		
@@ -143,43 +94,68 @@ public class EventsTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: FACT_CHECKING events test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 
-		FactCheckingEventTester et = new FactCheckingEventTester();
+		FactCheckingEventConsumer consumer = new FactCheckingEventConsumer();
+		
+		Set<String> set = new HashSet<String>();
+		set.add("chicken has teeth");
+		
+		Set<String> set2 = new HashSet<String>();
+		set2.add("?a rdf:type Monkey");
+		set2.add("?a eats grass");
 		
 		try {
-			oro.registerEvents(et);
+			oro.registerEvent(
+					new GenericWatcher(	EventType.FACT_CHECKING,
+										IWatcher.TriggeringType.ON_TRUE,
+										set,
+										consumer));
+			
+			oro.registerEvent(
+					new GenericWatcher(	EventType.FACT_CHECKING,
+										IWatcher.TriggeringType.ON_FALSE_ONE_SHOT,
+										set,
+										consumer));
+			
+			oro.registerEvent(
+					new GenericWatcher(	EventType.FACT_CHECKING,
+										IWatcher.TriggeringType.ON_TRUE,
+										set2,
+										consumer));
+
 		} catch (EventRegistrationException e) {
 			fail("Error while registering an event!");
 		}
 		
-		assertFalse("Initially, the event shouldn't be triggered", et.hasBeenTriggered);
+		assertFalse("Initially, the event shouldn't be triggered since the model" +
+				" wasn't updated", consumer.hasBeenTriggered);
 		
 		//triggered a model update
 		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT, false);
 		
-		assertTrue("Chicken have not yet teeth! we should triggered once the 'ON_FALSE_ONE_SHOT event!", et.hasBeenTriggered);
+		assertTrue("Chicken have not yet teeth! we should trigger once the 'ON_FALSE_ONE_SHOT event!", consumer.hasBeenTriggered);
 		//reset the flag
-		et.hasBeenTriggered = false;
+		consumer.hasBeenTriggered = false;
 		
 		//re-triggered a model update
 		oro.add(oro.createStatement("paris prefers listening_to_music"), MemoryProfile.DEFAULT, false);
 		
-		assertFalse("Chicken have not yet teeth but we already triggered the event!", et.hasBeenTriggered);
+		assertFalse("Chicken have not yet teeth but we already triggered the event!", consumer.hasBeenTriggered);
 		
 		oro.add(oro.createStatement("chicken has teeth"), MemoryProfile.DEFAULT, false);
 		
-		assertTrue("Chicken now should have teeth :-(", et.hasBeenTriggered);
-		//reset the flag
-		et.hasBeenTriggered = false;
+		assertTrue("Chicken now should have teeth :-(", consumer.hasBeenTriggered);
+		//reset the flaget
+		consumer.hasBeenTriggered = false;
 		
 		oro.remove(oro.createStatement("chicken has teeth"));
 		
-		assertFalse("No events should be triggered there :-(", et.hasBeenTriggered);
+		assertFalse("No events should be triggered there :-(", consumer.hasBeenTriggered);
 		
 		oro.add(oro.createStatement("baboon eats grass"), MemoryProfile.DEFAULT, false);
 		
-		assertTrue("Event has not been triggered :-(", et.hasBeenTriggered);
+		assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
 		//reset the flag
-		et.hasBeenTriggered = false;
+		consumer.hasBeenTriggered = false;
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -189,17 +165,12 @@ public class EventsTest extends TestCase {
 	/**
 	 * This tests event framework on "NEW_INSTANCE" type of events
 	 */	
-	private class NewInstanceEventTester extends GenericWatcherProvider implements IEventConsumer {
+	private class NewInstanceEventConsumer implements IEventConsumer {
 
 		public boolean hasBeenTriggered = false;		
-		
-		public NewInstanceEventTester() {
-			super();
-			watchers.add(new NewInstanceWatcher("Monkey", this));			
-		}		
 
 		@Override
-		public void consumeEvent(OroEvent e) {
+		public void consumeEvent(UUID id, OroEvent e) {
 			System.out.print("Unbelivable ! New Monkey:");
 			System.out.print("\t" + e.getEventContext());
 				
@@ -213,33 +184,33 @@ public class EventsTest extends TestCase {
 		System.out.println("[UNITTEST] ***** TEST: NEW_INSTANCE events test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 
-		NewInstanceEventTester et = new NewInstanceEventTester();
+		NewInstanceEventConsumer consumer = new NewInstanceEventConsumer();
 		
 		try {
-			oro.registerEvents(et);
+			oro.registerEvent(new NewInstanceWatcher("Monkey", consumer));
 		} catch (EventRegistrationException e) {
 			fail("Error while registering an event!");
 		}
 		
-		assertFalse("Initially, the event shouldn't be triggered", et.hasBeenTriggered);
+		assertFalse("Initially, the event shouldn't be triggered", consumer.hasBeenTriggered);
 		
 		//trigger a model update
 		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT, false);
 		
-		assertFalse("No new monkey, no reason to trigger the event", et.hasBeenTriggered);
+		assertFalse("No new monkey, no reason to trigger the event", consumer.hasBeenTriggered);
 				
 		//re-trigger a model update
 		oro.add(oro.createStatement("coco rdf:type Monkey"), MemoryProfile.DEFAULT, false);
 		
-		assertTrue("We just added Coco, but it wasn't detected", et.hasBeenTriggered);
+		assertTrue("We just added Coco, but it wasn't detected", consumer.hasBeenTriggered);
 		//reset the flag
-		et.hasBeenTriggered = false;
+		consumer.hasBeenTriggered = false;
 		
 		oro.add(oro.createStatement("bumbo climbsOn old_oak"), MemoryProfile.DEFAULT, false);
 		
-		assertTrue("Bumbo should be inferred to be a monkey since it climbs on trees!", et.hasBeenTriggered);
+		assertTrue("Bumbo should be inferred to be a monkey since it climbs on trees!", consumer.hasBeenTriggered);
 		//reset the flag
-		et.hasBeenTriggered = false;
+		consumer.hasBeenTriggered = false;
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

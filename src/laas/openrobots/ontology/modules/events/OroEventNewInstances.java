@@ -3,6 +3,7 @@ package laas.openrobots.ontology.modules.events;
 import java.util.HashSet;
 import java.util.Set;
 
+import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 
 import com.hp.hpl.jena.ontology.OntResource;
@@ -23,12 +24,8 @@ public class OroEventNewInstances extends OroEventImpl {
 	
 	@Override
 	public String getEventContext() {
-		String res = "";
-		for (String s : matchedId) {
-			res += s = "\n";
-		}
 		
-		return res;
+		return Helpers.stringify(matchedId);
 	}
 
 	public String getMatchingId() {
