@@ -1,14 +1,18 @@
 package laas.openrobots.ontology.connectors;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -162,9 +166,11 @@ public class SocketConnector implements IConnector, Runnable {
 	
 	public static final String DEFAULT_PORT = "6969";
 	public static final String MESSAGE_TERMINATOR = "#end#";
+
+	private Charset charset = Charset.forName("UTF-8");
 	
 	int port;
-	ServerSocket server = null;
+	ServerSocketChannel server = null;
 	
 	HashMap<String, IService> registredServices;
 	private volatile boolean keepOn = true;
@@ -175,7 +181,14 @@ public class SocketConnector implements IConnector, Runnable {
 	 *
 	 */
 	public class ClientWorker implements Runnable, IEventConsumer {
-		  private Socket client;
+		  private SocketChannel client;
+		 
+		  private ByteBuffer buffer = ByteBuffer.allocate(4096);
+		  private String remainsOfMyBuffer = "";
+		  
+		  private Selector selector;
+		  private SelectionKey key;
+		  
 		  private String name;
 		  
 		  private boolean keepOnThisWorker = true;
@@ -184,11 +197,42 @@ public class SocketConnector implements IConnector, Runnable {
 		  
 		  private List<Pair<UUID, OroEvent>> eventsQueue;
 		  
-		  ClientWorker(Socket client) {
-		   this.client = client;
-		   this.name = "ClientWorker " + client.toString();
-		   
-		   eventsQueue = new ArrayList<Pair<UUID, OroEvent>>();
+		  ClientWorker(SocketChannel client) {
+			  
+			  try {
+				  selector = Selector.open();
+			  } catch (IOException e1) {
+				  Logger.log("SocketConnector error: impossible to get a selector" +
+				 		"for a socket! Better to quit now :-/\n", VerboseLevel.FATAL_ERROR);
+				  Logger.log("Exception: " + e1.getLocalizedMessage() + "\n", VerboseLevel.DEBUG);
+				  System.exit(1);
+			  }
+
+			  
+			  this.client = client;
+			  
+			  //Set the socket in non-blocking mode
+			  try {
+				  client.configureBlocking(false);
+			  } catch (IOException e) {
+				  Logger.log("SocketConnector error: impossible to set the socket " +
+						   "in non-blocking mode! I kill it now.\n", VerboseLevel.SERIOUS_ERROR);
+				  Logger.log("Exception: " + e.getLocalizedMessage() + "\n", VerboseLevel.DEBUG);
+				  return;
+			  }
+				
+			  try {
+				key = client.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+			} catch (ClosedChannelException e) {
+				 Logger.log("SocketConnector error: the socket has been closed" +
+				 		"before any operation! I kill it now.\n", VerboseLevel.SERIOUS_ERROR);
+				 Logger.log("Exception: " + e.getLocalizedMessage() + "\n", VerboseLevel.DEBUG);
+				 return;
+			}
+
+			  this.name = "ClientWorker " + client.toString();
+
+			  eventsQueue = new ArrayList<Pair<UUID, OroEvent>>();
 		  }
 
 		  public String getName(){
@@ -205,101 +249,132 @@ public class SocketConnector implements IConnector, Runnable {
 		  
 		  public void run() {
 
-		    BufferedReader in = null;
-		    PrintWriter out = null;
-		    
+			List<String> req = null;
 		    long timeLastActivity = System.currentTimeMillis();
 		    
-		    try{
-		      in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-		      out = new PrintWriter(client.getOutputStream(), true);
-		    } catch (IOException e) {
-		      Logger.log("SocketConnector fatal error: in or out failed", VerboseLevel.FATAL_ERROR);
-		      System.exit(1);
-		    }
-
 		    while(keepOn && keepOnThisWorker){
-		    	    	 
-		    	ArrayList<String> request = new ArrayList<String>();
-		    	String line = null;
-		    	while (true) {
-		    		
-		    		try {
-						Thread.sleep(20);
-					} catch (InterruptedException e) {}
-					
-					if (System.currentTimeMillis() - timeLastActivity > (KEEP_ALIVE_SOCKET_DURATION * 1000)) {
-						Logger.log("Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.\n", VerboseLevel.WARNING);
-						keepOnThisWorker = false;
-						break;
-		    		}
-					
-					if (incomingEvent) {
-						incomingEvent = false;
-						
-						Iterator<Pair<UUID, OroEvent>> it = eventsQueue.iterator();
-						
-						while(it.hasNext()) {
-							Pair<UUID, OroEvent> evt = it.next();
-							OroEvent e = evt.getRight();
-							out.println("event");
-							out.println(evt.getLeft());
-							if (e.getEventContext() != "")
-								out.println(e.getEventContext());
-							out.println(MESSAGE_TERMINATOR);
-							
-							eventsQueue.remove(evt);
-							
-							Logger.log("Event " + evt.getLeft() + " notified.\n", VerboseLevel.VERBOSE);
-						}
-						
-					}
+		    	    	 	    		
+	    		try {
+					Thread.sleep(20);
+				} catch (InterruptedException e) {}
 				
-					try{
-			    		line = in.readLine(); //answers null if the stream doesn't contain a "\n"
-			        } catch (IOException e) {
-			        	Logger.log("Read failed on one of the opened socket (" + getName() + "). Killing it.\n", VerboseLevel.SERIOUS_ERROR);
-						keepOnThisWorker = false;
-						break;
+				if (System.currentTimeMillis() - timeLastActivity > (KEEP_ALIVE_SOCKET_DURATION * 1000)) {
+					Logger.log("Connection " + getName() + " has been closed because it was inactive since " + KEEP_ALIVE_SOCKET_DURATION + " sec. Please use the \"close\" method in your clients to close properly the socket.\n", VerboseLevel.WARNING);
+					keepOnThisWorker = false;
+					break;
+	    		}
+
+			
+				try{
+					req = null;
+					buffer.clear();
+					int count = client.read( buffer );
+					
+					if (count > 0) { 
+						buffer.flip();					
+						req = parseBuffer(buffer);
 					}
-		        
-		    		if (line != null) {
-			    		line = line.trim();
+		    		
+		        } catch (IOException e) {
+		        	Logger.log("Read failed on one of the opened socket (" + getName() + "). Killing it.\n", VerboseLevel.SERIOUS_ERROR);
+					keepOnThisWorker = false;
+					break;
+				}
+	        
+	    		if (req != null) 
+	    		{
+		    		timeLastActivity = System.currentTimeMillis();
 			    		
-			    		if (line.equalsIgnoreCase(MESSAGE_TERMINATOR)) {
-			    			timeLastActivity = System.currentTimeMillis();
-			    			break;
-			    		}
-			    		
-			    		if (line.equalsIgnoreCase("help")) { //Special case for the command "help": we don't require to enter the message terminaison string.
-			    			request.add(line);
-			    			timeLastActivity = System.currentTimeMillis();
-			    			break;
-			    		}
-			    		
-			    		
-			    		else request.add(line);
-		    		}
-		    	}
-		    	
-		        //Send data back to client
-		        if (request.size() != 0) {
-		        	String res = handleRequest(request);
+		    		//Execute the request
+		    		String res = handleRequest(req);
 		        
 		        	Logger.log("<< Send response: " + res + "\n", VerboseLevel.DEBUG);
 		        	
-		        	out.println(res);
-		        }
+		        	//Send data back to client	
+		        	try {
+						client.write(charset.encode(res + "\n"));
+					} catch (IOException e) {
+						 Logger.log("SocketConnector error: impossible to" +
+							 		"write to a socket! I kill it now.\n", VerboseLevel.SERIOUS_ERROR);
+						 Logger.log("Exception: " + e.getLocalizedMessage() + "\n", VerboseLevel.DEBUG);
+						 return;
+					}
 
+	    		}
+	    		
+				
+				if (incomingEvent) {
+					incomingEvent = false;
+					
+					List<Pair<UUID, OroEvent>> tmpEvtsQueue = new ArrayList<Pair<UUID,OroEvent>>(eventsQueue);
+					
+					Iterator<Pair<UUID, OroEvent>> it = tmpEvtsQueue.iterator();
+					
+					while(it.hasNext()) {
+						Pair<UUID, OroEvent> evt = it.next();
+						OroEvent e = evt.getRight();
+						try {
+							String evtMsg = "event\n" +
+											evt.getLeft() + "\n" +
+											(e.getEventContext() != "" ?
+													e.getEventContext() + "\n":
+													"") +
+											MESSAGE_TERMINATOR + "\n";
+												
+							client.write(charset.encode(evtMsg));
+						} catch (IOException e1) {
+							 Logger.log("SocketConnector error: impossible to" +
+								 		"write to a socket! I kill it now.\n", VerboseLevel.SERIOUS_ERROR);
+							 Logger.log("Exception: " + e1.getLocalizedMessage() + "\n", VerboseLevel.DEBUG);
+							 return;
+						}
+						
+						eventsQueue.remove(evt);
+						
+						Logger.log("Event " + evt.getLeft() + " notified.\n", VerboseLevel.VERBOSE);
+					}
+					
+				}
 		    }
 		  }
 		  
-		  public String handleRequest(ArrayList<String> request) {
+		  private List<String> parseBuffer(ByteBuffer buffer) {
+			
+			  String req = remainsOfMyBuffer + charset.decode(buffer).toString();
+			  
+			  req = req.replaceAll("\r\n|\r", "\n");
+			  
+			  List<String> res = new ArrayList<String>();
+			  
+		      //Special case for the command "help": we don't require to enter 
+		      //the message terminaison string.
+			  if (req.startsWith("help")) {
+				  res.add("help");
+				  remainsOfMyBuffer = req.substring(5); //len("help\n") = 5
+				  return res;
+			  }
+			  
+			  int i = req.indexOf(MESSAGE_TERMINATOR);	
+			  if (i >= 0) {
+				  String rawReq = req.substring(0, i);
+				  res = Arrays.asList(rawReq.split("\n"));
+				  
+				  remainsOfMyBuffer = req.substring(i + MESSAGE_TERMINATOR.length() + 1);
+				  
+				  return res;
+			  }
+			  
+			  remainsOfMyBuffer += req;
+			  
+			  return null;
+		}
+
+		public String handleRequest(List<String> list) {
 			  
 			  boolean methodFound = false;
 			  
 			  String result = "error\n\n";
-			  String queryName = request.get(0);
+			  String queryName = list.get(0);
 			  
 			  Logger.log(">> Got incoming request: " + queryName + "\n", VerboseLevel.DEBUG);
 			  
@@ -331,7 +406,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			Object[] args = new Object[m.getParameterTypes().length];
 	    	    			
     	    			
-	    	    			if (	request.size() == 1 && 
+	    	    			if (	list.size() == 1 && 
 	    	    					!(m.getParameterTypes().length == 0))
 	    	    			{
 	    	    				Logger.log("Error while executing the request: method \""+ queryName + "\" expects no parameters.\n", VerboseLevel.ERROR);
@@ -344,7 +419,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			int i = 0;
 	    	    			int shiftSpecialCases = 0;
 	    	    			
-	    	    			if (request.size() > 1) {
+	    	    			if (list.size() > 1) {
 		    	    			for (Class<?> param : m.getParameterTypes()) {
 		    	    				
 		    	    				try {
@@ -353,7 +428,7 @@ public class SocketConnector implements IConnector, Runnable {
 			    	    					shiftSpecialCases ++;
 			    	    				}
 			    	    				else {
-			    	    					args[i + shiftSpecialCases] = deserialize(request.get(i + 1), param);
+			    	    					args[i + shiftSpecialCases] = deserialize(list.get(i + 1), param);
 				    	    				i++;
 			    	    				}
 		    	    				} catch (IndexOutOfBoundsException e)
@@ -366,7 +441,7 @@ public class SocketConnector implements IConnector, Runnable {
 		    	    				}
 		    	    			}
 		    	    			
-		    	    			if (i != request.size() - 1) {
+		    	    			if (i != list.size() - 1) {
 		    	    				Logger.log("Error while executing the request: too many parameters provided for " +
 		    	    						"method \""+ queryName + "\" (" + i + " were expected).\n", VerboseLevel.ERROR);
 		    	 					result = "error\n" +
@@ -587,7 +662,8 @@ public class SocketConnector implements IConnector, Runnable {
 	public void run() {
 		// 
 		try{
-	      server = new ServerSocket(port); 
+			server = ServerSocketChannel.open();
+			server.socket().bind(new InetSocketAddress(port)); 
 	    } catch (IOException e) {
 	    	Logger.log("Error while creating the server: could not listen on port " + port + ". Port busy?\n", VerboseLevel.FATAL_ERROR);
 	    	System.exit(-1);
@@ -603,7 +679,7 @@ public class SocketConnector implements IConnector, Runnable {
 	        Thread t = new Thread(w, w.getName());
 	        t.start();
 	      } catch (IOException e) {
-	    	  if (!server.isClosed()) {
+	    	  if (!server.socket().isClosed()) {
 	    		  	Logger.log("Accept failed on port " + port + "\n", VerboseLevel.FATAL_ERROR);
 	    	  		System.exit(1);
 	    	  }
