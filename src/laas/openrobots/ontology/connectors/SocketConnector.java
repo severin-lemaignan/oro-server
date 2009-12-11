@@ -364,7 +364,7 @@ public class SocketConnector implements IConnector, Runnable {
 				  return res;
 			  }
 			  
-			  remainsOfMyBuffer += req;
+			  remainsOfMyBuffer = req;
 			  
 			  return null;
 		}
@@ -387,7 +387,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	}
 	    	else
 	    	{
-	    		/******* Iterate on registred methods ********/
+	    		/******* Iterate on registered methods ********/
 	    		for (String key : registredServices.keySet()){
 	    			
 	    			Method m = registredServices.get(key).getMethod();
@@ -428,7 +428,9 @@ public class SocketConnector implements IConnector, Runnable {
 			    	    					shiftSpecialCases ++;
 			    	    				}
 			    	    				else {
-			    	    					args[i + shiftSpecialCases] = (Object) Helpers.deserialize(list.get(i + 1), param);
+			    	    					Object ob = Helpers.deserialize(list.get(i + 1), param);
+			    	    					System.out.println(ob);
+			    	    					args[i + shiftSpecialCases] = ob; 
 				    	    				i++;
 			    	    				}
 		    	    				} catch (IndexOutOfBoundsException e)
