@@ -412,6 +412,73 @@ public class Helpers {
 		
 		return str;
 	}
+    
+    //TODO : Add unit test!
+    public static <T> T deserialize(String val, Class<T> type) {
+		//not typed because... requirements <- that's what I call a bad excuse
+		
+			if (type == String.class)
+				return (T) cleanValue(val);
+					
+			if (type == Integer.class)
+				return (T) new Integer(Integer.parseInt(val));
+			
+			if (type == Double.class)
+				return (T) new Double(Double.parseDouble(val));
+			
+			if (type == Boolean.class)
+				return (T) new Boolean(Boolean.parseBoolean(val));
+			
+			//assumes it's a list or map
+				
+			boolean isValidMap = true;
+			boolean isValidSet = true;
+			
+			//First, inspect the string to determine the type.
+			//If it starts and ends with {}, it's a map
+			//If it starts and ends with [], it's a set
+			if ( !val.substring(0, 1).equals("{") || !val.substring(val.length() - 1, val.length()).equals("}"))
+					isValidMap = false;
+			
+			if ( !val.substring(0, 1).equals("[") || !val.substring(val.length() - 1, val.length()).equals("]"))
+					isValidSet = false;
+			
+			val = val.substring(1, val.length() - 1); //remove the [] or {}
+			
+			//checks that every elements of the map is made of tokens separated by :
+			for (String s : tokenize(val, ','))
+				if (!isValidMap || !s.contains(":"))
+					isValidMap = false;
+			
+			assert(!(isValidMap && isValidSet));
+			
+			//if the string looks like a map and a map is indeed expected...
+			if (isValidMap && Map.class.isAssignableFrom(type)){
+				Map<String, String> result = new HashMap<String, String>();
+				
+				for (String s : tokenize(val, ','))
+					result.put(	cleanValue(s.trim().split(":", 2)[0]), 
+							cleanValue(s.trim().split(":", 2)[1]));
+				
+				return (T) result;
+			}					
+			//if the string looks like a set and a set of a list is indeed expected...
+			else if (isValidSet && Set.class.isAssignableFrom(type)){
+				Set<String> result = new HashSet<String>();
+				for (String s : tokenize(val, ','))
+					result.add(cleanValue(s));
+				return (T) result;
+			}					
+			//if the string looks like a set and a list of a list is indeed expected...
+			else if (isValidSet && List.class.isAssignableFrom(type)){
+				List<String> result = new ArrayList<String>();
+				for (String s : tokenize(val, ','))
+					result.add(cleanValue(s));
+				return (T) result;
+			}
+			
+			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getName() + " was expected, received \"" + val + "\")");
+	}
 		  
 	/** Remove leading and trailing quotes and whitespace if needed. 
 	 * 
