@@ -138,7 +138,7 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean BLINGBLING;
 	
-	public static final String VERSION = "0.6.7"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.6.99"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
