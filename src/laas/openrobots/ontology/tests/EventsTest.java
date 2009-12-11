@@ -36,9 +36,9 @@
 
 package laas.openrobots.ontology.tests;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 import junit.framework.TestCase;
@@ -50,7 +50,7 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.modules.events.GenericWatcher;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
-import laas.openrobots.ontology.modules.events.NewInstanceWatcher;
+import laas.openrobots.ontology.modules.events.NewClassInstanceWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -96,10 +96,10 @@ public class EventsTest extends TestCase {
 
 		FactCheckingEventConsumer consumer = new FactCheckingEventConsumer();
 		
-		Set<String> set = new HashSet<String>();
+		List<String> set = new ArrayList<String>();
 		set.add("chicken has teeth");
 		
-		Set<String> set2 = new HashSet<String>();
+		List<String> set2 = new ArrayList<String>();
 		set2.add("?a rdf:type Monkey");
 		set2.add("?a eats grass");
 		
@@ -161,17 +161,13 @@ public class EventsTest extends TestCase {
 	}
 	
 	
-	
-	/**
-	 * This tests event framework on "NEW_INSTANCE" type of events
-	 */	
 	private class NewInstanceEventConsumer implements IEventConsumer {
 
 		public boolean hasBeenTriggered = false;		
 
 		@Override
 		public void consumeEvent(UUID id, OroEvent e) {
-			System.out.print("Unbelivable ! New Monkey:");
+			System.out.print("Unbelivable ! New instances:");
 			System.out.print("\t" + e.getEventContext());
 				
 			hasBeenTriggered = true;			
@@ -179,6 +175,10 @@ public class EventsTest extends TestCase {
 		
 	}
 	
+	/**
+	 * This tests event framework on "NEW_INSTANCE" type of events
+	 */	
+	//TODO Unit-test not very complete!
 	public void testEventsNewInstance() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: NEW_INSTANCE events test *****");
@@ -186,8 +186,54 @@ public class EventsTest extends TestCase {
 
 		NewInstanceEventConsumer consumer = new NewInstanceEventConsumer();
 		
+		List<String> list = new ArrayList<String>();
+		list.add("b");
+		list.add("?a rdf:type Monkey");
+		list.add("?a eats ?b");
+		
 		try {
-			oro.registerEvent(new NewInstanceWatcher("Monkey", consumer));
+			oro.registerEvent(
+					new GenericWatcher(	EventType.NEW_INSTANCE,
+										IWatcher.TriggeringType.ON_TRUE,
+										list,
+										consumer));
+		} catch (EventRegistrationException e) {
+			fail("Error while registering an event!");
+		}
+		
+		assertFalse("Initially, the event shouldn't be triggered", consumer.hasBeenTriggered);
+		
+		//trigger a model update
+		oro.add(oro.createStatement("paris loves dancing"), MemoryProfile.DEFAULT, false);
+		
+		assertFalse("No new monkey eats smthg new, no reason to trigger the event", consumer.hasBeenTriggered);
+				
+		//re-trigger a model update
+		oro.add(oro.createStatement("coco rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+		
+		assertFalse("A new monkey, but it doesn't eat anything, no reason to trigger the event", consumer.hasBeenTriggered);
+
+		//re-trigger a model update
+		oro.add(oro.createStatement("coco eats banana"), MemoryProfile.DEFAULT, false);
+
+		assertTrue("Coco eats babana", consumer.hasBeenTriggered);
+
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This tests event framework on "NEW_CLASS_INSTANCE" type of events
+	 */	
+	public void testEventsNewClassInstance() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: NEW_CLASS_INSTANCE events test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+
+		NewInstanceEventConsumer consumer = new NewInstanceEventConsumer();
+		
+		try {
+			oro.registerEvent(new NewClassInstanceWatcher("Monkey", consumer));
 		} catch (EventRegistrationException e) {
 			fail("Error while registering an event!");
 		}

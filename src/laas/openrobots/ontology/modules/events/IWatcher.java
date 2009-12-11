@@ -1,6 +1,6 @@
 package laas.openrobots.ontology.modules.events;
 
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -38,20 +38,60 @@ public interface IWatcher {
 	 * what kind of event are expected by calling the {@link IWatcher#getPatternType()}
 	 * method. The interpretation of the watch pattern (returned by 
 	 * {@link IWatcher#getWatchPattern()}) depends of the type of event, as follow:
+	 * <p>
 	 * 
-	 * <ul>
-	 *  <li>{@code FACT_CHECKING}: the watch pattern must be a 
-	 *  {@linkplain laas.openrobots.ontology.PartialStatement partial statement}.
-	 *  If, when evaluated, it returns true (ie, at least one asserted or 
-	 *  inferred statement match the pattern), the event is fired.</li>
-	 *  <li>{@code NEW_INSTANCE}: the event is triggered when a new instance of
-	 *  the class returned by the watch pattern is added.</li>
-	 * </ul>
-	 * </p>
+	 * <h2>{@code FACT_CHECKING}</h2>
 	 * 
+	 * The watch pattern must be a {@linkplain laas.openrobots.ontology.PartialStatement partial statement}.
+	 * If, when evaluated, it returns true (ie, at least one asserted or inferred 
+	 * statement match the pattern), the event is fired.
+	 * 
+	 * <h2>{@code NEW_INSTANCE}</h2>
+	 * 
+	 * The event pattern for this type of event is first a variable and then a 
+	 * set of {@linkplain laas.openrobots.ontology.PartialStatement partial statement}. 
+	 * The event is triggered when a new statement matches this set.
+	 * 
+	 * The server return the list of instance bound to the variable.
+	 *  
+	 * <h3>Example</h3>
+	 * 
+	 * Registration:
+	 * <pre>
+	 * > registerEvent
+	 * > NEW_RELATION
+	 * > ON_TRUE
+	 * > b
+	 * > [?a desires ?b, ?a rdf:type Human]
+	 * </pre>
+	 * 
+	 * Add some facts:
+	 * <pre>
+	 * > add
+	 * > [ramses rdf:type Human, pyramidInauguration rdf:type StaticSituation, ramses desires pyramidInauguration]
+	 * </pre>
+	 * 
+	 * This would fire the event and return:
+	 * <pre>
+	 * > event
+	 * > [pyramidInauguration]
+	 * </pre>
+	 * 
+	 * <h2>{@code NEW_CLASS_INSTANCE}</h2>
+	 * 
+	 * The event is triggered when a new instance of the class returned by the 
+	 * watch pattern is added.
+	 * 
+	 * When the event is fired, the server send to the client the list of the new
+	 * instances.
+	 * 
+	 * This kind of event is a special, optimized version of {@code NEW_INSTANCE}
+	 * for class instances.
+	 * 
+	 *  
 	 * @see laas.openrobots.ontology.modules.events General description of events in oro-server
 	 */
-	static public enum EventType {FACT_CHECKING, NEW_INSTANCE};
+	static public enum EventType {FACT_CHECKING, NEW_CLASS_INSTANCE, NEW_INSTANCE};
 	
 	/** Constants that defines the way an event is triggered.
 	 * 
@@ -82,7 +122,7 @@ public interface IWatcher {
 		ON_FALSE_ONE_SHOT, 
 		ON_TOGGLE}
 
-	public Set<String> getWatchPattern();
+	public List<String> getWatchPattern();
 	
 	public EventType getPatternType();
 	

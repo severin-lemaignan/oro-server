@@ -1,6 +1,9 @@
 package laas.openrobots.ontology.modules.events;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import laas.openrobots.ontology.PartialStatement;
@@ -14,13 +17,15 @@ import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 
 import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QueryParseException;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.shared.Lock;
 
 public class EventProcessor {
@@ -40,9 +45,10 @@ public class EventProcessor {
 				
 		public Query cachedQuery;
 		public OntClass referenceClass;
+		public String varName;
 		
 		public boolean lastStatus;
-		public Set<OntResource> lastMatchedResources;
+		public Set<Resource> lastMatchedResources;
 
 		public WatcherHolder(IWatcher watcher) throws EventRegistrationException {
 			super();
@@ -73,30 +79,46 @@ public class EventProcessor {
 						else statement += Helpers.asSparqlRow(onto.createStatement(s));
 					
 				} catch (IllegalStatementException e) {
-					Logger.log("Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
-					throw new EventRegistrationException("Error while parsing a new watch pattern! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n");
+					Logger.log("Error while parsing a new watch pattern! ("+ 
+							e.getLocalizedMessage() +").\nCheck the syntax of " +
+							"your statement.\n", VerboseLevel.ERROR);
+					throw new EventRegistrationException("Error while parsing a " +
+							"new watch pattern! ("+ e.getLocalizedMessage() +").\n" +
+							"Check the syntax of your statement.\n");
 				}
 					
 				String resultQuery = "ASK { " + statement + " }";
-					
+				
+				Logger.log("SPARQL query: " + resultQuery + "\n", VerboseLevel.DEBUG);
+				
 				try	{
-					cachedQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
-					Logger.log("Event registered: new watch expression: " +  watcher.getWatchPattern() + "\n");
-					Logger.log("SPARQL query: " + resultQuery + "\n", VerboseLevel.DEBUG);
+					cachedQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);					
 				}
 				catch (QueryParseException e) {
-					Logger.log("Internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
-					throw new EventRegistrationException("Internal error during query parsing while trying to add an event hook! ("+ e.getLocalizedMessage() +").\nCheck the syntax of your statement.\n");
+					Logger.log("Internal error during query parsing while trying" +
+							" to add an event hook! ("+ e.getLocalizedMessage() +
+							").\nCheck the syntax of your statement.\n", VerboseLevel.ERROR);
+					throw new EventRegistrationException("Internal error during " +
+							"query parsing while trying to add an event hook! ("+ 
+							e.getLocalizedMessage() +").\nCheck the syntax of " +
+							"your statement.\n");
 				}
+				
+				Logger.log("New FACT_CHECKING event registered: new watch " +
+						"expression: " +  watcher.getWatchPattern() + "\n");
+				
 				break;
 			}
-			case NEW_INSTANCE:
+			case NEW_CLASS_INSTANCE:
 			{
 				//No query to compile: we use directly the IOntologyBackend.getInstancesOf() method
 				
 				if (watcher.getWatchPattern().size() != 1) {
-					Logger.log("Wrong pattern for a NEW_INSTANCE type of event. Only one class name was expected.\n", VerboseLevel.ERROR);
-					throw new EventRegistrationException("Wrong pattern for a NEW_INSTANCE type of event. Only one class name was expected.");
+					Logger.log("Wrong pattern for a NEW_INSTANCE type of event." +
+							" Only one class name was expected.\n", VerboseLevel.ERROR);
+					throw new EventRegistrationException("Wrong pattern for a " +
+							"NEW_INSTANCE type of event. Only one class name was " +
+							"expected.");
 				}
 
 				//must use a "for" loop because getWatchPattern is a set, but it
@@ -107,18 +129,100 @@ public class EventProcessor {
 					onto.getModel().leaveCriticalSection();
 				
 					if (referenceClass == null) {
-						Logger.log("The class " + s + " does not exists in the ontology. Cannot register the NEW_INSTANCE event!\n", VerboseLevel.ERROR);
-						throw new EventRegistrationException("The class " + s + " does not exists in the ontology. Cannot register the NEW_INSTANCE event!");
+						Logger.log("The class " + s + " does not exists in the " +
+								"ontology. Cannot register the NEW_INSTANCE " +
+								"event!\n", VerboseLevel.ERROR);
+						throw new EventRegistrationException("The class " + s + 
+								" does not exists in the ontology. Cannot " +
+								"register the NEW_INSTANCE event!");
 					}
 				}
 				
-				//Initialize the list of matching instance from the current state on the ontology.
-				lastMatchedResources = onto.getInstancesOf(referenceClass, false);
+				//Initialize the list of matching instance from the current 
+				//state on the ontology.
+				lastMatchedResources = new HashSet<Resource>(onto.getInstancesOf(referenceClass, false));
 				
-				Logger.log("Event registered: the class " + Namespaces.toLightString(referenceClass) + 
+				Logger.log("Initial matching instances: " + lastMatchedResources + 
+						" (they won't be reported).\n", VerboseLevel.DEBUG);
+				
+				Logger.log("New NEW_CLASS_INSTANCE event registered: the class " + 
+						Namespaces.toLightString(referenceClass) + 
 						" is now monitored for new instances.\n");
 
+				break;
+			}
+			
+			case NEW_INSTANCE:
+			{
+				Logger.log("Compiling new NEW_INSTANCE event.\n", VerboseLevel.VERBOSE);
 				
+				List<String> pattern = new ArrayList<String>(watcher.getWatchPattern());
+
+				//TODO: Implement filters for NEW_INSTANCE events
+				Set<String> filters = null;
+
+				varName = pattern.remove(0);
+				if (varName.startsWith("?")) varName = varName.substring(1);
+				
+				String query = "SELECT ?" + varName + "\n" +
+				"WHERE {\n";
+				
+				try {
+					
+					for (String s : pattern)
+						query += onto.createPartialStatement(s).asSparqlRow();
+					
+				} catch (IllegalStatementException e) {
+					Logger.log("Error while parsing partial statement ("+ 
+							e.getLocalizedMessage() +").\n", VerboseLevel.ERROR);
+					throw new EventRegistrationException("Error while parsing a " +
+							"new watch pattern! ("+ e.getLocalizedMessage() +").\n" +
+							"Check the syntax of your partial statements.\n");
+				}
+				
+				if (!(filters == null || filters.isEmpty())) 
+				{
+					Iterator<String> filtersItr = filters.iterator();
+					while (filtersItr.hasNext())
+					{
+						query += "FILTER (" + filtersItr.next() + ") .\n";
+					}
+				}
+				
+				query += "}";
+				
+				Logger.log("SPARQL query:\n" + query + "\n", VerboseLevel.DEBUG);
+									
+				try	{
+					cachedQuery = QueryFactory.create(query, Syntax.syntaxSPARQL);
+				}
+				catch (QueryParseException e) {
+					Logger.log("Internal error during query parsing while trying " +
+							"to add an event hook! ("+ e.getLocalizedMessage() +").\n" +
+							"Check the syntax of your statement.\n", VerboseLevel.ERROR);
+					throw new EventRegistrationException("Internal error during " +
+							"query parsing while trying to add an event hook! ("+ 
+							e.getLocalizedMessage() +").\nCheck the syntax of " +
+							"your statement.\n");
+				}
+				
+				
+				//Initialize the list of matching instance from the current state on the ontology.
+				lastMatchedResources = new HashSet<Resource>();
+				ResultSet rawResult = QueryExecutionFactory.create(cachedQuery, onto.getModel()).execSelect();
+				
+				if (rawResult != null) {				
+					while (rawResult.hasNext())
+					{
+						QuerySolution row = rawResult.nextSolution();
+						lastMatchedResources.add(row.getResource(varName));
+					}
+				}
+				Logger.log("Initial matching instances: " + lastMatchedResources +
+						" (they won't be reported).\n", VerboseLevel.DEBUG);
+
+				
+				Logger.log("New NEW_INSTANCE event registered.\n");
 			}
 		}
 		
@@ -140,6 +244,7 @@ public class EventProcessor {
 		
 		this.supportedEventTypes = new HashSet<EventType>();
 		supportedEventTypes.add(EventType.FACT_CHECKING);
+		supportedEventTypes.add(EventType.NEW_CLASS_INSTANCE);
 		supportedEventTypes.add(EventType.NEW_INSTANCE);
 		
 	}
@@ -157,6 +262,10 @@ public class EventProcessor {
 				switch (holder.getWatcher().getPatternType()) {
 					case FACT_CHECKING:
 						processFactChecking(holder, watchersToBeRemoved);
+						break;
+						
+					case NEW_CLASS_INSTANCE:
+						processNewClassInstance(holder, watchersToBeRemoved);
 						break;
 						
 					case NEW_INSTANCE:
@@ -224,12 +333,64 @@ public class EventProcessor {
 		
 	}
 	
+	private void processNewClassInstance(WatcherHolder holder, Set<WatcherHolder> watchersToBeRemoved) throws QueryExecException {
+	
+		
+		Set<Resource> instances = new HashSet<Resource>(onto.getInstancesOf(holder.referenceClass, false));
+		
+		Set<Resource> futureResources = new HashSet<Resource>(instances);
+		
+		instances.removeAll(holder.lastMatchedResources);
+		
+		//Nothing changed
+		if (instances.isEmpty() && futureResources.size() == holder.lastMatchedResources.size())
+			return;
+		
+		//Instances have been removed
+		if (instances.isEmpty() && futureResources.size() < holder.lastMatchedResources.size()) {
+			holder.lastMatchedResources = futureResources;
+			return;
+		}
+		
+		assert (!(instances.isEmpty() && futureResources.size() > holder.lastMatchedResources.size()));
+		
+		//New instances have been added
+		OroEvent e = new OroEventNewInstances(instances);
+		
+		switch (holder.watcher.getTriggeringType()) {
+		case ON_TRUE:
+			holder.watcher.notifySubscriber(e);
+			break;
+			
+		case ON_TRUE_ONE_SHOT:
+			holder.watcher.notifySubscriber(e);
+			watchersToBeRemoved.add(holder);
+			break;		
+		}
+		
+		
+		holder.lastMatchedResources = futureResources;
+		
+		
+	}
+	
 	private void processNewInstance(WatcherHolder holder, Set<WatcherHolder> watchersToBeRemoved) throws QueryExecException {
 	
 		
-		Set<OntResource> instances = onto.getInstancesOf(holder.referenceClass, false);
+		Set<Resource> instances = new HashSet<Resource>();
 		
-		Set<OntResource> futureResources = new HashSet<OntResource>(instances);
+		ResultSet rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
+		
+		if (rawResult != null) {				
+			while (rawResult.hasNext())
+			{
+				QuerySolution row = rawResult.nextSolution();
+				instances.add(row.getResource(holder.varName));
+			}
+		}
+
+		
+		Set<Resource> futureResources = new HashSet<Resource>(instances);
 		
 		instances.removeAll(holder.lastMatchedResources);
 		

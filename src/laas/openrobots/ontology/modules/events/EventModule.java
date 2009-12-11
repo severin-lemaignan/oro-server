@@ -2,6 +2,7 @@ package laas.openrobots.ontology.modules.events;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,6 +23,8 @@ import laas.openrobots.ontology.service.RPCMethod;
  * @author slemaign
  * @see SocketConnector The SocketConnector class documentation has examples of 
  * event registration with the socket connector.
+ * 
+ * @since 0.6.8
  */
 public class EventModule implements IServiceProvider {
 
@@ -46,7 +49,15 @@ public class EventModule implements IServiceProvider {
 	 * @throws EventRegistrationException 
 	 * @see IWatcher
 	 */
-	private UUID addEvent(EventType eventType, Set<String> eventPattern, IWatcher.TriggeringType triggeringType, IEventConsumer client) throws EventRegistrationException {
+	private UUID addEvent(	EventType eventType, 
+							IWatcher.TriggeringType triggeringType,
+							String variable,
+							List<String> eventPattern, 
+							IEventConsumer client) 
+			throws EventRegistrationException
+	{
+		if (variable != null) eventPattern.add(0, variable);
+		
 		IWatcher e = new GenericWatcher(eventType, triggeringType, eventPattern, client);
 		registredEvents.add(e);
 
@@ -61,7 +72,19 @@ public class EventModule implements IServiceProvider {
 			desc = "registers an event. Expected parameters are: type, triggering " +
 					"type, event pattern. The last parameter is set automatically."
 	)
-	public UUID registerEvent(String type, String triggeringType, Set<String> pattern, IEventConsumer consumer)
+	public UUID registerEvent(String type, String triggeringType, List<String> pattern, IEventConsumer consumer)
+				throws InvalidEventDescriptorException, EventRegistrationException
+	{
+		return registerEvent(type, triggeringType, null, pattern, consumer);
+	}
+				
+				
+	@RPCMethod(
+			category = "events",
+			desc = "registers an event. Expected parameters are: type, triggering " +
+					"type, variable, event pattern. The last parameter is set automatically."
+	)
+	public UUID registerEvent(String type, String triggeringType, String variable, List<String> pattern, IEventConsumer consumer)
 				throws InvalidEventDescriptorException, EventRegistrationException
 	{
 		EventType eType = null;
@@ -76,6 +99,15 @@ public class EventModule implements IServiceProvider {
 					" instead.");
 		}
 		
+		if (eType == EventType.NEW_INSTANCE && variable == null){
+			Logger.log("No variable provided for NEW_INSTANCE event", VerboseLevel.WARNING);
+			throw new InvalidEventDescriptorException("NEW_INSTANCE events " +
+					"require as first parameter a variable name to bind.");
+		}
+		
+		if (eType != EventType.NEW_INSTANCE) variable = null;
+			
+		
 		try {
 			eTriggeringType = IWatcher.TriggeringType.valueOf(triggeringType.toUpperCase());
 		} catch (IllegalArgumentException iae) {
@@ -87,7 +119,7 @@ public class EventModule implements IServiceProvider {
 					"Got " + triggeringType +	" instead.");
 		}
 		
-		return addEvent(eType, pattern, eTriggeringType, consumer);
+		return addEvent(eType, eTriggeringType, variable, pattern, consumer);
 	}
 
 }

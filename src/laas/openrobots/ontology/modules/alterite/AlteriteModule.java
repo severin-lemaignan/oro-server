@@ -12,6 +12,7 @@ import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.base.BaseModule;
@@ -78,7 +79,7 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 		if (OroServer.BLINGBLING)
 			Logger.log("22, v'la les agents!\n", VerboseLevel.WARNING);
 		
-		for (String s : e.getEventContext().split("\n"))
+		for (String s : (Set<String>) Helpers.deserialize(e.getEventContext(), Set.class))
 			add(s);
 		
 	}
