@@ -543,6 +543,7 @@ public class CategorizationModule implements IServiceProvider {
 	 * discriminating properties.
 	 */
 	//TODO WE DON'T HANDLE CORRECTLY NON-FUNCTIONNAL PROPERTIES!!
+	//TODO Remove superproperties without direct values to solve several slowdown and bugs
 	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
 		
 		

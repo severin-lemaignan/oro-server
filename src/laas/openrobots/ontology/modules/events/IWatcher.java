@@ -59,7 +59,7 @@ public interface IWatcher {
 	 * Registration:
 	 * <pre>
 	 * > registerEvent
-	 * > NEW_RELATION
+	 * > NEW_INSTANCE
 	 * > ON_TRUE
 	 * > b
 	 * > [?a desires ?b, ?a rdf:type Human]

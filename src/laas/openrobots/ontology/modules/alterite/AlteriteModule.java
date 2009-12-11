@@ -1,21 +1,26 @@
 package laas.openrobots.ontology.modules.alterite;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+
+import com.hp.hpl.jena.shared.NotFoundException;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.base.BaseModule;
+import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
@@ -153,6 +158,20 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 		
 		Logger.log(id + ": ", VerboseLevel.IMPORTANT);
 		oro.save(path);
+		
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="returns a list of properties that helps to differentiate individuals for a specific agent."
+	)
+	public List<Set<String>> discriminateForAgent(String id, Set<String> rawConcepts) throws AgentNotFoundException, OntologyServerException, NotFoundException, NotComparableException {
+		
+		IOntologyBackend oro = getModelForAgent(id);
+		CategorizationModule catModule = new CategorizationModule(oro);
+		
+		Logger.log(id + ": ", VerboseLevel.IMPORTANT);
+		return catModule.discriminate(rawConcepts);
 		
 	}
 	
