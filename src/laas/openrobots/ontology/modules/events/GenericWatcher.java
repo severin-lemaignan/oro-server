@@ -1,12 +1,12 @@
 package laas.openrobots.ontology.modules.events;
 
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 public class GenericWatcher implements IWatcher {
 
 	protected EventType eventType;
-	protected Set<String> eventPattern;
+	protected List<String> eventPattern;
 	protected IWatcher.TriggeringType triggeringType;
 	
 	protected IEventConsumer client;
@@ -15,7 +15,7 @@ public class GenericWatcher implements IWatcher {
 	
 	public GenericWatcher(EventType eventType, 
 						IWatcher.TriggeringType triggeringType,
-						Set<String> eventPattern,  
+						List<String> eventPattern,  
 						IEventConsumer client) {
 		super();
 		this.eventType = eventType;
@@ -33,7 +33,7 @@ public class GenericWatcher implements IWatcher {
 	}
 
 	@Override
-	public Set<String> getWatchPattern() {
+	public List<String> getWatchPattern() {
 		return eventPattern;
 	}
 	

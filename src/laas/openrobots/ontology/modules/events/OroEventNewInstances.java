@@ -6,18 +6,18 @@ import java.util.Set;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 
-import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 public class OroEventNewInstances extends OroEventImpl {
 
 	private Set<String> matchedId;
 		
-	public OroEventNewInstances(Set<OntResource> matchedId) {
+	public OroEventNewInstances(Set<Resource> matchedId) {
 		super();
 		
 		this.matchedId = new HashSet<String>();
 		
-		for (OntResource r : matchedId)
+		for (Resource r : matchedId)
 			this.matchedId.add(Namespaces.toLightString(r));
 
 	}

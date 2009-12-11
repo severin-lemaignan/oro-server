@@ -1,6 +1,6 @@
 package laas.openrobots.ontology.modules.events;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 
 import laas.openrobots.ontology.modules.alterite.AgentWatcher;
 
@@ -15,12 +15,12 @@ import laas.openrobots.ontology.modules.alterite.AgentWatcher;
  * @author slemaign
  *
  */
-public class NewInstanceWatcher extends GenericWatcher {
+public class NewClassInstanceWatcher extends GenericWatcher {
 		
-	public NewInstanceWatcher(String classToWatch, IEventConsumer o) {
-		super(	EventType.NEW_INSTANCE, 
+	public NewClassInstanceWatcher(String classToWatch, IEventConsumer o) {
+		super(	EventType.NEW_CLASS_INSTANCE, 
 				IWatcher.TriggeringType.ON_TRUE, 
-				new HashSet<String>(),
+				new ArrayList<String>(),
 				o);
 		
 		this.eventPattern.add(classToWatch);
