@@ -14,6 +14,7 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -193,8 +194,11 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract boolean check(PartialStatement statement);
 
 	/**
-	 * Performs a consistency validation against the ontology. If the check fails, it throws an exception with details on the inconsistencies sources.
-	 * @throws InconsistentOntologyException thrown if the ontology is currently inconsistent. The exception message contains details on the source of inconsistency.
+	 * Performs a consistency validation against the ontology. If the check 
+	 * fails, it throws an exception with details on the inconsistencies sources.
+	 * @throws InconsistentOntologyException thrown if the ontology is currently 
+	 * inconsistent. The exception message contains details on the source of 
+	 * inconsistency.
 	 */
 	public abstract void checkConsistency()
 			throws InconsistentOntologyException;
@@ -218,7 +222,13 @@ public interface IOntologyBackend extends IServiceProvider {
 	 *	}
 	 * </pre>
 	 * This example would print all the instances existing in the ontology.<br/>
-	 * Attention! Unlike other methods which take string representation of statements or resource, namespaces or namespace prefixes CAN NOT be omitted: {@code SELECT ?instance WHERE {?instance eats bananas}} won't match the same things as {@code SELECT ?instance WHERE {?instance oro:eats oro:bananas}} even if {@code oro} is the prefix of the default namespace. 
+	 * 
+	 * Attention! Unlike other methods which take string representation of 
+	 * statements or resource, namespaces or namespace prefixes CAN NOT be 
+	 * omitted: {@code SELECT ?instance WHERE {?instance eats bananas}} won't 
+	 * match the same things as {@code SELECT ?instance WHERE {?instance 
+	 * oro:eats oro:bananas}} even if {@code oro} is the prefix of the default 
+	 * namespace. 
 	 * 
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
 	 * @return The result of the query as a Jena ResultSet.
@@ -228,6 +238,24 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract ResultSet query(String query) throws QueryParseException,
 			QueryExecException;
 
+	/**
+	 * Tries to identify a resource given a set of partially defined statements 
+	 * (plus optional restrictions) about this resource.
+	 * 
+	 * @param varName The name of the variable to bind, as used in the partial 
+	 * statements.
+	 * @param statements A set of partial statements that globaly define a search
+	 * pattern
+	 * @param filters a vector of string containing the various filters to be 
+	 * appended to the search. The syntax is the SPARQL one (as defined here:
+	 *  http://www.w3.org/TR/rdf-sparql-query/#tests).
+	 * @return a result set of resources that match the statements.
+	 * @see {@link #guess(String, Vector, double)}
+	 * @see BaseModule#find(String, Set, Set) Examples of use
+	 */
+	public abstract ResultSet find(	String varName,	
+							Set<PartialStatement> statements, 
+							Set<String> filters);
 	/**
 	 * Tries to approximately identify an individual given a set of known statements about this resource.<br/>
 	 * The individual which is looked for must be currently the <b>subject</b> of all these statements.<br/><br/>

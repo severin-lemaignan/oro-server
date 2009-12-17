@@ -446,6 +446,28 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return this.lastQueryResult;
 		
 	}
+	
+	public ResultSet find(	String varName,	Set<PartialStatement> statements, 
+							Set<String> filters) {
+		
+		String query = "SELECT ?" + varName + "\n" +
+		"WHERE {\n";
+		for (PartialStatement ps : statements)
+		{
+			query += ps.asSparqlRow();
+		}
+		
+		if (!(filters == null || filters.isEmpty())) 
+		{
+			for (String filter :filters)
+			{
+				query += "FILTER (" + filter + ") .\n";
+			}
+		}		
+		query += "}";
+		
+		return query(query);
+	}
 
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#guess(java.lang.String, java.util.Vector, double)

@@ -377,32 +377,30 @@ public class BaseModule implements IServiceProvider {
 	)	
 	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException {
 		
+		Logger.log("Searching resources in the ontology");
+				
 		Set<String> result = new HashSet<String>();
-		Iterator<String> stmts = statements.iterator();
+		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
 		if (varName.startsWith("?")) varName = varName.substring(1);
 		
-		String query = "SELECT ?" + varName + "\n" +
-		"WHERE {\n";
-		while (stmts.hasNext())
-		{
-			PartialStatement stmt = oro.createPartialStatement(stmts.next());
-			query += stmt.asSparqlRow();
+		Logger.log(" matching following statements:\n", VerboseLevel.VERBOSE);
+		
+		for (String ps : statements) {
+			Logger.log("\t- " + ps + "\n", VerboseLevel.VERBOSE);
+			stmts.add(oro.createPartialStatement(ps));
 		}
 		
-		if (!(filters == null || filters.isEmpty())) 
-		{
-			Iterator<String> filtersItr = filters.iterator();
-			while (filtersItr.hasNext())
-			{
-				query += "FILTER (" + filtersItr.next() + ") .\n";
-			}
+		if (filters != null) {
+			Logger.log("with these restrictions:\n", VerboseLevel.VERBOSE);
+			for (String f : filters)
+				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
 		
 		
-		query += "}";
+		ResultSet rawResult = oro.find(varName, stmts, filters);
 		
-		ResultSet rawResult = oro.query(query);
+		Logger.log("...done.\n");
 		
 		if (rawResult == null) return null;
 		
@@ -418,7 +416,7 @@ public class BaseModule implements IServiceProvider {
 	/**
 	 * Tries to identify a resource given a set of partially defined statements about this resource.<br/>
 	 * 
-	 * This is a simpler form for {@link #find(String, Vector, Vector)}, without filters.
+	 * This is a simpler form for {@link #find(String, Set, Set)}, without filters.
 	 * 
 	 * <br/>
 	 * C++ code snippet using liboro: 
