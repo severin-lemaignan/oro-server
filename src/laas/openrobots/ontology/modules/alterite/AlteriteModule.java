@@ -101,7 +101,7 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 	 * @param rawStmts a set of statements
 	 * @throws IllegalStatementException
 	 * @throws AgentNotFoundException 
-	 * @see {@link BaseModule#add(Set)}
+	 * @see BaseModule#add(Set)
 	 */
 	@RPCMethod(
 			category = "agents",
@@ -121,7 +121,7 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 	 * @param memProfile the memory profile
 	 * @throws IllegalStatementException
 	 * @throws AgentNotFoundException 
-	 * @see {@link BaseModule#add(Set, String)}
+	 * @see BaseModule#add(Set, String)
 	 * @see MemoryProfile Available memory profile
 	 */
 	@RPCMethod(

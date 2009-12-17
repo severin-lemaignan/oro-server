@@ -54,19 +54,13 @@ pattern (the form of the pattern depends on the type of event, as documented her
 </p>
 
 <p>
-For convenience, some standard watchers are already implemented as abstract class
-and can easily be specialized with specific patterns (cf {@link laas.openrobots.ontology.modules.events.InternalWatcher}, 
-{@NewInstanceWatcher}).
-</p>
-
-<p>
-For a class to be allowed to register events, it must implement the {@link laas.openrobots.ontology.modules.events.IWatcherProvider}
-interface (or extend the abstract class {@link laas.openrobots.ontology.modules.events.GenericWatcherProvider}).
+For convenience, a generic watcher ({@link laas.openrobots.ontology.modules.events.GenericWatcher}) 
+is provided, as well as more specialized ones like {@link laas.openrobots.ontology.modules.events.NewClassInstanceWatcher}.
 </p>
 
 <p>
 The events can eventually be registered to an {@linkplain laas.openrobots.ontology.backends.IOntologyBackend ontology 
-backend} by calling {@link laas.openrobots.ontology.backends.IOntologyBackend.registerEvents(IWatcherProvider)}.
+backend} by calling {@link laas.openrobots.ontology.backends.IOntologyBackend#registerEvent(IWatcher)}.
 </p>
 
 <p>

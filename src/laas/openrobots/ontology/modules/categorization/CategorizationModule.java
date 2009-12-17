@@ -534,7 +534,7 @@ public class CategorizationModule implements IServiceProvider {
 	 * what he positively knows. 
 	 * </p>
 	 * 
-	 * @param concepts A set of concepts
+	 * @param individuals A set of concepts
 	 * @return A list of two sets: first, a set of properties - if they exist -
 	 * that are individually sufficient to differentiate all the individuals
 	 * in the provided set from the values (objects) of these properties. Then a 
@@ -545,19 +545,7 @@ public class CategorizationModule implements IServiceProvider {
 	//TODO WE DON'T HANDLE CORRECTLY NON-FUNCTIONNAL PROPERTIES!!
 	//TODO Remove superproperties without direct values to solve several slowdown and bugs
 	public List<Set<Property>> getDiscriminent(Set<OntResource> individuals) throws NotComparableException {
-		
-		
-		/*//DEBUG BLOCK
-		System.out.println("***********************");
-		for (Statement s : oro.getModel().listStatements().toSet())
-			System.out.println(Namespaces.toLightString(s));
-		System.out.println("***********************");
-		for (Statement s : oro.getModel().getRawModel().listStatements().toSet())
-			System.out.println(Namespaces.toLightString(s));
-		System.out.println("***********************");
-		
-		System.exit(0);
-		*/
+
 		
 		Integer nbIndividuals = individuals.size();
 		boolean isTotalDiscriminent = true;

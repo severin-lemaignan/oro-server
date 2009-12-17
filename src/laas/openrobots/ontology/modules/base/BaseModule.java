@@ -2,7 +2,6 @@ package laas.openrobots.ontology.modules.base;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +49,8 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	/**
-	 * Like {@link #add(Set<String>, MemoryProfile)} with the {@link MemoryProfile.DEFAULT} memory profile.
-
+	 * Like {@link #add(Set<String>, MemoryProfile)} with the {@link MemoryProfile#DEFAULT} memory profile.
+	 * 
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
 	 * @throws IllegalStatementException
 	 * 
@@ -129,13 +128,13 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * This method does nothing if the statement already exists with the same memory profile. If the same statement is added with a different memory profile, the shortest term memory container has priority.
 	 * 
-	 * @param statement The new statement.
+	 * @param rawStmts A set of new statements.
 	 * @param memProfile The memory profile associated with this statement.
 	 * @throws IllegalStatementException
 	 * 
 	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
-	 * @see #add(Statement, MemoryProfile)
-	 * @see #remove(Statement)
+	 * @see IOntologyBackend#add(Statement, MemoryProfile, boolean)
+	 * @see #remove(Set)
 	 */
 	@RPCMethod(
 			desc="adds one or several statements (triplets S-P-O) to the robot model associated with a memory profile."
@@ -188,7 +187,6 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
 	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
-	 * @see {@link #clear(PartialStatement)} for an example.
 	 * @see PartialStatement
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
@@ -363,7 +361,7 @@ public class BaseModule implements IServiceProvider {
 	 * </pre>
 	 * 
 	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
+	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
@@ -446,7 +444,7 @@ public class BaseModule implements IServiceProvider {
 	 * </pre>
 	 * 
 	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partial_statements The partial statement statements defining (more or less) the resource your looking for.
+	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
 	 * @see #find(String, Vector, Vector)

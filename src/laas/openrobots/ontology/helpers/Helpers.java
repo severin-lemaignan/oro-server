@@ -360,7 +360,7 @@ public class Helpers {
      * corner cases.
      * @param o The object to convert
      * @return A JSON-like string representating the object.
-     * @see {@link http://json.org} The JSON website
+     * @see <a href="http://json.org">The JSON website</a>
      */
     public static <T> String stringify(T o) {
     	if (o == null)
@@ -480,10 +480,10 @@ public class Helpers {
 			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getName() + " was expected, received \"" + val + "\")");
 	}
 		  
-	/** Remove leading and trailing quotes and whitespace if needed. 
+	/** Remove leading and trailing quotes and whitespace if needed from a string. 
 	 * 
-	 * @param value
-	 * @return
+	 * @param value the string to clean.
+	 * @return The same string with quotes and whitespaces trimmed.
 	 */
 	public static String cleanValue(String value) {
 		String res = value.trim();
@@ -495,8 +495,9 @@ public class Helpers {
 	
 	/** Protect a string by escaping the quotes and surrounding the string with quotes.
 	 * 
-	 * @param value
-	 * @return
+	 * @param value The string to protect.
+	 * @return The same string between double quotes and with inside quotes
+	 * escaped. 
 	 */
 	public static String protectValue(String value) {
 		String res = value.replaceAll("\"", "\\\"");
