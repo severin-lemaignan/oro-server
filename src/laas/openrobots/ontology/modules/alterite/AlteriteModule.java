@@ -1,15 +1,19 @@
 package laas.openrobots.ontology.modules.alterite;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.shared.NotFoundException;
 
 import laas.openrobots.ontology.OroServer;
+import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
@@ -18,6 +22,7 @@ import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
+import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
@@ -146,6 +151,71 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 			Logger.log(id + ": ");
 			oro.remove(oro.createStatement(rawStmt));
 		}
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="tries to identify a resource given a set of partially defined " +
+					"statements and restrictions in an specific agent model."
+	)
+	public Set<String> findForAgent(String id, 
+									String varName, 
+									Set<String> statements, 
+									Set<String> filters) 
+						throws IllegalStatementException, AgentNotFoundException
+	{
+		IOntologyBackend oro = getModelForAgent(id);
+		
+		Logger.log(id + ": ");
+		
+
+		Logger.log("Searching resources in ontolgy");
+		
+		Set<String> result = new HashSet<String>();
+		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
+		
+		if (varName.startsWith("?")) varName = varName.substring(1);
+		
+		Logger.log(" matching following statements:\n", VerboseLevel.VERBOSE);
+		
+		for (String ps : statements) {
+			Logger.log("\t- " + ps + "\n", VerboseLevel.VERBOSE);
+			stmts.add(oro.createPartialStatement(ps));
+		}
+		
+		if (filters != null) {
+			Logger.log("with these restrictions:\n", VerboseLevel.VERBOSE);
+			for (String f : filters)
+				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
+		}
+		
+		
+		ResultSet rawResult = oro.find(varName, stmts, filters);
+		
+		Logger.log("...done.\n");
+		
+		if (rawResult == null) return null;
+		
+		while (rawResult.hasNext())
+		{
+			QuerySolution row = rawResult.nextSolution();
+			result.add(Namespaces.toLightString(row.get(varName)));
+		}
+		
+		return result;
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="tries to identify a resource given a set of partially defined " +
+					"statements in an specific agent model."
+	)
+	public Set<String> findForAgent(String id, 
+									String varName, 
+									Set<String> statements) 
+						throws IllegalStatementException, AgentNotFoundException
+	{
+		return findForAgent(id, varName, statements, null);
 	}
 
 	@RPCMethod(
