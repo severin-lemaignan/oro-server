@@ -982,7 +982,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
 			//TODO: Workaround for http://clark-parsia.trac.cvsdude.com/pellet-devel/ticket/356
-			onto.setStrictMode(false);
+			//onto.setStrictMode(false);
+			onto.setStrictMode(true);
 			
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
