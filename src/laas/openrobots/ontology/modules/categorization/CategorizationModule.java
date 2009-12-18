@@ -834,12 +834,11 @@ public class CategorizationModule implements IServiceProvider {
 		                			return false;
 	                	}
 	                }
-	                
+	                	                
 	                return true;
 	            }
 			});
-				
-		//System.out.println("\nResource " + c);
+
 		//lists all the properties for a given subject and add, for each property, the corresponding objects.
 		while (stmtList.hasNext())
 		{
@@ -854,8 +853,40 @@ public class CategorizationModule implements IServiceProvider {
 			//System.out.println(tmp.getPredicate() + " -> " + tmp.getObject());
 		}
 		
+		//Clean the properties list to remove all properties which have a 
+		//subproperty with whom they share the same value.
 		
-		//We add the type of the resource.
+		
+		//First, we keep only properties that share a same value
+		
+		Map <RDFNode, Set<Property>> values = Helpers.reverseSetMap(propertiesList);
+		for (RDFNode n : values.keySet()) {
+			if (values.get(n).size() > 1) {
+				Logger.log("Suspect properties: " + values.get(n) + ". " +
+						"Is one of them a super-property without direct any value?\n", VerboseLevel.DEBUG);
+				Set<OntProperty> suspectOntProperties = new HashSet<OntProperty>();
+				
+				for (Property p : values.get(n)) {
+					suspectOntProperties.add(oro.createProperty(p.getURI()));
+				}
+				
+				for (Property p : values.get(n)) {
+					for (OntProperty op : suspectOntProperties) {
+						
+						if (!p.equals((Property)op)) {
+							if (oro.createProperty(p.getURI()).hasSubProperty(op, false)) {
+								Logger.log("-> Removing " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(n)+ " \n", VerboseLevel.DEBUG);
+								propertiesList.get(p).remove(n);
+								break;
+							}
+						}
+					}
+				}
+			}
+				
+		}
+		
+		//We add the type (class) of the resource.
 		Set<RDFNode> cType = new HashSet<RDFNode>();
 		cType.add(c.getRDFType(true));
 		propertiesList.put(type, cType);

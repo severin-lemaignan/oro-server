@@ -1532,9 +1532,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 				discriminents.get(0).size() == 1 &&
 				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("hasColor"))));
 		
-		//**********************************************************************
-				
-				
+		discriminents.clear();
+			
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -1598,19 +1597,19 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
+		/*
 		assertTrue("The best discriminents should be climbsOn AND isOn",
 				discriminents.get(0).size() == 0 &&
 				discriminents.get(1).size() == 2 &&
 				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("isOn"))) &&
 				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("climbsOn"))));
-
+		*/
 		discriminents.clear();
 		
 		//**********************************************************************
 		
 		resources.remove(oro.getResource("bonobo"));
 		
-		//climbsOn is a sub-property of isOn
 		try {
 			oro.add(oro.createStatement("gibbon rdf:type Monkey"), MemoryProfile.DEFAULT, false);
 			oro.add(oro.createStatement("gibbon isOn radish"), MemoryProfile.DEFAULT, false);
@@ -1629,13 +1628,60 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
+		/*
 		assertTrue("The only common property is 'isOn'.",
 				discriminents.get(0).size() == 1 &&
 				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("isOn"))));
-
+		 */
 		
 		//**********************************************************************
-				
+		// Check the behaviour with super-/sub-properties
+		
+		try {
+			oro.add(oro.createStatement("vervet climbsOn palmtree"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("macaque rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("macaque isOn palmtree"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+		
+		resources.clear();
+		resources.add(oro.getResource("vervet"));
+		resources.add(oro.getResource("macaque"));
+		
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue(discriminents.get(1).size() == 1 &&
+				discriminents.get(1).contains(oro.getModel().getProperty(Namespaces.format("climbsOn"))));
+
+		discriminents.clear();
+		
+		try {
+			oro.remove(oro.createStatement("macaque isOn palmtree"));
+			oro.add(oro.createStatement("macaque climbsOn coconut"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			fail("Error while adding a statement!");
+			e1.printStackTrace();
+		}
+
+		try {
+			discriminents = categorizationModule.getDiscriminent(resources);
+		} catch (NotComparableException e) {
+			fail();
+		}
+		
+		assertTrue("Only climsOn and not isOn should be returned.",
+				discriminents.get(0).size() == 1 &&
+				discriminents.get(0).contains(oro.getModel().getProperty(Namespaces.format("climbsOn"))));
+
+		//**********************************************************************
+	
+			
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

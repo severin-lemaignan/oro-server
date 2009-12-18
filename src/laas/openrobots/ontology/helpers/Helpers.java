@@ -336,6 +336,21 @@ public class Helpers {
     	return res;
     }
     
+    public static <K, V> Map<V, Set<K>> reverseSetMap(final Map<K, Set<V>> m) {
+    	Map<V, Set<K>> res = new HashMap<V, Set<K>>();
+    	
+    	for (K k : m.keySet()) {
+    		for (V v : m.get(k)) {
+	    		if (!res.containsKey(v))
+	    			res.put(v, new HashSet<K>());
+	    		res.get(v).add(k);
+    		}
+    	}
+    	
+    	
+    	return res;
+    }
+    
     /**
      * This simple method return true is a given object implements a given
      * interface.
