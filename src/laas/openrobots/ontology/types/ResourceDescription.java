@@ -27,6 +27,8 @@ public class ResourceDescription implements Serializable {
 			"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
 			"http://www.w3.org/2002/07/owl#sameAs", 
 			"http://www.w3.org/2002/07/owl#differentFrom",
+			"http://www.w3.org/2002/07/owl#topDataProperty",
+			"http://www.w3.org/2002/07/owl#bottomDataProperty",
 			"http://www.w3.org/2000/01/rdf-schema#label"};
 	
 	private final String resourcesToRemove[] = {
@@ -125,9 +127,14 @@ public class ResourceDescription implements Serializable {
 			OntResource tmp = it.next();
 			
 			if (!tmp.isAnon()) {
-				result += "\n{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
-				result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
-				if (it.hasNext()) result += ",";
+				for (String rToRemove : resourcesToRemove) {
+                	if (!tmp.getURI().equalsIgnoreCase(rToRemove)) {
+                		result += "\n{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
+    					result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
+    					if (it.hasNext()) result += ",";
+                	}
+            	}
+				
 			}			
 			
 		}
@@ -136,7 +143,10 @@ public class ResourceDescription implements Serializable {
 	}
 	
 	/**
-	 * This method scans all the given statements and build a list of present predicate with their associated objects. This list is then output as a JSON string.
+	 * This method scans all the given statements and build a list of present 
+	 * predicate with their associated objects. This list is then output as a 
+	 * JSON string.
+	 * 
 	 * @param rawStmtList
 	 * @return a JSON string describing, for each property, all the linked resources.
 	 */
