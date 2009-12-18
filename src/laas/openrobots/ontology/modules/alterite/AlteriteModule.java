@@ -248,10 +248,12 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 	/**************************************************************************/
 	
 	private IOntologyBackend getModelForAgent(String id) throws AgentNotFoundException {
-		IOntologyBackend oro = agents.get(id).model;
 		
-		if (oro == null) throw new AgentNotFoundException("I couldn't find the agent " + id + ".");
+		AgentModel a = agents.get(id);
+		if (a == null) throw new AgentNotFoundException("I couldn't find the agent " + id + ".");
 		
+		IOntologyBackend oro = a.model;
+			
 		return oro;
 	}
 }
