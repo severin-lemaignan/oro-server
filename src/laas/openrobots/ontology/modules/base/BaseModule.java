@@ -398,7 +398,7 @@ public class BaseModule implements IServiceProvider {
 		
 		ResultSet rawResult = oro.find(varName, stmts, filters);
 		
-		Logger.log("...done.\n");
+		Logger.log("...done.\n", false);
 		
 		if (rawResult == null) return null;
 		

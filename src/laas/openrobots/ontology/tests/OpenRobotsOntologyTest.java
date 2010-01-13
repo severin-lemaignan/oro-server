@@ -91,7 +91,7 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
  */
 public class OpenRobotsOntologyTest extends TestCase {
 
-	final String ORO_TEST_CONF = "oro_test.conf";
+	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
 	Properties conf;
 	
 	public OpenRobotsOntologyTest() {

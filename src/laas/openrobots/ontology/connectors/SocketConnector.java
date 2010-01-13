@@ -16,7 +16,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -423,13 +422,14 @@ public class SocketConnector implements IConnector, Runnable {
 		    	    			for (Class<?> param : m.getParameterTypes()) {
 		    	    				
 		    	    				try {
+		    	    					//TODO: This is hackish.
 			    	    				if (param.equals(IEventConsumer.class))	{
 			    	    					args[i] = this;
 			    	    					shiftSpecialCases ++;
 			    	    				}
 			    	    				else {
 			    	    					Object ob = Helpers.deserialize(list.get(i + 1), param);
-			    	    					System.out.println(ob);
+			    	    					Logger.log("Parameter: " + ob.toString() + "\n", VerboseLevel.DEBUG);
 			    	    					args[i + shiftSpecialCases] = ob; 
 				    	    				i++;
 			    	    				}
