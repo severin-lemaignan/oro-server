@@ -618,7 +618,7 @@ public class CategorizationModule implements IServiceProvider {
 		//Remove properties that lead to only 1 group (ie, non selective properties)
 		//(only for properties shared by more than one individual)
 		for (Property p : listOfPropertiesValues.keySet()) {
-			if (listOfPropertiesValues.get(p).size() == 1 && listOfProperties.get(p) > 1)
+			if (listOfPropertiesValues.get(p).size() <= 1 && listOfProperties.get(p) > 1)
 				listOfProperties.remove(p);
 		}
 	
