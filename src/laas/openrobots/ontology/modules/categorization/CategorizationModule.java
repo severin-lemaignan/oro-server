@@ -327,9 +327,17 @@ public class CategorizationModule implements IServiceProvider {
 	private Set<OntProperty> commonProperties() {
 
 				
-		Set<OntProperty> propA = modelA.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter()).toSet();
+		//Set<OntProperty> propA = modelA.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter()).toSet();
+		ExtendedIterator<OntProperty> propTmpA = modelA.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter());
+		
+		Set<OntProperty> propA = new HashSet<OntProperty>();
+		while (propTmpA.hasNext()) {
+			OntProperty p = propTmpA.next();
+			propA.add(p);
+		}
+			
 		Set <OntProperty> commonProp = modelB.listOntProperties().filterKeep(Namespaces.getDefaultNsFilter()).toSet();
-		commonProp.retainAll(propA);
+		//commonProp.retainAll(propA);
 		
 		return commonProp;
 	}
@@ -355,7 +363,12 @@ public class CategorizationModule implements IServiceProvider {
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
-		loadModels(conceptA, conceptB);
+		try {
+			loadModels(conceptA, conceptB);
+		} catch (NotComparableException e) {
+			oro.getModel().leaveCriticalSection();
+			throw e;
+		}
 	
 		for (Set<Statement> ss : firstDifferentAncestors()) {
 			
@@ -918,7 +931,12 @@ public class CategorizationModule implements IServiceProvider {
 		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
-		loadModels(conceptA, conceptB);
+		try {
+			loadModels(conceptA, conceptB);
+		} catch (NotComparableException e) {
+			oro.getModel().leaveCriticalSection();
+			throw e;
+		}
 
 		//*********************** Common ancestors *****************************
 		for (OntClass c : commonAncestors()) {
