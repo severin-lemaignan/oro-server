@@ -872,25 +872,31 @@ public class CategorizationModule implements IServiceProvider {
 		
 		//First, we keep only properties that share a same value
 		
+		//we reverse the map 'properties->values' to retrieve the properties with the same value
 		Map <RDFNode, Set<Property>> values = Helpers.reverseSetMap(propertiesList);
 		for (RDFNode n : values.keySet()) {
-			if (values.get(n).size() > 1) {
+			if (values.get(n).size() > 1) { //if more than one property for one value, then...
 				Logger.log("Suspect properties: " + values.get(n) + ". " +
 						"Is one of them a super-property without direct any value?\n", VerboseLevel.DEBUG);
 				Set<OntProperty> suspectOntProperties = new HashSet<OntProperty>();
 				
+				//...we store these properties
 				for (Property p : values.get(n)) {
 					suspectOntProperties.add(oro.createProperty(p.getURI()));
 				}
 				
+				//and for each pair of them, we check if there a parent/child relation
 				for (Property p : values.get(n)) {
 					for (OntProperty op : suspectOntProperties) {
 						
 						if (!p.equals((Property)op)) {
-							if (oro.createProperty(p.getURI()).hasSubProperty(op, false)) {
-								Logger.log("-> Removing " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(n)+ " \n", VerboseLevel.DEBUG);
-								propertiesList.get(p).remove(n);
-								break;
+							OntProperty op2 = oro.createProperty(p.getURI()); 
+							if(!op.hasEquivalentProperty(op2)) {
+								if (op2.hasSubProperty(op, false)) {
+									Logger.log("-> Removing " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(n)+ " \n", VerboseLevel.DEBUG);
+									propertiesList.get(p).remove(n);
+									break;
+								}
 							}
 						}
 					}
