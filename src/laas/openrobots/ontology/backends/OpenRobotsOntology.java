@@ -972,7 +972,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 						"\t- " + oroCommonSenseUri + 
 						",\n\t- " + oroRobotInstanceUri + 
 						" or\n\t- " + oroScenarioUri + 
-						".\nExiting.", VerboseLevel.FATAL_ERROR);
+						".\nExiting.\n", VerboseLevel.FATAL_ERROR);
 				System.exit(1);
 			}
 			//Ontology model and reasonner type
@@ -982,8 +982,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
 			//TODO: Workaround for http://clark-parsia.trac.cvsdude.com/pellet-devel/ticket/356
-			//onto.setStrictMode(false);
-			onto.setStrictMode(true);
+			onto.setStrictMode(false);
+			//onto.setStrictMode(true);
 			
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
