@@ -1537,8 +1537,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
+	
+	
 	/**
-	 * This tests croner cases for the discrinimate method.
+	 * This tests corner cases for the discrinimate method.
 	 */
 	public void testAdvancedDiscriminent() {
 
