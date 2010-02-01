@@ -262,7 +262,7 @@ public class OroServer implements IServiceProvider {
 			addNewServiceProviders(alteriteModule);
 		}
 		
-		// Check we have registred services and list them
+		// Check we have registered services and list them
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the " +
 					"ontology server! I've no reason to continue, so I'm " +

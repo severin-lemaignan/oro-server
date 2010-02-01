@@ -391,7 +391,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    			
 	    			Method m = registredServices.get(key).getMethod();
 
-	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName))
+	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName) && m.getParameterTypes().length == list.size() - 1)
 	    	    	{
 	    	    		methodFound = true;
 	    	    		boolean invokationDone = false;
@@ -405,8 +405,8 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			Object[] args = new Object[m.getParameterTypes().length];
 	    	    			
     	    			
-	    	    			if (	list.size() == 1 && 
-	    	    					!(m.getParameterTypes().length == 0))
+	    	    			if (	list.size() != 1 && 
+	    	    					m.getParameterTypes().length == 0)
 	    	    			{
 	    	    				Logger.log("Error while executing the request: method \""+ queryName + "\" expects no parameters.\n", VerboseLevel.ERROR);
 	    	 					result = "error\n" +
