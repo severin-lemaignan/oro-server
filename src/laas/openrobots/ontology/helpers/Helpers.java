@@ -430,7 +430,10 @@ public class Helpers {
     
     //TODO : Add unit test!
     public static <T> T deserialize(String val, Class<T> type) {
-		//not typed because... requirements <- that's what I call a bad excuse
+		//TODO: not typed because... <- that's what I call a bad excuse
+    	
+    		//Save it for errors message, in case something goes wrong
+    		String originalValue = val;
 		
 			if (type == String.class)
 				return (T) cleanValue(val);
@@ -492,7 +495,7 @@ public class Helpers {
 				return (T) result;
 			}
 			
-			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getName() + " was expected, received \"" + val + "\")");
+			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getSimpleName() + " was expected by the method, received \"" + originalValue + "\" instead)");
 	}
 		  
 	/** Remove leading and trailing quotes and whitespace if needed from a string. 

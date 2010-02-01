@@ -144,7 +144,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private Properties parameters;
 
 	
-	private Map<String, Pair<String, ResourceType> > lookupTable;
+	private Map<String, Set<Pair<String, ResourceType>>> lookupTable;
 	private boolean modelChanged = true;
 	private boolean forceLookupTableUpdate = false; //useful to systematically rebuild the lookup table when a statement has been removed.
 	
@@ -447,6 +447,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 	
+	@Override
 	public ResultSet find(	String varName,	Set<PartialStatement> statements, 
 							Set<String> filters) {
 		
@@ -736,28 +737,27 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String)
 	 */
 	@Override
-	public List<String> lookup(String id) throws NotFoundException {
+	public Set<List<String>> lookup(String id) throws NotFoundException {
 		
 		//if statements have been removed, we must force a rebuilt of the lookup
 		//table else a former concept that doesn't exist anymore could be returned.
-		if (forceLookupTableUpdate) rebuildLookupTable();
+		//In any case, if we can not find the id, we try to rebuild the lookup 
+		//table, in case some changes occurred since the last lookup.
+		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase()))
+		//	rebuildLookupTable();			
 				
-		List<String> result = new ArrayList<String>();
+		Set<List<String>> result = new HashSet<List<String>>();		
 		
-		if (lookupTable.containsKey(id.toLowerCase())) {
-			result.add(lookupTable.get(id.toLowerCase()).getLeft());
-			result.add(lookupTable.get(id.toLowerCase()).getRight().toString());
-		}
-		else {
-			
-			//we try to rebuild the lookup table, in case some changes occured since the last lookup.
-			rebuildLookupTable();
-			if (lookupTable.containsKey(id.toLowerCase())) {
-				result.add(lookupTable.get(id.toLowerCase()).getLeft());
-				result.add(lookupTable.get(id.toLowerCase()).getRight().toString());
+		if (lookupTable.containsKey(id.toLowerCase()))
+		{
+			for (Pair<String, ResourceType> p : lookupTable.get(id.toLowerCase())) {
+				List<String> l = new ArrayList<String>();
+				l.add(p.getLeft());
+				l.add(p.getRight().toString());
+				result.add(l);
 			}
-			else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
 		}
+		else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
 		
 		return result;
 		
@@ -861,7 +861,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	private void initialize(){
 		
-		this.lookupTable = new HashMap<String, Pair<String, ResourceType>>();
+		this.lookupTable = new HashMap<String, Set<Pair<String, ResourceType>>>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 					
@@ -900,6 +900,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		modelChanged = true;
 		
 		eventProcessor.process();
+		
+		//TODO: do we need to update it every time?
+		rebuildLookupTable();
 		
 		
 		if (rsName != null)	memoryManager.watch(rsName);
@@ -1016,6 +1019,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	}
 
+	private void addToLookupTable(String key, String id, ResourceType type) {
+		if (!lookupTable.containsKey(key)) {
+			lookupTable.put(key, new HashSet<Pair<String,ResourceType>>());
+		}
+		lookupTable.get(key).add(
+						new Pair<String, ResourceType>(id, type));
+	}
 
 	/**
 	 * Rebuild the map that binds all the concepts to their labels and type 
@@ -1043,13 +1053,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					ExtendedIterator<RDFNode> labels = res.listLabels(null);
 					
 					if (labels.hasNext())
-						while(labels.hasNext()) {							
-							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(),
-											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
+						while(labels.hasNext()) {
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.INSTANCE);
 						}
 					
-					lookupTable.put(res.getLocalName().toLowerCase(), 
-							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.INSTANCE));
+					
+					//Add the concept id itself.
+					addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.INSTANCE);
 					
 				}
 			}
@@ -1065,11 +1076,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 					if (labels.hasNext())
 						while(labels.hasNext()) {
-							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(),
-											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.CLASS));
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.CLASS);
 						}
-					else lookupTable.put(	res.getLocalName().toLowerCase(),
-							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.CLASS));
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.CLASS);
 					
 				}
 			}
@@ -1085,11 +1095,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 					if (labels.hasNext())
 						while(labels.hasNext()) {
-							lookupTable.put(	labels.next().as(Literal.class).getLexicalForm().toLowerCase(), 
-											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY));
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
 						}
-					else lookupTable.put(	res.getLocalName().toLowerCase(),
-							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY));
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
 					
 				}
 			}
@@ -1105,11 +1114,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					
 					if (labels.hasNext())
 						while(labels.hasNext()) {
-							lookupTable.put(  labels.next().as(Literal.class).getLexicalForm().toLowerCase(), 
-											new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY));
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
 						}
-					else lookupTable.put(	res.getLocalName().toLowerCase(),
-							new Pair<String, ResourceType>(Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY));
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
 				}
 			}
 		}

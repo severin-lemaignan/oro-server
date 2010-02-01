@@ -333,7 +333,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see ResourceType
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract List<String> lookup(String id) throws NotFoundException;
+	public abstract Set<List<String>> lookup(String id) throws NotFoundException;
 
 	/**
 	 * Remove all statements matching the partial statement.

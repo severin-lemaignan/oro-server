@@ -1,5 +1,8 @@
 package laas.openrobots.ontology.helpers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Pair<L, R> {
  
     private final L left;
@@ -46,5 +49,28 @@ public class Pair<L, R> {
     
     public String toString() {
     	return "<" + getLeft().toString() + ", " + getRight().toString() + ">";
+    }
+    
+    /**
+     * If the left and right members of the pair have the same type, return a list of the members.
+     * Else, return null
+     * 
+     * TODO Test this code!!
+     */
+    public List<L> asList() {
+    	
+    	//if (!left.getClass().equals(right.getClass()))
+    	//	return null;
+    	
+    	List<L> res =  new ArrayList<L>();
+    	res.add(left);
+
+		try {
+			res.add((L) right);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    		
+    	return res;
     }
 }

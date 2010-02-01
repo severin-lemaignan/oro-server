@@ -62,7 +62,12 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, false);
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, false);
+		}
+			
 	}
 	
 	@RPCMethod(
@@ -782,7 +787,7 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
 	)
-	public List<String> lookup(String id) throws NotFoundException {
+	public Set<List<String>> lookup(String id) throws NotFoundException {
 		
 		return oro.lookup(id);
 		
