@@ -63,18 +63,20 @@ print >> f_module, """/**
 package %(pkg)s;
 
 import java.util.Properties;
+import java.util.Set;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.service.IServiceProvider;
+import laas.openrobots.ontology.service.RPCMethod;
 
 /**
  * @author [add your name]
  *
  */
-public class %(name)s implements IModule {
+public class %(name)s implements IModule, IServiceProvider {
 
-		IOntologyBackend oro;
+	IOntologyBackend oro;
 	Properties serverParams;
 	
 	/**
@@ -100,13 +102,29 @@ public class %(name)s implements IModule {
 		super();
 	}
 	
+	/**
+	 * The foo function has a @RPCMethod annotation: it will be automatically 
+	 * registered and exposed by the server at the next restart.
+	 * 
+	 * @param args a set of strings
+	 * @return the concatenation of all the strings
+	 */
+	@RPCMethod (
+			category = "not classified",
+			desc = "concatenate a set of strings."
+			)
+	public String foo(Set<String> args) {
+		String res = "";
+		for (String s: args) res += s;
+		return res;
+	}
+	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.modules.IModule#getServiceProvider()
 	 */
 	@Override
 	public IServiceProvider getServiceProvider() {
-		// TODO Auto-generated method stub
-		return null;
+		return this;
 	}
 
 }
