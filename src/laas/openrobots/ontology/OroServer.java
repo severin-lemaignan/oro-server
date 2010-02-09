@@ -36,8 +36,12 @@
 
 package laas.openrobots.ontology;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -55,13 +59,25 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.util.iterator.Filter;
+
+import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.exceptions.InvalidPluginException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
+import laas.openrobots.ontology.exceptions.PluginNotFoundException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
@@ -185,12 +201,15 @@ public class OroServer implements IServiceProvider {
 	
 	public void addNewServiceProviders(IServiceProvider provider)
 	{
+		if (provider != null) {
+			
 			Map<String, IService> services = getDeclaredServices(provider);
 			if (services != null)
 				registredServices.putAll(services);
 			
 			// refresh connectors
 			for (IConnector c : connectors)	c.refreshServiceList(registredServices);
+		}
 	}
 	
 	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException, OntologyServerException { 
@@ -221,9 +240,9 @@ public class OroServer implements IServiceProvider {
 	    						"|          OroServer " + 
 	    										VERSION + "           |\n" +
 	    						"|                                    |\n" +
-	    						"|         ");
-	    	System.out.print("(c)LAAS-CNRS 2009");
-	    	Logger.printlnInBlue("          |\n" +
+	    						"|       ");
+	    	System.out.print("(c)LAAS-CNRS 2009-2010");
+	    	Logger.printlnInBlue("       |\n" +
 								"+------------------------------------+");
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[25m");
     	}
@@ -248,6 +267,7 @@ public class OroServer implements IServiceProvider {
 
 		/********************* SERVICES REGISTRATION **************************/
 		
+		// Base modules
 		IServiceProvider baseModule = new BaseModule(oro);
 		addNewServiceProviders(baseModule);
 		
@@ -257,11 +277,39 @@ public class OroServer implements IServiceProvider {
 		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
 		
-		if (serverParameters.getProperty("enable_alterite", "true").equalsIgnoreCase("true")) {
-			IServiceProvider alteriteModule = new AlteriteModule(oro);
-			addNewServiceProviders(alteriteModule);
-		}
+		// External plugins
 		
+		PluginLoader pl = new PluginLoader(oro, serverParameters);		
+		
+		String pluginsPath = serverParameters.getProperty("plugins_path");
+		
+		if (pluginsPath != null) {
+			
+			File f = new File(pluginsPath);
+			
+			Logger.log("Looking fo external plugins...\n");
+			
+			FilenameFilter filter = new FilenameFilter() {
+	            	public boolean accept(File f, String s) {return s.endsWith("jar") ? true : false; }
+				};
+         
+			for (File jarFile : f.listFiles(filter)) {
+				Logger.log(jarFile.toString() + "\n");
+				IModule module;
+				try {
+					module = pl.loadJAR("file://" + jarFile.getPath());
+					addNewServiceProviders(module.getServiceProvider());
+				}
+				catch (PluginNotFoundException e) {
+					Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
+				}
+				catch (InvalidPluginException e) {
+					Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
+				}
+			}
+				
+		}
+					
 		// Check we have registered services and list them
 		if (registredServices.size() == 0)
 			throw new OntologyServerException("No service registred by the " +
@@ -277,7 +325,7 @@ public class OroServer implements IServiceProvider {
 
 		
 /*******************************************************************************
-*                       CONNECTORS INITIALIZATION                              *
+*                    SOCKET CONNECTOR INITIALIZATION                           *
 *******************************************************************************/
     	
     	// Currently, only one connector, the socket connector 

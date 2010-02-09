@@ -24,6 +24,7 @@ import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
@@ -33,12 +34,12 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
-public class AlteriteModule implements IServiceProvider, IEventConsumer {
-
+public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer {
+	
 	private Map<String, AgentModel> agents;
 		
 	private Properties serverParameters;
-	
+		
 	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException {
 		this(oro, OroServer.serverParameters);
 	}
@@ -65,6 +66,11 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 			Logger.log("Alterite module won't work because the \"new agent\" event " +
 					"couldn't be registered.\n", VerboseLevel.WARNING);
 		}
+	}
+
+	@Override
+	public IServiceProvider getServiceProvider() {
+		return this;
 	}
 	
 	public void add(String id){
@@ -256,4 +262,5 @@ public class AlteriteModule implements IServiceProvider, IEventConsumer {
 			
 		return oro;
 	}
+
 }

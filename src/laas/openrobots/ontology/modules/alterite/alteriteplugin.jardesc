@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="/oro-server/plugins/AlteriteModule.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/oro-server/src/laas/openrobots/ontology/modules/alterite/alteriteplugin.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" manifestLocation="/oro-server/src/laas/openrobots/ontology/modules/alterite/MANIFEST" manifestVersion="1.0" reuseManifest="true" saveManifest="true" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <javaElement handleIdentifier="=oro-server/src&lt;laas.openrobots.ontology.modules.alterite{AlteriteModule.java"/>
+        <javaElement handleIdentifier="=oro-server/src&lt;laas.openrobots.ontology.modules.alterite{AgentWatcher.java"/>
+        <file path="/oro-server/src/laas/openrobots/ontology/modules/alterite/package.html"/>
+        <javaElement handleIdentifier="=oro-server/src&lt;laas.openrobots.ontology.modules.alterite{AgentModel.java"/>
+    </selectedElements>
+</jardesc>
