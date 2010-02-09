@@ -129,7 +129,7 @@ public class PluginLoader {
 		}
 
 		
-		Logger.log("Plugin \"" + pluginName + "\" successfully loaded and initialized.");
+		Logger.log("Plugin \"" + pluginName + "\" successfully loaded and initialized.\n");
 		
 		return module;
 
