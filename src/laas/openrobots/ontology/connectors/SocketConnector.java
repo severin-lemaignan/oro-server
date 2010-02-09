@@ -375,7 +375,7 @@ public class SocketConnector implements IConnector, Runnable {
 			  String result = "error\n\n";
 			  String queryName = list.get(0);
 			  
-			  Logger.log(">> Got incoming request: " + queryName + "\n", VerboseLevel.DEBUG);
+			  Logger.log(">> Got incoming request: " + queryName + " with " + (list.size() - 1) + " parameters\n", VerboseLevel.DEBUG);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
 	    		Logger.log("Closing communication with client " + getName() + ".\n");
@@ -547,7 +547,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    	}
 	    		}
 	    		if (!methodFound){
-	    			Logger.log("Error while executing the request: method \""+ queryName + "not implemented by the ontology server.\n", VerboseLevel.ERROR);
+	    			Logger.log("Error while executing the request: method \""+ queryName + "\" not implemented by the ontology server.\n", VerboseLevel.ERROR);
 					result = "error\n" +
 							"NotImplementedException\n" +
 							"Method " + queryName + " not implemented by the ontology server.";						
