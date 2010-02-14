@@ -27,6 +27,7 @@ import com.hp.hpl.jena.shared.NotFoundException;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -781,15 +782,22 @@ public class BaseModule implements IServiceProvider {
 		return getResourceDetails(id, OroServer.DEFAULT_LANGUAGE);
 	}
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String)
-	 */
 	@RPCMethod(
 			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
 	)
 	public Set<List<String>> lookup(String id) throws NotFoundException {
 		
 		return oro.lookup(id);
+		
+	}
+	
+	@RPCMethod(
+			desc = "try to identify a concept from its id or label and its type " +
+					"(class, instance, object_property, datatype_property)."
+	)
+	public Set<String> lookup(String id, String type) throws NotFoundException {
+		
+		return oro.lookup(id, ResourceType.fromString(type));
 		
 	}
 	

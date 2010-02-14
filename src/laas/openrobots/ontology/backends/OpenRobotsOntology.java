@@ -761,6 +761,33 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String, ResourceType)
+	 */
+	@Override
+	public Set<String> lookup(String id, ResourceType type) throws NotFoundException {
+		
+		//if statements have been removed, we must force a rebuilt of the lookup
+		//table else a former concept that doesn't exist anymore could be returned.
+		//In any case, if we can not find the id, we try to rebuild the lookup 
+		//table, in case some changes occurred since the last lookup.
+		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase()))
+		//	rebuildLookupTable();			
+				
+		Set<String> result = new HashSet<String>();		
+		
+		if (lookupTable.containsKey(id.toLowerCase()))
+		{
+			for (Pair<String, ResourceType> p : lookupTable.get(id.toLowerCase()))
+				if (p.getRight().equals(type))
+					result.add(p.getLeft());
+		}
+		else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
+		
+		return result;
+		
+	}
+	
 	/**
 	 * Returns the current set of parameters.
 	 * 

@@ -687,8 +687,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("Error while adding a statement!");
 			e.printStackTrace();
 		}
-
-		long startTime = System.currentTimeMillis();
         
 		try {
 			oro.lookup("princess Daisy");
@@ -743,8 +741,32 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("No label \"king kong\" should exist anymore in the ontology.");
 		} catch (NotFoundException e) {}
 	
-		long totalTime = (System.currentTimeMillis()-startTime);
-		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 5 + "ms");
+		//Test lookup with a type
+		
+		stmts.clear();
+		stmts.add("rintintin rdf:type Dog");
+		stmts.add("lassie rdf:type Cat");
+		stmts.add("rintintin sees lassie");
+		stmts.add("rintintin hasAge 134");
+		
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+		
+		assertTrue(onto.lookup("rintintin", ResourceType.INSTANCE).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.CLASS).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.OBJECT_PROPERTY).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.DATATYPE_PROPERTY).contains("rintintin"));
+		assertTrue(onto.lookup("dog", ResourceType.CLASS).contains("Dog"));
+		assertFalse(onto.lookup("dog", ResourceType.INSTANCE).contains("Dog"));
+		assertTrue(onto.lookup("sees", ResourceType.OBJECT_PROPERTY).contains("sees"));
+		assertFalse(onto.lookup("sees", ResourceType.DATATYPE_PROPERTY).contains("sees"));
+		assertFalse(onto.lookup("sees", ResourceType.DATATYPE_PROPERTY).contains("hasAge"));
+		assertTrue(onto.lookup("hasage", ResourceType.DATATYPE_PROPERTY).contains("hasAge"));
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	

@@ -326,16 +326,33 @@ public interface IOntologyBackend extends IServiceProvider {
 			boolean onlyDirect) throws NotFoundException;
 
 	/**
-	 * Returns the id and type (INSTANCE, CLASS, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of the concept whose label or id match the given parameter. If several concepts match, an randomly choosen one is returned.
+	 * Returns the set of all [id, type] (with type one of INSTANCE, CLASS, 
+	 * OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of concepts whose labels
+	 *  or id match the given parameter.
 	 * 
 	 * @param label the label (in any language) or id to look for.
 	 * @return A list made of the id of the concept whose label matchs the parameter followed by its type.
 	 * @throws NotFoundException
 	 * @see ResourceType
+	 * @see #lookup(String, ResourceType)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Set<List<String>> lookup(String id) throws NotFoundException;
 
+	/**
+	 * Returns the set of all id of concepts whose labels or ids match the given
+	 *  parameter and of the given type.
+	 * 
+	 * @param label the label (in any language) or id to look for.
+	 * @param type the type of the resource that is looked for.
+	 * @return A list made of the id of the concept whose label matchs the parameter followed by its type.
+	 * @throws NotFoundException
+	 * @see ResourceType
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	public abstract Set<String> lookup(String id, ResourceType type) throws NotFoundException;
+
+	
 	/**
 	 * Remove all statements matching the partial statement.
 	 * Usage example:<br/>
