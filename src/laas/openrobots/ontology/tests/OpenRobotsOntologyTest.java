@@ -1134,58 +1134,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 
-	/**
-	 * This test try to identify a resource through one of its numerical property, but in an approximate way.
-	 */
-	public void testApproximateNumericMatching() {
-
-		System.out.println("[UNITTEST] ***** TEST: Approximate numeric matching *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
-		
-	
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
-
-		try {
-			partialStatements.add(oro.createPartialStatement("?mysterious age \"40\"^^xsd:int"));
-			partialStatements.add(oro.createPartialStatement("?mysterious weight \"60\"^^xsd:double"));
-		} catch (IllegalStatementException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		Hashtable<Resource, Double> matchingResources = null;
-		
-		try {
-			matchingResources = oro.guess("mysterious", partialStatements, 0.6);
-		} catch (UnmatchableException e) {
-			e.printStackTrace();
-			fail(e.getLocalizedMessage());
-		}
-		
-		assertFalse("guess() didn't answered anything!",matchingResources.isEmpty());
-		
-		Iterator<Resource> res = matchingResources.keySet().iterator();
-		while(res.hasNext())
-		{
-			Resource currentRes = res.next();
-			assertTrue("Only baboon should be returned.", currentRes.getLocalName().contains("baboon"));
-			//assertTrue("The matching quality should be about 0.7.", matchingResources.get(currentRes) == 0.725);
-		}
-		//TODO Add a test which returns the class of the resource.
-		
-		try {
-			matchingResources = oro.guess("mysterious", partialStatements, 0.9);
-		} catch (UnmatchableException e) {
-			e.printStackTrace();
-			fail(e.getLocalizedMessage());
-		}
-		
-		assertTrue("guess() shouldn't have answered anything!",matchingResources.isEmpty());
-		
-		
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-
 	/***********************************************************************
 	 *                       ADVANCED TESTS                                *
 	 ***********************************************************************/

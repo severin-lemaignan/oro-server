@@ -149,7 +149,7 @@ public class ReasoningTests extends TestCase {
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
 		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
 
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
+		Set<PartialStatement> partialStatements = new HashSet<PartialStatement>();
 
 		try {
 			partialStatements.add(oro.createPartialStatement("?individual age 12^^xsd:int"));
@@ -160,15 +160,9 @@ public class ReasoningTests extends TestCase {
 		
 		startTime = System.currentTimeMillis();
 		
-		Hashtable<Resource, Double> matchingResources = new Hashtable<Resource, Double>();
-		try {
-			matchingResources = oro.guess("individual", partialStatements, 0.5);
-		} catch (UnmatchableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		Set<String> res = oro.find("individual", partialStatements, null);
 		
-		assertEquals(max + 1 + " individuals should be returned.", max + 1, matchingResources.size());
+		assertEquals(max + 1 + " individuals should be returned.", max + 1, res.size());
 		
 		System.out.println(max + " statements guessed in "+ (System.currentTimeMillis() - startTime) + "ms.");
 						

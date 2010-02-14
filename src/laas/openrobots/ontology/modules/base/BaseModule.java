@@ -371,7 +371,6 @@ public class BaseModule implements IServiceProvider {
 	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
-	 * @see #guess(String, Vector, double)
 	 * @see PartialStatement Syntax of partial statements
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */

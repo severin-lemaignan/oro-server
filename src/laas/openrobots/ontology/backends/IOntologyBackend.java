@@ -257,61 +257,6 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract ResultSet find(	String varName,	
 							Set<PartialStatement> statements, 
 							Set<String> filters);
-	/**
-	 * Tries to approximately identify an individual given a set of known statements about this resource.<br/>
-	 * The individual which is looked for must be currently the <b>subject</b> of all these statements.<br/><br/>
-	 * 
-	 * Following steps are achieved:
-	 * <ol>
-	 * <li>For each statement, a SPARQL query is issued by replacing the object by a variable.</li>
-	 * <li>This query returns a first list of individuals bound with the statement predicate to some object.</li>
-	 * <li>For each member of this list, a "distance" to the original statement is measured and "matching quality level" is stored. The relevant metrics are delegated to...</li>
-	 * TODO ...what delegates ?<br/>
-	 * <li>These steps are reiterated over the vector of given statements. If new matching individuals are discover, we append them to the individuals list. If they already exist in the list, their previous matching quality level is multiplied with the new one.</li>
-	 * <li>At the end, all individuals whose matching quality level is below the threshold are discarded.</li>
-	 * </ol>
-	 * <br/>
-	 * Please note that:
-	 * <ul>
-	 * <li>If a statement involves a non-functional property (ie the subject may have several time this property with different objects), the statement is currently ignored.</li>
-	 * </ul>
-	 * 
-	 * <b>For example:</b><br/>
-	 * If your ontology defines such a statement:<br/>
-	 * {@code ns:bottle ns:size "120"^^xsd:integer"}<br/>
-	 * Then: 
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 *
-	 * Vector<Statement> knowledge = new Vector<Statement>();
-	 *	try {
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:size "100"^^xsd:integer"));
-	 *	} catch (IllegalStatementException e) {
-	 *		e.printStackTrace();
-	 *	}
-	 *
-	 * Hashtable<Resource, Double> matchingResources = myOntology.guess("mysterious", statements, 0.6);
-	 *
-	 *	Iterator<Resource> res = matchingResources.keySet().iterator();
-	 *	while(res.hasNext())
-	 *	{
-	 *		Resource currentRes = res.next();
-	 *		System.out.println(currentRes.getLocalName() + " (match quality: " + matchingResources.get(currentRes) + ").");
-	 *	}
-	 * </pre>
-	 *  should output something like {@code "ns:bottle (match quality: 0.8)"}.
-	 * 
-	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partialStatements The statements defining (more or less) the resource your looking for.
-	 * @param threshold the match quality threshold to hold and return a resource.
-	 * @return a table containing the matching individuals and the corresponding match quality level (from 0.0: no match to 1.0: perfect match).
-	 * @throws UnmatchableException thrown if we don't know how to compare (ie to calculate a distance) two nodes. TODO : improve this description.
-	 * @see #find(String, Vector)
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public abstract Hashtable<Resource, Double> guess(String varName,
-			Vector<PartialStatement> partialStatements, double threshold)
-			throws UnmatchableException;
 
 	public abstract Set<OntClass> getSuperclassesOf(OntClass type,
 			boolean onlyDirect) throws NotFoundException;
