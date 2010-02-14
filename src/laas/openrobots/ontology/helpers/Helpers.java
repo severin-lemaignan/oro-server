@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
@@ -520,6 +521,18 @@ public class Helpers {
 		String res = value.replaceAll("\"", "\\\"");
 		    		
 		return "\"" + res + "\"";
+	}
+	
+	
+	public static <T> T pickRandom(Set<T> set) {
+		int item = new Random().nextInt(set.size()); // In real life, the Random object should be rather more shared than this
+		int i = 0;
+		for(T obj : set) {
+		    if (i == item) return obj;
+		    i++;
+		}
+		
+		return null;		
 	}
 
 }
