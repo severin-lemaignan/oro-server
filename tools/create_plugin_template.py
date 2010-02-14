@@ -22,7 +22,7 @@ while(ok != "y"):
 		if (os.path.exists(output_path)):
 			ok = raw_input("Attention! the destination path already exist. Are you sure you want to continue? (y/n)")
 		else:
-			os.mkdir(output_path)
+			os.makedirs(output_path)
 			ok = "y"
 
 f_manifest = open("./" + output_path + "MANIFEST", "w")
