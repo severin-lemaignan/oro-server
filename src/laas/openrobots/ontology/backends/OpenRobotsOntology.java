@@ -134,8 +134,6 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
  */
 public class OpenRobotsOntology implements IOntologyBackend {
 	
-	public static enum ResourceType {CLASS, INSTANCE, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED}
-	
 	private OntModel onto;
 	
 	private ResultSet lastQueryResult;

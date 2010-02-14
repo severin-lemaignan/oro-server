@@ -55,7 +55,7 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
