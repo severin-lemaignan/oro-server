@@ -688,8 +688,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 
-		assertNull("No label \"princess Daisy\" exists in the ontology.", onto.lookup("princess Daisy"));
-		assertTrue("No label \"princess Daisy\" exists in the ontology.", oro.lookup("princess Daisy").isEmpty());
+		assertTrue("No label \"princess Daisy\" exists in the ontology.", onto.lookup("princess Daisy").isEmpty());
 		
 		assertEquals("The \"baboon\" instance should be retrieved.", "baboon", oro.lookup("BabouIn").iterator().next().get(0));
 		assertEquals("The \"baboon\" type should be INSTANCE.", ResourceType.INSTANCE.toString(), oro.lookup("BabouIn").iterator().next().get(1));

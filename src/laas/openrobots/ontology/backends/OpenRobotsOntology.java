@@ -755,7 +755,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(l);
 			}
 		}
-		else return null;
 		
 		return result;
 		
@@ -782,7 +781,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				if (p.getRight().equals(type))
 					result.add(p.getLeft());
 		}
-		else return null;
 		
 		return result;
 		

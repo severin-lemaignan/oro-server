@@ -332,7 +332,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * 
 	 * @param label the label (in any language) or id to look for.
 	 * @return A list made of the id of the concept whose label matches the 
-	 * parameter followed by its type, or null if nothing was found.
+	 * parameter followed by its type, or an empty set if nothing was found.
 	 * @see ResourceType
 	 * @see #lookup(String, ResourceType)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -345,8 +345,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * 
 	 * @param label the label (in any language) or id to look for.
 	 * @param type the type of the resource that is looked for.
-	 * @return A list made of the id of the concept whose label matchs the parameter followed by its type.
-	 * @throws NotFoundException
+	 * @return A set of ids whose label matches the parameter or an empty set.
 	 * @see ResourceType
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */

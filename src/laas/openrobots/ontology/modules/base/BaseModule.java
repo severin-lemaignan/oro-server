@@ -785,13 +785,8 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
 	)
-	public Set<List<String>> lookup(String id) {
-		
-		Set<List<String>> res = oro.lookup(id);
-		
-		if (res == null)
-			return new HashSet<List<String>>();
-		else return res;
+	public Set<List<String>> lookup(String id) {	
+		return oro.lookup(id);
 	}
 	
 	@RPCMethod(
@@ -799,12 +794,7 @@ public class BaseModule implements IServiceProvider {
 					"(class, instance, object_property, datatype_property)."
 	)
 	public Set<String> lookup(String id, String type) {
-		
-		Set<String> res = oro.lookup(id, ResourceType.fromString(type));
-
-		if (res == null)
-			return new HashSet<String>();
-		else return res;
+		return oro.lookup(id, ResourceType.fromString(type));
 	}
 	
 }
