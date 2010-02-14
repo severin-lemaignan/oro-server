@@ -2,14 +2,14 @@ package laas.openrobots.ontology.modules.alterite;
 
 import java.util.Properties;
 
-import org.mindswap.pellet.jena.PelletReasonerFactory;
-
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+
+import org.mindswap.pellet.jena.PelletReasonerFactory;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;

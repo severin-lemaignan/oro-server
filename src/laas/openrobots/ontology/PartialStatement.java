@@ -38,6 +38,11 @@ package laas.openrobots.ontology;
 
 import java.util.List;
 
+import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.helpers.Helpers;
+import laas.openrobots.ontology.helpers.Namespaces;
+
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Alt;
 import com.hp.hpl.jena.rdf.model.Bag;
@@ -53,11 +58,6 @@ import com.hp.hpl.jena.rdf.model.Seq;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
-
-import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.helpers.Helpers;
-import laas.openrobots.ontology.helpers.Namespaces;
 
 /** A partial statement is a statement whose at least one element (subject, predicate or object) is unknown.</br>
  * 

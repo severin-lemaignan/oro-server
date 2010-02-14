@@ -8,16 +8,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
-import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -162,16 +159,12 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 			Logger.log("Sending expression " +
 					stmts.toString() + "\n", VerboseLevel.DEBUG);
 			
-			ResultSet rawResult = oro.find("obj", stmts, null);
-			
-			if (!rawResult.hasNext()) res = "Nothing!";
+			Set<String> rawResult = oro.find("obj", stmts, null);
+			//TODO fetch the labels
+			if (rawResult.isEmpty()) res = "Nothing!";
 			else {
-				while (rawResult.hasNext())
-				{
-					QuerySolution row = rawResult.nextSolution();
-					//TODO return the labels
-					res += Namespaces.toLightString(row.get("obj")) + ", ";
-				}
+				for (String r : rawResult)
+					res += r + ", ";
 				//TODO: this formatting regex won't match - ' and other similar characters
 				res = res.replaceAll("([\\w, ]+),([\\w ]+), ", "$1 and$2, I think.");
 				res = res.replaceFirst("(?:(\\w+), )$", "Only $1.");
@@ -180,6 +173,9 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		} catch (IllegalStatementException e) {
 			res = "I think you asked me a question, but I didn't understand what" +
 					" you were looking for...";
+		} catch (InvalidQueryException e) {
+			res = "I think you asked me a question, but I didn't understand what" +
+			" you were looking for...";
 		}
 		
 		return res;

@@ -8,21 +8,17 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.shared.NotFoundException;
-
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
-import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
@@ -33,6 +29,8 @@ import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
+
+import com.hp.hpl.jena.shared.NotFoundException;
 
 public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer {
 	
@@ -168,7 +166,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 									String varName, 
 									Set<String> statements, 
 									Set<String> filters) 
-						throws IllegalStatementException, AgentNotFoundException
+						throws IllegalStatementException, AgentNotFoundException, InvalidQueryException
 	{
 		IOntologyBackend oro = getModelForAgent(id);
 		
@@ -195,20 +193,10 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
 		
-		
-		ResultSet rawResult = oro.find(varName, stmts, filters);
-		
+				
 		Logger.log("...done.\n");
 		
-		if (rawResult == null) return null;
-		
-		while (rawResult.hasNext())
-		{
-			QuerySolution row = rawResult.nextSolution();
-			result.add(Namespaces.toLightString(row.get(varName)));
-		}
-		
-		return result;
+		return oro.find(varName, stmts, filters);
 	}
 	
 	@RPCMethod(
@@ -219,7 +207,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public Set<String> findForAgent(String id, 
 									String varName, 
 									Set<String> statements) 
-						throws IllegalStatementException, AgentNotFoundException
+						throws IllegalStatementException, AgentNotFoundException, InvalidQueryException
 	{
 		return findForAgent(id, varName, statements, null);
 	}

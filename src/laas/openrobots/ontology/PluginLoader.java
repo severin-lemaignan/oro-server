@@ -11,8 +11,8 @@ import java.util.jar.Attributes;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.InvalidPluginException;
 import laas.openrobots.ontology.exceptions.PluginNotFoundException;
-import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.JarClassLoader;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 

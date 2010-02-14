@@ -1,6 +1,5 @@
 package laas.openrobots.ontology.backends;
 
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -10,8 +9,8 @@ import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -24,9 +23,7 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryParseException;
-import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -232,12 +229,12 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * namespace. 
 	 * 
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
+	 * @param query 
 	 * @return The result of the query as a Jena ResultSet.
 	 * @see #queryAsXML(String)
 	 * @throws QueryParseException thrown if the argument is not a valid SPARQL query.
 	 */
-	public abstract ResultSet query(String query) throws QueryParseException,
-			QueryExecException;
+	public abstract Set<String> query(String key, String query) throws InvalidQueryException;
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements 
@@ -250,13 +247,14 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @param filters a vector of string containing the various filters to be 
 	 * appended to the search. The syntax is the SPARQL one (as defined here:
 	 *  http://www.w3.org/TR/rdf-sparql-query/#tests).
-	 * @return a result set of resources that match the statements.
+	 * @return a set of resources that match the statements.
+	 * @throws InvalidQueryException 
 	 * @see {@link #guess(String, Vector, double)}
 	 * @see BaseModule#find(String, Set, Set) Examples of use
 	 */
-	public abstract ResultSet find(	String varName,	
+	public abstract Set<String> find(	String varName,	
 							Set<PartialStatement> statements, 
-							Set<String> filters);
+							Set<String> filters) throws InvalidQueryException;
 
 	public abstract Set<OntClass> getSuperclassesOf(OntClass type,
 			boolean onlyDirect) throws NotFoundException;

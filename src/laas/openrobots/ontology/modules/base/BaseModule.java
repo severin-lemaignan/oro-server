@@ -7,23 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.hp.hpl.jena.ontology.Individual;
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.query.QueryExecException;
-import com.hp.hpl.jena.query.QueryParseException;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.query.ResultSetFormatter;
-import com.hp.hpl.jena.rdf.model.Literal;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.shared.Lock;
-import com.hp.hpl.jena.shared.NotFoundException;
-
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -31,6 +14,7 @@ import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -39,6 +23,18 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 import laas.openrobots.ontology.types.ResourceDescription;
+
+import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.shared.Lock;
+import com.hp.hpl.jena.shared.NotFoundException;
 
 public class BaseModule implements IServiceProvider {
 
@@ -247,38 +243,13 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="performs one SPARQL query on the ontology"
 	)
-	public Set<String> query(String key, String q) throws QueryParseException, QueryExecException
+	public Set<String> query(String key, String q) throws InvalidQueryException
 	{
 		Logger.log("Processing query:\n" + q + "\n");
-		
-		Set<String> result = new HashSet<String>();
 
-		//String key = "";
-		
-		//The variable we want to bind.
-		/*if (params.size() == 1) {
-			String q = params.firstElement();
-			int iQmark = q.indexOf("?");
-			int iSpace = (q.indexOf(" ", iQmark) == -1) ? q.length() : q.indexOf(" ", iQmark);
-			int iReturn = (q.indexOf('\n', iQmark) == -1) ? q.length() : q.indexOf("\n", iQmark);
-			key = q.substring(iQmark+1, Math.min(iSpace, iReturn));
-		}		
-		else key = params.remove(0); //if more than one string is given, we assume that the first param is the variable to bind.
-		*/
-		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
-		
-		ResultSet queryResults = null;
-		
-		queryResults = oro.query(q);
-		while (queryResults.hasNext()) {
-			RDFNode node = queryResults.nextSolution().getResource(key);
-			if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
-				result.add(Namespaces.toLightString(node));
-		}
-		
-		return result;
+		return oro.query(key, q);
 	}
-	
+
 	/**
 	 * Like {@link #query(String) query} except it returns a XML-encoded SPARQL result.
 	 * 
@@ -286,6 +257,7 @@ public class BaseModule implements IServiceProvider {
 	 * @return The result of the query as SPARQL XML string.
 	 * @see #query(String)
 	 */
+	/**TODO: REIMPLEMENT queryAsXML!!
 	@RPCMethod(
 			category="querying",
 			desc = "performs one or several SPARQL queries on the ontology and returns a XML-formatted result set"
@@ -298,7 +270,7 @@ public class BaseModule implements IServiceProvider {
 		else
 			return null;
 	}
-	
+	**/
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements (plus optional restrictions) about this resource.<br/>
@@ -371,6 +343,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
+	 * @throws InvalidQueryException 
 	 * @see PartialStatement Syntax of partial statements
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
@@ -378,7 +351,7 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements plus restrictions about this resource."
 	)	
-	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException {
+	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException, InvalidQueryException {
 		
 		Logger.log("Searching resources in the ontology");
 				
@@ -399,21 +372,10 @@ public class BaseModule implements IServiceProvider {
 			for (String f : filters)
 				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
-		
-		
-		ResultSet rawResult = oro.find(varName, stmts, filters);
-		
+				
 		Logger.log("...done.\n", false);
 		
-		if (rawResult == null) return null;
-		
-		while (rawResult.hasNext())
-		{
-			QuerySolution row = rawResult.nextSolution();
-			result.add(Namespaces.toLightString(row.get(varName)));
-		}
-		
-		return result;
+		return oro.find(varName, stmts, filters);
 	}
 
 	/**
@@ -452,6 +414,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
+	 * @throws InvalidQueryException 
 	 * @see #find(String, Vector, Vector)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
@@ -459,7 +422,7 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements about this resource."
 	)	
-	public Set<String> find(String varName, Set<String> statements) throws IllegalStatementException {
+	public Set<String> find(String varName, Set<String> statements) throws IllegalStatementException, InvalidQueryException {
 		return find(varName, statements, null);
 	}
 

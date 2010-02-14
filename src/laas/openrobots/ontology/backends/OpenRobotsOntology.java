@@ -43,10 +43,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +57,8 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -76,7 +74,6 @@ import laas.openrobots.ontology.service.RPCMethod;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
-import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.ontology.DatatypeProperty;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.ObjectProperty;
@@ -418,8 +415,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
 	 */
-	public ResultSet query(String query) throws QueryParseException, QueryExecException
+	public Set<String> query(String key, String query) throws InvalidQueryException
 	{
+		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
+		
+		
+		Set<String> res = new HashSet<String>();
 		
 		//Add the common prefixes.
 		query = Namespaces.prefixes() + query;
@@ -433,21 +434,32 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
 		catch (QueryParseException e) {
-			Logger.log("error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
-			throw e;
+			Logger.log("Error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.ERROR);
+			throw new InvalidQueryException("Error during query parsing ! ("+ e.getLocalizedMessage() +")");
 		}
 		catch (QueryExecException e) {
-			Logger.log("error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
-			throw e;
+			Logger.log("Error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
+			throw new InvalidQueryException("Error during query execution ! ("+ e.getLocalizedMessage() +")");
 		}
 				
-		return this.lastQueryResult;
+		while (this.lastQueryResult.hasNext()) {
+			QuerySolution s = this.lastQueryResult.nextSolution();
+			try {
+				Resource node = s.getResource(key);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					res.add(Namespaces.toLightString(node));
+			} catch (ClassCastException e) {
+				Literal l = s.getLiteral(key);
+				res.add(l.getLexicalForm());
+			}
+		}
 		
+		return res;
 	}
 	
 	@Override
-	public ResultSet find(	String varName,	Set<PartialStatement> statements, 
-							Set<String> filters) {
+	public Set<String> find(	String varName,	Set<PartialStatement> statements, 
+							Set<String> filters) throws InvalidQueryException {
 		
 		String query = "SELECT ?" + varName + "\n" +
 		"WHERE {\n";
@@ -465,7 +477,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}		
 		query += "}";
 		
-		return query(query);
+		return query(varName, query);
 	}
 
 
