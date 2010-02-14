@@ -735,7 +735,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String)
 	 */
 	@Override
-	public Set<List<String>> lookup(String id) throws NotFoundException {
+	public Set<List<String>> lookup(String id) {
 		
 		//if statements have been removed, we must force a rebuilt of the lookup
 		//table else a former concept that doesn't exist anymore could be returned.
@@ -755,7 +755,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(l);
 			}
 		}
-		else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
+		else return null;
 		
 		return result;
 		
@@ -765,7 +765,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String, ResourceType)
 	 */
 	@Override
-	public Set<String> lookup(String id, ResourceType type) throws NotFoundException {
+	public Set<String> lookup(String id, ResourceType type) {
 		
 		//if statements have been removed, we must force a rebuilt of the lookup
 		//table else a former concept that doesn't exist anymore could be returned.
@@ -782,7 +782,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				if (p.getRight().equals(type))
 					result.add(p.getLeft());
 		}
-		else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
+		else return null;
 		
 		return result;
 		
