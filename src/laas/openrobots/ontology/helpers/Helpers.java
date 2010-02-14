@@ -73,6 +73,13 @@ import com.hp.hpl.jena.rdf.model.impl.ModelCom;
  *
  */
 public class Helpers {
+	
+	static Random handOfGod;
+	
+	{
+		handOfGod = new Random(System.currentTimeMillis());
+	}
+	
 	/**
 	 * Parse a SPARQL string representing a literal to an actual Jena {@link com.hp.hpl.jena.rdf.model.Literal}. The method actually returns a {@link com.hp.hpl.jena.rdf.model.RDFNode} because if the literal is not recognized, it falls back on a generic RDFNode. To be sure the result is actually a literal, the {@link com.hp.hpl.jena.rdf.model.RDFNode#isLiteral()} method can be used.<br/> 
 	 * @param lex the string representing the literal.
@@ -525,14 +532,17 @@ public class Helpers {
 	
 	
 	public static <T> T pickRandom(Set<T> set) {
-		int item = new Random().nextInt(set.size()); // In real life, the Random object should be rather more shared than this
-		int i = 0;
-		for(T obj : set) {
-		    if (i == item) return obj;
-		    i++;
-		}
 		
-		return null;		
+		if(set.isEmpty()) return null;
+		
+		ArrayList<T> list = new ArrayList<T>(set);
+		
+		int size = set.size();
+		
+		if (size == 1)
+			return list.get(0);
+
+		return list.get(handOfGod.nextInt(size));		
 	}
 
 }
