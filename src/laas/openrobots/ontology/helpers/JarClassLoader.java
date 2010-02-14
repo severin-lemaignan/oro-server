@@ -73,6 +73,7 @@ public class JarClassLoader extends URLClassLoader {
      */
     public Attributes getManifestEntries() throws IOException {
         URL u = new URL("jar", "", url + "!/");
+        Logger.log("Openning JAR package " + u.toString() + "\n", VerboseLevel.DEBUG);
         JarURLConnection uc = (JarURLConnection)u.openConnection();
         Attributes attr = uc.getMainAttributes();
         return attr;
