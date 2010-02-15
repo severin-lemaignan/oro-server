@@ -380,7 +380,7 @@ public class BaseModule implements IServiceProvider {
 	)	
 	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException {
 		
-		Logger.log("Searching resources in the ontology");
+		Logger.log("Searching resources in the ontology...\n");
 				
 		Set<String> result = new HashSet<String>();
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
@@ -402,8 +402,6 @@ public class BaseModule implements IServiceProvider {
 		
 		
 		ResultSet rawResult = oro.find(varName, stmts, filters);
-		
-		Logger.log("...done.\n", false);
 		
 		if (rawResult == null) return null;
 		
@@ -486,7 +484,7 @@ public class BaseModule implements IServiceProvider {
 	 */
 	@RPCMethod(
 			category="querying",
-			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the \"usages\" of a resource."
+			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the usages of a resource."
 	)
 	public Set<String> getInfos(String lex_resource) throws NotFoundException {
 		
