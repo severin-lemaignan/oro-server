@@ -81,8 +81,8 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 	 * the question, an will return an natural answer.
 	 * 
 	 * @param sentence the sentence to parse, in natural language
-	 * @return an answer in natural language if the sentence was understood,
-	 * nothing else.
+	 * @return an answer in natural language if the sentence was understood, else
+	 * an empty string.
 	 */
 	@RPCMethod (
 			category = "natural language",
@@ -101,7 +101,7 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		else if (whatMatcher.matches())
 			res = handleFind(whatMatcher.group(2), whatMatcher.group(3), whatMatcher.group(1));
 		else
-			res = "I don't understand what you mean.";
+			res = "";
 		
 		return res;
 	}
