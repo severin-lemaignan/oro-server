@@ -11,13 +11,14 @@ import java.util.jar.Attributes;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.InvalidPluginException;
 import laas.openrobots.ontology.exceptions.PluginNotFoundException;
-import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.JarClassLoader;
+import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 
 public class PluginLoader {
 
+	private enum CONSTRUCTOR_TYPE {ORO_PARAMS, ORO, PARAMS, DEFAULT};
 	private IOntologyBackend oro;
 	private Properties params;
 	
@@ -29,7 +30,7 @@ public class PluginLoader {
 	
 	public IModule loadJAR(String jarFile) throws PluginNotFoundException, InvalidPluginException {
 		
-		Logger.log("Loading plugin " + jarFile + "\n", VerboseLevel.DEBUG);
+		Logger.log("Loading plugin " + jarFile + "\n", VerboseLevel.VERBOSE);
 		
 		URL url = null;
         try {
@@ -61,33 +62,41 @@ public class PluginLoader {
 		try {
 			pluginClass = (Class<IModule>) cl.loadClass(className);
 		} catch (ClassNotFoundException e1) {
-			Logger.log("Unable to find plugin " + className + ". Check your classpath. Skipping this plugin for now.", VerboseLevel.SERIOUS_ERROR);
+			Logger.log("Unable to find plugin " + className + ". Check your classpath. Skipping this plugin for now.\n", VerboseLevel.SERIOUS_ERROR);
 			throw new PluginNotFoundException("Unable to find plugin " + className + ". Check your classpath.");
 		}
 					
 		Constructor c;
+		CONSTRUCTOR_TYPE mode = CONSTRUCTOR_TYPE.DEFAULT;
+
+		IModule module = null;
 		
 		try {
 			//First, looking for a Constructor(IOntologyBackend, Properties)
 			c = pluginClass.getConstructor(IOntologyBackend.class, Properties.class);
+			mode = CONSTRUCTOR_TYPE.ORO_PARAMS;
+			
 		} catch (SecurityException e) {
-			Logger.log("Security exception while loading " + className + ". Skipping this plugin.", VerboseLevel.SERIOUS_ERROR);
+			Logger.log("Security exception while loading " + className + ". Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 			e.printStackTrace();
 			throw new InvalidPluginException("Impossible to load the plugin (security exception)");
 		} catch (NoSuchMethodException e) {
 			try {
 				//Then, looking for a Constructor(IOntologyBackend)
 				c = pluginClass.getConstructor(IOntologyBackend.class);
+				mode = CONSTRUCTOR_TYPE.ORO;
+				
 			} catch (SecurityException se) {
-				Logger.log("Security exception while loading " + className + ". Skipping this plugin.", VerboseLevel.SERIOUS_ERROR);
+				Logger.log("Security exception while loading " + className + ". Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 				se.printStackTrace();
 				throw new InvalidPluginException("Impossible to load the plugin (security exception)");
 			} catch (NoSuchMethodException e2) {
 				try {
 					//Then, looking for a Constructor(Properties)
 					c = pluginClass.getConstructor(Properties.class);
+					mode = CONSTRUCTOR_TYPE.PARAMS;
 				} catch (SecurityException se) {
-					Logger.log("Security exception while loading " + className + ". Skipping this plugin.", VerboseLevel.SERIOUS_ERROR);
+					Logger.log("Security exception while loading " + className + ". Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 					se.printStackTrace();
 					throw new InvalidPluginException("Impossible to load the plugin (security exception)");
 				} catch (NoSuchMethodException e3) {
@@ -95,37 +104,49 @@ public class PluginLoader {
 						//Finally, looking for a default Constructor()
 						c = pluginClass.getConstructor();
 					} catch (SecurityException se) {
-						Logger.log("Security exception while loading " + className + ". Skipping this plugin.", VerboseLevel.SERIOUS_ERROR);
+						Logger.log("Security exception while loading " + className + ". Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 						se.printStackTrace();
 						throw new InvalidPluginException("Impossible to load the plugin (security exception)");
 					} catch (NoSuchMethodException e4) {
-						Logger.log("Plugin " + className + " has no suitable constructor. Skipping this plugin.", VerboseLevel.SERIOUS_ERROR);
+						Logger.log("Plugin " + className + " has no suitable constructor. Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 						throw new InvalidPluginException("Impossible to load the plugin (no suiable constructor)");
 					}
 				}
 			}
 		}
 
-		IModule module = null;
 		
 		try {
-			module = (IModule) c.newInstance(oro, params);
+			switch (mode) {
+				case ORO_PARAMS:
+					module = (IModule) c.newInstance(oro, params);
+					break;
+				case ORO:
+					module = (IModule) c.newInstance(oro);
+					break;
+				case PARAMS:
+					module = (IModule) c.newInstance(params);
+					break;
+				case DEFAULT:
+					module = (IModule) c.newInstance();
+			}
+			
 		} catch (IllegalArgumentException e) {
-			Logger.log("Unexpected error at plugin initialization. Better to stop now.", VerboseLevel.FATAL_ERROR);
+			Logger.log("Unexpected error at plugin initialization. Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 			e.printStackTrace();
-			System.exit(1);
+			throw new InvalidPluginException("Unexpected error at plugin initialization.");
 		} catch (InstantiationException e) {
-			Logger.log("Unexpected error at plugin initialization. Better to stop now.", VerboseLevel.FATAL_ERROR);
+			Logger.log("Unexpected error at plugin initialization. Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 			e.printStackTrace();
-			System.exit(1);
+			throw new InvalidPluginException("Unexpected error at plugin initialization.");
 		} catch (IllegalAccessException e) {
-			Logger.log("Unexpected error at plugin initialization. Better to stop now.", VerboseLevel.FATAL_ERROR);
+			Logger.log("Unexpected error at plugin initialization. Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 			e.printStackTrace();
-			System.exit(1);
+			throw new InvalidPluginException("Unexpected error at plugin initialization.");
 		} catch (InvocationTargetException e) {
-			Logger.log("Unexpected error at plugin initialization. Better to stop now.", VerboseLevel.FATAL_ERROR);
+			Logger.log("Unexpected error at plugin initialization. Skipping this plugin.\n", VerboseLevel.SERIOUS_ERROR);
 			e.printStackTrace();
-			System.exit(1);
+			throw new InvalidPluginException("Unexpected error at plugin initialization.");
 		}
 
 		

@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;

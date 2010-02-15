@@ -31,15 +31,14 @@
 
 package laas.openrobots.ontology.helpers;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.JarURLConnection;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.InvocationTargetException;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-import java.io.IOException;
 
 /**
  * A class loader for loading jar files, both local and remote.
@@ -73,6 +72,7 @@ public class JarClassLoader extends URLClassLoader {
      */
     public Attributes getManifestEntries() throws IOException {
         URL u = new URL("jar", "", url + "!/");
+        Logger.log("Openning JAR package " + u.toString() + "\n", VerboseLevel.DEBUG);
         JarURLConnection uc = (JarURLConnection)u.openConnection();
         Attributes attr = uc.getMainAttributes();
         return attr;

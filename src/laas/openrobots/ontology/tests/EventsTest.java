@@ -37,8 +37,8 @@
 package laas.openrobots.ontology.tests;
 
 import java.util.ArrayList;
-import java.util.Properties;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import junit.framework.TestCase;

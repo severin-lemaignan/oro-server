@@ -1,8 +1,5 @@
 package laas.openrobots.ontology.modules;
 
-import com.sun.xml.internal.fastinfoset.sax.Properties;
-
-import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.service.IServiceProvider;
 
 /**

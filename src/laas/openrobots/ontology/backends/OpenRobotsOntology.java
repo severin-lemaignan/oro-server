@@ -43,10 +43,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +57,8 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -76,7 +74,6 @@ import laas.openrobots.ontology.service.RPCMethod;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
-import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.ontology.DatatypeProperty;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.ObjectProperty;
@@ -133,8 +130,6 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
  * @author Severin Lemaignan <i>severin.lemaignan@laas.fr</i>
  */
 public class OpenRobotsOntology implements IOntologyBackend {
-	
-	public static enum ResourceType {CLASS, INSTANCE, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED}
 	
 	private OntModel onto;
 	
@@ -420,8 +415,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
 	 */
-	public ResultSet query(String query) throws QueryParseException, QueryExecException
+	public Set<String> query(String key, String query) throws InvalidQueryException
 	{
+		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
+		
+		
+		Set<String> res = new HashSet<String>();
 		
 		//Add the common prefixes.
 		query = Namespaces.prefixes() + query;
@@ -435,21 +434,32 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			this.lastQueryResult = myQueryExecution.execSelect();
 		}
 		catch (QueryParseException e) {
-			Logger.log("error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
-			throw e;
+			Logger.log("Error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.ERROR);
+			throw new InvalidQueryException("Error during query parsing ! ("+ e.getLocalizedMessage() +")");
 		}
 		catch (QueryExecException e) {
-			Logger.log("error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
-			throw e;
+			Logger.log("Error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
+			throw new InvalidQueryException("Error during query execution ! ("+ e.getLocalizedMessage() +")");
 		}
 				
-		return this.lastQueryResult;
+		while (this.lastQueryResult.hasNext()) {
+			QuerySolution s = this.lastQueryResult.nextSolution();
+			try {
+				Resource node = s.getResource(key);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					res.add(Namespaces.toLightString(node));
+			} catch (ClassCastException e) {
+				Literal l = s.getLiteral(key);
+				res.add(l.getLexicalForm());
+			}
+		}
 		
+		return res;
 	}
 	
 	@Override
-	public ResultSet find(	String varName,	Set<PartialStatement> statements, 
-							Set<String> filters) {
+	public Set<String> find(	String varName,	Set<PartialStatement> statements, 
+							Set<String> filters) throws InvalidQueryException {
 		
 		String query = "SELECT ?" + varName + "\n" +
 		"WHERE {\n";
@@ -467,115 +477,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}		
 		query += "}";
 		
-		return query(query);
+		return query(varName, query);
 	}
 
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#guess(java.lang.String, java.util.Vector, double)
-	 */
-	public Hashtable<Resource, Double> guess(String varName, Vector<PartialStatement> partialStatements, double threshold) throws UnmatchableException {
-
-		Hashtable<Resource, Double> result = new Hashtable<Resource, Double>();
-		Hashtable<Resource, Integer> nbMatches = new Hashtable<Resource, Integer>();
-		
-		Iterator<PartialStatement> stmts = partialStatements.iterator();
-		
-		String query = "";
-		
-		if (varName.startsWith("?")) varName = varName.substring(1);
-		
-		Logger.log("Trying to guess what \""+ varName + "\" could be...");
-		
-		//TODO don't forget to check that properties are functional!
-		
-		while (stmts.hasNext())
-		{
-			PartialStatement stmt = stmts.next();
-			query = "SELECT ?" + varName + " ?value\n" +
-					"WHERE {\n" +
-					"?" + varName + " <" + stmt.getPredicate().getURI() + "> ?value}\n";
-			ResultSet individuals = query(query);
-			
-			while (individuals.hasNext())
-			{
-				QuerySolution row = individuals.nextSolution();
-								
-				if (!result.containsKey(row.getResource(varName)))
-				{
-					nbMatches.put(row.getResource(varName),1);
-					
-					result.put(row.getResource(varName),
-								getMatchQuality(stmt.getObject(), row.get("value")));
-				}
-				else
-				{
-					nbMatches.put(row.getResource(varName),nbMatches.get(row.getResource(varName))+1);
-					
-					result.put(row.getResource(varName),
-							result.get(row.getResource(varName)) + getMatchQuality(stmt.getObject(), row.get("value")));
-				}
-					
-			}
-			
-		}
-		
-		
-		//Compute mean values and discard resources whose matching quality is smaller than the threshold.
-		Enumeration<Resource> objects = result.keys();
-		
-		Logger.log("\n  -> Results (threshold="+threshold+"):\n");
-		
-		while (objects.hasMoreElements())
-		{
-			Resource current = (Resource)objects.nextElement();
-						
-			result.put(current, result.get(current) / nbMatches.get(current));
-			
-			Logger.log("\t" + current.toString() + " -> " + result.get(current) + "\n");
-			
-			if (result.get(current) < threshold) result.remove(current);
-		}
-				
-		return result;
-	}
-	
-
-	//TODO: Implement comparison between object. The clean way to do so would be to define a "isMatchable" interface and Java classes linked to relevant ontology classes (like "Color").
-	private Double getMatchQuality(RDFNode object1, RDFNode object2) throws UnmatchableException {
-		
-		Double matchQuality=0.0;
-		
-		if (!(object1.isLiteral() && object2.isLiteral())) throw new UnmatchableException("Match comparison between object is not yet implemented.");
-		
-		Literal a, b;
-		a = (Literal)object1.as(Literal.class);
-		b = (Literal)object2.as(Literal.class);
-		
-		Class aClass = a.getDatatype().getJavaClass();
-		Class bClass = b.getDatatype().getJavaClass();
-		
-		if (aClass == null || bClass == null) throw new UnmatchableException("Couldn't cast the literal datatype while comparing statements (tip: check the syntax of your literal!).");
-				
-		if(aClass.getSuperclass() == Number.class) {
-				try {
-					Double aD = ((Number)a.getValue()).doubleValue();
-					Double bD = ((Number)b.getValue()).doubleValue();
-					//matchQuality = (Math.exp(-Math.pow(((aD-bD)/Math.max(aD, bD)), 2) * 5.0));
-					matchQuality = Math.max(0.1, 1-Math.abs(aD - bD)/aD);
-				} catch (DatatypeFormatException dte) {
-					throw new UnmatchableException("Datatype mismatch while estimating match quality (between" + a.getLexicalForm() + " and "+ b.getLexicalForm() + ").");
-					//The datatype of the second object is not compatible with the first one. We can safely ignore this exception, and set the match quality to zero.
-				}
-		}
-
-		else if(aClass == Boolean.class && bClass == Boolean.class) {
-			if ((Boolean)a.getValue() & (Boolean)b.getValue()) matchQuality = 1.0;
-			else matchQuality = 0.1;
-		}
-		else throw new UnmatchableException("Datatype mismatch while estimating match quality (between" + a.getLexicalForm() + " and "+ b.getLexicalForm() + ").");
-							
-		return matchQuality;
-	}
 
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#getResource(String)
@@ -737,7 +641,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String)
 	 */
 	@Override
-	public Set<List<String>> lookup(String id) throws NotFoundException {
+	public Set<List<String>> lookup(String id) {
 		
 		//if statements have been removed, we must force a rebuilt of the lookup
 		//table else a former concept that doesn't exist anymore could be returned.
@@ -757,7 +661,32 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(l);
 			}
 		}
-		else throw new NotFoundException("The resource (or label) " + id + " could not be found in the ontology.");
+		
+		return result;
+		
+	}
+	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#lookup(java.lang.String, ResourceType)
+	 */
+	@Override
+	public Set<String> lookup(String id, ResourceType type) {
+		
+		//if statements have been removed, we must force a rebuilt of the lookup
+		//table else a former concept that doesn't exist anymore could be returned.
+		//In any case, if we can not find the id, we try to rebuild the lookup 
+		//table, in case some changes occurred since the last lookup.
+		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase()))
+		//	rebuildLookupTable();			
+				
+		Set<String> result = new HashSet<String>();		
+		
+		if (lookupTable.containsKey(id.toLowerCase()))
+		{
+			for (Pair<String, ResourceType> p : lookupTable.get(id.toLowerCase()))
+				if (p.getRight().equals(type))
+					result.add(p.getLeft());
+		}
 		
 		return result;
 		

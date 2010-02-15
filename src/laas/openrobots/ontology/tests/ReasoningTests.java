@@ -3,12 +3,8 @@ package laas.openrobots.ontology.tests;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Vector;
-
-import com.hp.hpl.jena.rdf.model.Resource;
 
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
@@ -17,7 +13,7 @@ import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
@@ -82,7 +78,7 @@ public class ReasoningTests extends TestCase {
 		startTime = System.currentTimeMillis();
 		try {
 			matchingResources = oro.find("individual", partialStatements);			
-		} catch (IllegalStatementException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -102,8 +98,8 @@ public class ReasoningTests extends TestCase {
 		startTime = System.currentTimeMillis();
 		
 		try {
-			matchingResources = oro.find("animals", partialStatements);			
-		} catch (IllegalStatementException e) {
+				matchingResources = oro.find("animals", partialStatements);
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -149,7 +145,7 @@ public class ReasoningTests extends TestCase {
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
 		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
 
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
+		Set<PartialStatement> partialStatements = new HashSet<PartialStatement>();
 
 		try {
 			partialStatements.add(oro.createPartialStatement("?individual age 12^^xsd:int"));
@@ -160,15 +156,15 @@ public class ReasoningTests extends TestCase {
 		
 		startTime = System.currentTimeMillis();
 		
-		Hashtable<Resource, Double> matchingResources = new Hashtable<Resource, Double>();
+		Set<String> res = null;
 		try {
-			matchingResources = oro.guess("individual", partialStatements, 0.5);
-		} catch (UnmatchableException e) {
-			// TODO Auto-generated catch block
+			res = oro.find("individual", partialStatements, null);
+		} catch (InvalidQueryException e) {
 			e.printStackTrace();
+			fail();
 		}
 		
-		assertEquals(max + 1 + " individuals should be returned.", max + 1, matchingResources.size());
+		assertEquals(max + 1 + " individuals should be returned.", max + 1, res.size());
 		
 		System.out.println(max + " statements guessed in "+ (System.currentTimeMillis() - startTime) + "ms.");
 						

@@ -48,14 +48,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
@@ -73,6 +73,13 @@ import com.hp.hpl.jena.rdf.model.impl.ModelCom;
  *
  */
 public class Helpers {
+	
+	static Random handOfGod;
+	
+	{
+		handOfGod = new Random(System.currentTimeMillis());
+	}
+	
 	/**
 	 * Parse a SPARQL string representing a literal to an actual Jena {@link com.hp.hpl.jena.rdf.model.Literal}. The method actually returns a {@link com.hp.hpl.jena.rdf.model.RDFNode} because if the literal is not recognized, it falls back on a generic RDFNode. To be sure the result is actually a literal, the {@link com.hp.hpl.jena.rdf.model.RDFNode#isLiteral()} method can be used.<br/> 
 	 * @param lex the string representing the literal.
@@ -202,8 +209,8 @@ public class Helpers {
 	}
 	
 		
-	public static OpenRobotsOntology.ResourceType getType(OntResource resource) {
-		OpenRobotsOntology.ResourceType type;
+	public static ResourceType getType(OntResource resource) {
+		ResourceType type;
 
 		if (resource == null) return ResourceType.UNDEFINED;
 		
@@ -521,6 +528,21 @@ public class Helpers {
 		String res = value.replaceAll("\"", "\\\"");
 		    		
 		return "\"" + res + "\"";
+	}
+	
+	
+	public static <T> T pickRandom(Set<T> set) {
+		
+		if(set.isEmpty()) return null;
+		
+		ArrayList<T> list = new ArrayList<T>(set);
+		
+		int size = set.size();
+		
+		if (size == 1)
+			return list.get(0);
+
+		return list.get(handOfGod.nextInt(size));		
 	}
 
 }

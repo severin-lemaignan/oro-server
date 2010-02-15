@@ -42,26 +42,23 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Vector;
 
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
-import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
+import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
@@ -72,11 +69,9 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
-import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -251,24 +246,23 @@ public class OpenRobotsOntologyTest extends TestCase {
 		 ****************/
 		long intermediateTime = System.currentTimeMillis();
 		
-		ResultSet result =	onto.query(
-						"SELECT ?instances \n" +
-						"WHERE { \n" +
-						"?instances rdf:type oro:Monkey}\n");
+		Set<String> result = null;
+		try {
+			result = onto.query("instances",
+							"SELECT ?instances \n" +
+							"WHERE { \n" +
+							"?instances rdf:type oro:Monkey}\n");
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		}
 	
 		
 		
 		System.out.println("[UNITTEST] First query executed in roughly "+ (System.currentTimeMillis() - intermediateTime) + "ms.");
 	
-	
-		int counter = 0;
-		while (result.hasNext())
-		{
-			counter ++;
-			String name = result.nextSolution().getResource("instances").getLocalName();
-			assertTrue("Monkeys should be returned. Got " + name, name.contains("baboon") ||name.contains("gorilla"));
-		}
-		assertEquals("Two monkeys should be returned", 2, counter);
+
+		assertEquals("Two monkeys should be returned", 2, result.size());
 		
 		
 		/*****************
@@ -278,6 +272,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long intermediateTime2 = System.currentTimeMillis();
 		
 		//Second test in XML mode
+		/** TODO: REIMPLEMENT THAT as soon as the corresponding method is back
 		String xmlResult =	oro.queryAsXML(
 						"SELECT ?instances \n" +
 						"WHERE { \n" +
@@ -292,7 +287,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			count++;
 		}
 		assertEquals("Three instances of Animal should be returned.", 3, count);
-		
+		*/
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -398,19 +393,22 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long intermediateTime = System.currentTimeMillis();
 		
 		//Note: there are easier ways to query to ontology for simple cases (see find() for instance). But it comes later in the unit tests.
-		ResultSet result =	onto.query(
-				"SELECT ?instances \n" +
-				"WHERE { \n" +
-				"?instances rdf:type oro:Animal}\n");
-		assertTrue("query didn't answer anything!",result.hasNext());
+		Set<String> result = null;
+		try {
+			result = onto.query("instances",
+					"SELECT ?instances \n" +
+					"WHERE { \n" +
+					"?instances rdf:type oro:Animal}\n");
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		}
+		assertFalse("query didn't answer anything!",result.isEmpty());
 
 		System.out.println("[UNITTEST] One statement added in roughly "+ ((intermediateTime - startTime) / 4) + "ms, and ontology queried in roughly "+(System.currentTimeMillis()-intermediateTime)+"ms.");
 		
-		int count = 0;
-		while (result.hasNext()){			
-			result.next();
-			count++;
-		}
+		int count = result.size();
+		
 		assertEquals("Six individuals, instances of Animal, should be returned.", 6, count);
 		
 	
@@ -427,20 +425,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
 		
-		//First test a request before altering the ontology. 
-		String xmlResult =	oro.queryAsXML(
-				"SELECT ?value \n" +
-				"WHERE { \n" +
-				"?instances rdf:type owl:Thing .\n" +
-				"?instances oro:isFemale ?value}\n");
-		assertNotNull("query didn't answered anything!",xmlResult);
-		
-		int next = 0; int count = -1;
-		while (next != -1){
-			next = xmlResult.indexOf("true", next + 1);
-			count++;
-		}
-		assertEquals("The value of isFemale for baboon should be true. It's the only one.", 1, count);
+		Set<String> result = null;
 		
 		//Add a statement
 		try {
@@ -451,19 +436,20 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		//Check it was added.
-		xmlResult =	oro.queryAsXML(
-				"SELECT ?value \n" +
-				"WHERE { \n" +
-				"?instances rdf:type owl:Thing .\n" +
-				"?instances oro:isFemale ?value}\n");
-		assertNotNull("query didn't answered anything!",xmlResult);
 		
-		next = 0; count = -1;
-		while (next != -1){
-			next = xmlResult.indexOf("true", next + 1);
-			count++;
+		try {
+			result = oro.query("i",
+					"SELECT ?i \n" +
+					"WHERE { \n" +
+					"?i rdf:type owl:Thing .\n" +
+					"?i oro:isFemale true}\n");
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
 		}
-		assertEquals("The value of isFemale for baboon and fish is now true. We should get two positives.", 2, count);
+		assertFalse("query didn't answered anything!",result.isEmpty());
+		
+		assertTrue("The value of isFemale for baboon and fish is now true. We should get two positives.", result.contains("baboon") && result.contains("fish") && result.size() == 2);
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -688,12 +674,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 
-		long startTime = System.currentTimeMillis();
-        
-		try {
-			oro.lookup("princess Daisy");
-			fail("No label \"princess Daisy\" exists in the ontology.");
-		} catch (NotFoundException e) {}
+		assertTrue("No label \"princess Daisy\" exists in the ontology.", onto.lookup("princess Daisy").isEmpty());
 		
 		assertEquals("The \"baboon\" instance should be retrieved.", "baboon", oro.lookup("BabouIn").iterator().next().get(0));
 		assertEquals("The \"baboon\" type should be INSTANCE.", ResourceType.INSTANCE.toString(), oro.lookup("BabouIn").iterator().next().get(1));
@@ -738,13 +719,34 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try {
-			oro.lookup("king kong");
-			fail("No label \"king kong\" should exist anymore in the ontology.");
-		} catch (NotFoundException e) {}
+		assertTrue("No label \"king kong\" should exist anymore in the ontology.", oro.lookup("king kong").isEmpty());
 	
-		long totalTime = (System.currentTimeMillis()-startTime);
-		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 5 + "ms");
+		//Test lookup with a type
+		
+		stmts.clear();
+		stmts.add("rintintin rdf:type Dog");
+		stmts.add("lassie rdf:type Cat");
+		stmts.add("rintintin sees lassie");
+		stmts.add("rintintin hasAge 134");
+		
+		try {
+			oro.add(stmts);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a statement!");
+			e.printStackTrace();
+		}
+		
+		assertTrue(onto.lookup("rintintin", ResourceType.INSTANCE).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.CLASS).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.OBJECT_PROPERTY).contains("rintintin"));
+		assertFalse(onto.lookup("rintintin", ResourceType.DATATYPE_PROPERTY).contains("rintintin"));
+		assertTrue(onto.lookup("dog", ResourceType.CLASS).contains("Dog"));
+		assertFalse(onto.lookup("dog", ResourceType.INSTANCE).contains("Dog"));
+		assertTrue(onto.lookup("sees", ResourceType.OBJECT_PROPERTY).contains("sees"));
+		assertFalse(onto.lookup("sees", ResourceType.DATATYPE_PROPERTY).contains("sees"));
+		assertFalse(onto.lookup("sees", ResourceType.DATATYPE_PROPERTY).contains("hasAge"));
+		assertTrue(onto.lookup("hasage", ResourceType.DATATYPE_PROPERTY).contains("hasAge"));
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -904,14 +906,15 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 				
-		ResultSet result =	onto.query(who_is_an_animal);
-		
-		int count = 0;
-		while (result.hasNext()){
-			result.next();
-			count++;
+		Set<String> result = null;
+		try {
+			result = onto.query("instances", who_is_an_animal);
+		} catch (InvalidQueryException e5) {
+			e5.printStackTrace();
+			fail();
 		}
-		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
+		
+		assertEquals("Five individuals, instances of Animal, should be returned.", 5, result.size());
 		
 		//Let's remove a statement: Birds are no more animals, and thus, the sparrow shouldn't be counted as an animal.
 		try {
@@ -921,14 +924,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result = onto.query(who_is_an_animal);
-		
-		count = 0;
-		while (result.hasNext()){
-			System.out.println(result.next());
-			count++;
+		try {
+			result = onto.query("instances",who_is_an_animal);
+		} catch (InvalidQueryException e4) {
+			e4.printStackTrace();
+			fail();
 		}
-		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
+		
+		assertEquals("Four individuals, instances of Animal, should be returned.", 4, result.size());
 		
 		//Let's add 2 more statements
 		stmts.clear();
@@ -942,26 +945,28 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result =	onto.query(who_is_an_animal);		
-		count = 0;
-		while (result.hasNext()){
-			result.next();
-			count++;
+		try {
+			result =	onto.query("instances", who_is_an_animal);
+		} catch (InvalidQueryException e3) {
+			e3.printStackTrace();
+			fail();
 		}
+		
 		//Since sparrows are said to eat something, they are animals.
-		assertEquals("Five individuals, instances of Animal, should be returned.", 5, count);
+		assertEquals("Five individuals, instances of Animal, should be returned.", 5, result.size());
 
 		String what_does_the_sparrow_eat = "SELECT ?food \n" +
 		"WHERE { \n" +
 		"oro:sparrow oro:eats ?food}\n";
 
-		result = onto.query(what_does_the_sparrow_eat);		
-		count = 0;
-		while (result.hasNext()){
-			result.next();
-			count++;
-		}
-		assertEquals("Two objects should be returned.", 2, count);
+		try {
+			result = onto.query("food", what_does_the_sparrow_eat);
+		} catch (InvalidQueryException e2) {
+			e2.printStackTrace();
+			fail();
+		}		
+		
+		assertEquals("Two objects should be returned.", 2, result.size());
 		
 		//Let's clear infos about what the sparrow eats.
 		try {
@@ -971,22 +976,24 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		result = onto.query(what_does_the_sparrow_eat);		
-		count = 0;
-		while (result.hasNext()){
-			result.next();
-			count++;
-		}
-		assertEquals("Nothing should be returned.", 0, count);
+		try {
+			result = onto.query("food", what_does_the_sparrow_eat);
+		} catch (InvalidQueryException e1) {
+			e1.printStackTrace();
+			fail();
+		}		
+	
+		assertEquals("Nothing should be returned.", 0, result.size());
 		
-		result =	onto.query(who_is_an_animal);
-		count = 0;
-		while (result.hasNext()){
-			result.next();
-			count++;
+		try {
+			result =	onto.query("instances", who_is_an_animal);
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
 		}
+
 		//There's no more assertions permitting to say that sparrows are animals, so they shouldn't appear.
-		assertEquals("Four individuals, instances of Animal, should be returned.", 4, count);
+		assertEquals("Four individuals, instances of Animal, should be returned.", 4, result.size());
 	
 	
 		
@@ -1067,7 +1074,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			matchingResources = oro.find("?mysterious", partial_statements);
 			
 			matchingResources = oro.find("mysterious", partial_statements);
-		} catch (IllegalStatementException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -1094,7 +1101,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			matchingResources = oro.find("mysterious", partial_statements, filters);
-		} catch (IllegalStatementException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -1107,65 +1114,13 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			matchingResources = oro.find("mysterious", partial_statements, filters);
-		} catch (IllegalStatementException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
 		assertEquals("find() should now answer only 1 resources (baboon)", 1, matchingResources.size());
-		
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-
-	/**
-	 * This test try to identify a resource through one of its numerical property, but in an approximate way.
-	 */
-	public void testApproximateNumericMatching() {
-
-		System.out.println("[UNITTEST] ***** TEST: Approximate numeric matching *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
-		
-	
-		Vector<PartialStatement> partialStatements = new Vector<PartialStatement>();
-
-		try {
-			partialStatements.add(oro.createPartialStatement("?mysterious age \"40\"^^xsd:int"));
-			partialStatements.add(oro.createPartialStatement("?mysterious weight \"60\"^^xsd:double"));
-		} catch (IllegalStatementException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		Hashtable<Resource, Double> matchingResources = null;
-		
-		try {
-			matchingResources = oro.guess("mysterious", partialStatements, 0.6);
-		} catch (UnmatchableException e) {
-			e.printStackTrace();
-			fail(e.getLocalizedMessage());
-		}
-		
-		assertFalse("guess() didn't answered anything!",matchingResources.isEmpty());
-		
-		Iterator<Resource> res = matchingResources.keySet().iterator();
-		while(res.hasNext())
-		{
-			Resource currentRes = res.next();
-			assertTrue("Only baboon should be returned.", currentRes.getLocalName().contains("baboon"));
-			//assertTrue("The matching quality should be about 0.7.", matchingResources.get(currentRes) == 0.725);
-		}
-		//TODO Add a test which returns the class of the resource.
-		
-		try {
-			matchingResources = oro.guess("mysterious", partialStatements, 0.9);
-		} catch (UnmatchableException e) {
-			e.printStackTrace();
-			fail(e.getLocalizedMessage());
-		}
-		
-		assertTrue("guess() shouldn't have answered anything!",matchingResources.isEmpty());
-		
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -1200,7 +1155,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			matchingResources = oro.find("animals", partialStatements);	
-		} catch (IllegalStatementException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}		

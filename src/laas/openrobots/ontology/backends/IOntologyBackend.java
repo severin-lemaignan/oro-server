@@ -1,18 +1,16 @@
 package laas.openrobots.ontology.backends;
 
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.backends.OpenRobotsOntology.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
-import laas.openrobots.ontology.exceptions.UnmatchableException;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -25,17 +23,17 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.QueryParseException;
-import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
 
-/** This interface describes the abstract behaviour of an ontology backend. It presents the list of operation the "knowledge store" should provide to be used with the {@linkplain laas.openrobots.ontology.OroServer ontology server}.<br/>
+/** This interface describes the abstract behaviour of an ontology backend. It 
+ * presents the list of operation the "knowledge store" should provide to be 
+ * used with the {@linkplain laas.openrobots.ontology.OroServer ontology server}.
  * <br/>
- * Please note that, since annotation can not be inherited in Java 1.6, it is useless to link this interface to the {@link laas.openrobots.ontology.service.IServiceProvider} interface. However, all classes implementing the {@link IOntologyBackend} must implement as well {@link IServiceProvider}.
+ * 
  * @author slemaign
  *
  */
@@ -231,12 +229,12 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * namespace. 
 	 * 
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
+	 * @param query 
 	 * @return The result of the query as a Jena ResultSet.
 	 * @see #queryAsXML(String)
 	 * @throws QueryParseException thrown if the argument is not a valid SPARQL query.
 	 */
-	public abstract ResultSet query(String query) throws QueryParseException,
-			QueryExecException;
+	public abstract Set<String> query(String key, String query) throws InvalidQueryException;
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements 
@@ -249,68 +247,14 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @param filters a vector of string containing the various filters to be 
 	 * appended to the search. The syntax is the SPARQL one (as defined here:
 	 *  http://www.w3.org/TR/rdf-sparql-query/#tests).
-	 * @return a result set of resources that match the statements.
+	 * @return a set of resources that match the statements.
+	 * @throws InvalidQueryException 
 	 * @see {@link #guess(String, Vector, double)}
 	 * @see BaseModule#find(String, Set, Set) Examples of use
 	 */
-	public abstract ResultSet find(	String varName,	
+	public abstract Set<String> find(	String varName,	
 							Set<PartialStatement> statements, 
-							Set<String> filters);
-	/**
-	 * Tries to approximately identify an individual given a set of known statements about this resource.<br/>
-	 * The individual which is looked for must be currently the <b>subject</b> of all these statements.<br/><br/>
-	 * 
-	 * Following steps are achieved:
-	 * <ol>
-	 * <li>For each statement, a SPARQL query is issued by replacing the object by a variable.</li>
-	 * <li>This query returns a first list of individuals bound with the statement predicate to some object.</li>
-	 * <li>For each member of this list, a "distance" to the original statement is measured and "matching quality level" is stored. The relevant metrics are delegated to...</li>
-	 * TODO ...what delegates ?<br/>
-	 * <li>These steps are reiterated over the vector of given statements. If new matching individuals are discover, we append them to the individuals list. If they already exist in the list, their previous matching quality level is multiplied with the new one.</li>
-	 * <li>At the end, all individuals whose matching quality level is below the threshold are discarded.</li>
-	 * </ol>
-	 * <br/>
-	 * Please note that:
-	 * <ul>
-	 * <li>If a statement involves a non-functional property (ie the subject may have several time this property with different objects), the statement is currently ignored.</li>
-	 * </ul>
-	 * 
-	 * <b>For example:</b><br/>
-	 * If your ontology defines such a statement:<br/>
-	 * {@code ns:bottle ns:size "120"^^xsd:integer"}<br/>
-	 * Then: 
-	 * <pre>
-	 * IOntologyServer myOntology = new OpenRobotsOntology();
-	 *
-	 * Vector<Statement> knowledge = new Vector<Statement>();
-	 *	try {
-	 *		knowledge.add(myOntology.createStatement("?mysterious_object ns:size "100"^^xsd:integer"));
-	 *	} catch (IllegalStatementException e) {
-	 *		e.printStackTrace();
-	 *	}
-	 *
-	 * Hashtable<Resource, Double> matchingResources = myOntology.guess("mysterious", statements, 0.6);
-	 *
-	 *	Iterator<Resource> res = matchingResources.keySet().iterator();
-	 *	while(res.hasNext())
-	 *	{
-	 *		Resource currentRes = res.next();
-	 *		System.out.println(currentRes.getLocalName() + " (match quality: " + matchingResources.get(currentRes) + ").");
-	 *	}
-	 * </pre>
-	 *  should output something like {@code "ns:bottle (match quality: 0.8)"}.
-	 * 
-	 * @param varName The name of the variable to identify, as used in the statements.
-	 * @param partialStatements The statements defining (more or less) the resource your looking for.
-	 * @param threshold the match quality threshold to hold and return a resource.
-	 * @return a table containing the matching individuals and the corresponding match quality level (from 0.0: no match to 1.0: perfect match).
-	 * @throws UnmatchableException thrown if we don't know how to compare (ie to calculate a distance) two nodes. TODO : improve this description.
-	 * @see #find(String, Vector)
-	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 */
-	public abstract Hashtable<Resource, Double> guess(String varName,
-			Vector<PartialStatement> partialStatements, double threshold)
-			throws UnmatchableException;
+							Set<String> filters) throws InvalidQueryException;
 
 	public abstract Set<OntClass> getSuperclassesOf(OntClass type,
 			boolean onlyDirect) throws NotFoundException;
@@ -325,16 +269,32 @@ public interface IOntologyBackend extends IServiceProvider {
 			boolean onlyDirect) throws NotFoundException;
 
 	/**
-	 * Returns the id and type (INSTANCE, CLASS, OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of the concept whose label or id match the given parameter. If several concepts match, an randomly choosen one is returned.
+	 * Returns the set of all [id, type] (with type one of INSTANCE, CLASS, 
+	 * OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of concepts whose labels
+	 *  or id match the given parameter.
 	 * 
 	 * @param label the label (in any language) or id to look for.
-	 * @return A list made of the id of the concept whose label matchs the parameter followed by its type.
-	 * @throws NotFoundException
+	 * @return A list made of the id of the concept whose label matches the 
+	 * parameter followed by its type, or an empty set if nothing was found.
 	 * @see ResourceType
+	 * @see #lookup(String, ResourceType)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	public abstract Set<List<String>> lookup(String id) throws NotFoundException;
 
+	/**
+	 * Returns the set of all id of concepts whose labels or ids match the given
+	 *  parameter and of the given type.
+	 * 
+	 * @param label the label (in any language) or id to look for.
+	 * @param type the type of the resource that is looked for.
+	 * @return A set of ids whose label matches the parameter or an empty set.
+	 * @see ResourceType
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	public abstract Set<String> lookup(String id, ResourceType type) throws NotFoundException;
+
+	
 	/**
 	 * Remove all statements matching the partial statement.
 	 * Usage example:<br/>
