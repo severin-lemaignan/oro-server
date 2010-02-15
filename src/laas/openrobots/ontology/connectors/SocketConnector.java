@@ -89,7 +89,7 @@ import laas.openrobots.ontology.service.IService;
  * #end#
  * </pre>
  * The {@code event_id} will match the id returned at event registration. The 
- * return values depend on the type of event. Details are provided on the {@link EventType}
+ * return values depend on the type of event. Details are provided on the {@link IWatcher.EventType}
  * page.
  * 
  * <h2>Some examples</h2>

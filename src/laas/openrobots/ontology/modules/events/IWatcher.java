@@ -16,7 +16,7 @@ import java.util.UUID;
  * <p>
  * When the event is triggered, its {@link #notifySubscriber(OroEvent)} method 
  * is called and expected to warn the event subscribers that the event they were
- * watching occured.
+ * watching occurred.
  * </p>
  * 
  * <p>

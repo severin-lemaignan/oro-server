@@ -28,14 +28,14 @@ import laas.openrobots.ontology.service.RPCMethod;
  * <ul>
  * <li><tt>? [learn|remember|add] ? [that|:] {subject} {predicate} {object}</tt>: the 
  * module will add accordingly the statement in the knowledge base.</li>
- * <tt>? [learn|remember|add] ? [that|:] {concept_label} [type|is|are] {class_name}</tt>: asserts
- * that <tt>concept</tt> belongs to <tt>class</tt>
- * <tt>? [learn|remember|add] ? [that|:] {class_name}s are [a kind|kinds] of 
- * {superclass}</tt>: asserts that <tt>class</tt> is a subclass of <tt>superclass</tt>
- * <tt>[what|which] [{object_type}|] [do|does] {subject} {predicate}</tt>: will query 
+ * <li><tt>? [learn|remember|add] ? [that|:] {concept_label} [type|is|are] {class_name}</tt>: asserts
+ * that <tt>concept</tt> belongs to <tt>class</tt></li>
+ * <li><tt>? [learn|remember|add] ? [that|:] {class_name}s are [a kind|kinds] of 
+ * {superclass}</tt>: asserts that <tt>class</tt> is a subclass of <tt>superclass</tt></li>
+ * <li><tt>[what|which] [{object_type}|] [do|does] {subject} {predicate}</tt>: will query 
  * the knowledge base and return the list of objects that matches <tt>{subject} 
- * {predicate} ?obj</tt> (plus <tt>?obj rdf:type {object_type}</tt> is it's defined).
- * <ul>
+ * {predicate} ?obj</tt> (plus <tt>?obj rdf:type {object_type}</tt> is it's defined).</li>
+ * </ul>
  * 
  * The method will try its best (ie, invoke {@link IOntologyBackend#lookup(String, ResourceType)})
  * to reuse existing names and concept in the knowledge base.

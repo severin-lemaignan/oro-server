@@ -249,7 +249,6 @@ public interface IOntologyBackend extends IServiceProvider {
 	 *  http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return a set of resources that match the statements.
 	 * @throws InvalidQueryException 
-	 * @see {@link #guess(String, Vector, double)}
 	 * @see BaseModule#find(String, Set, Set) Examples of use
 	 */
 	public abstract Set<String> find(	String varName,	

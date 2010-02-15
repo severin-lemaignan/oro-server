@@ -46,12 +46,12 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	/**
-	 * Like {@link #add(Set<String>, MemoryProfile)} with the {@link MemoryProfile#DEFAULT} memory profile.
+	 * Like {@link #add(Set<String>, String)} with the {@link MemoryProfile#DEFAULT} memory profile.
 	 * 
 	 * @param statements A vector of string representing statements to be inserted in the ontology.
 	 * @throws IllegalStatementException
 	 * 
-	 * @see #add(Set<String>, MemoryProfile)
+	 * @see #add(Set, String)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
@@ -102,13 +102,13 @@ public class BaseModule implements IServiceProvider {
 	 *  
 	 * <pre>
 	 * #include &quot;oro.h&quot;
-	 * #include &quot;yarp_connector.h&quot;
+	 * #include &quot;socket_connector.h&quot;
 	 * 
 	 * using namespace std;
 	 * using namespace oro;
 	 * int main(void) {
 	 * 
-	 * 		YarpConnector connector(&quot;myDevice&quot;, &quot;oro&quot;);
+	 * 		SocketConnector connector(&quot;localhost&quot;, &quot;6969&quot;);
 	 * 		Ontology* onto = Ontology::createWithConnector(connector);
 	 * 
 	 * 		onto->add(Statement("gorilla rdf:type Monkey"));
@@ -162,9 +162,9 @@ public class BaseModule implements IServiceProvider {
 	 * Remove a given statement (represented as a string) from the ontology. Does nothing if the statement doesn't exist.
 	 * 
 	 * @param stmt A string representing the statement to remove from the ontology.
-	 * @see #add(String)
-	 * @see #remove(Statement)
-	 * @see #createStatement(String) Syntax details regarding the string describing the statement.
+	 * @see #add(Set)
+	 * @see IOntologyBackend#remove(Statement)
+	 * @see IOntologyBackend#createStatement(String) Syntax details regarding the string describing the statement.
 	 */
 	public void remove(String stmt) throws IllegalStatementException {
 		oro.remove(oro.createStatement(stmt));
@@ -174,7 +174,7 @@ public class BaseModule implements IServiceProvider {
 	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
 	 * 
 	 * @param stmts A vector of strings representing the statements to remove from the ontology.
-	 * @see #add(Vector)
+	 * @see #add(Set)
 	 * @see #remove(String)
 	 */
 	@RPCMethod(
@@ -492,7 +492,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/** Returns all the super classes of a given class, as asserted or inferred from the ontology.
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file). 
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -521,7 +521,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/** Returns all the direct super-classes of a given class (ie, the classes whose the given class is a direct descendant), as asserted or inferred from the ontology.
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -550,7 +550,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/** Returns all the sub-classes of a given class, as asserted or inferred from the ontology.
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -579,7 +579,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/** Returns all the direct sub-classes of a given class (ie, the classes whose the given class is the direct parent), as asserted or inferred from the ontology.
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -608,7 +608,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/** Returns all the instances of a given class, as asserted or inferred from the ontology. 
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of classe ids associated to their labels (in the default language, as defined in the configuration file).
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -639,7 +639,7 @@ public class BaseModule implements IServiceProvider {
 	
 	/**  Returns all the direct instances of a given class (ie, the instances whose the given class is the direct parent), as asserted or inferred from the ontology.
 	 * 
-	 * @param A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
+	 * @param type A class, in its namespace (if no namespace is specified, the default namespace is assumed, as defined in the configuration file)
 	 * @return A map of instances ids (individuals) associated to their labels (in the default language, as defined in the configuration file).
 	 * @throws NotFoundException
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.

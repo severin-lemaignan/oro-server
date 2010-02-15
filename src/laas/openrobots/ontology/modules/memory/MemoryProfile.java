@@ -22,7 +22,7 @@ public enum MemoryProfile {
 	LONGTERM (-1),
 	/**
 	 * Default memory profile is equivalent to the long term memory profile.
-	 * @see MemoryProfile.LONGTERM
+	 * @see MemoryProfile#LONGTERM
 	 */
 	DEFAULT (-1);
 	
