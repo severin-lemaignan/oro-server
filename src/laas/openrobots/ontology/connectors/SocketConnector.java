@@ -464,8 +464,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    				if (m.getParameterTypes().length == 0) m.invoke(o); else m.invoke(o, args);
 	    	    				invokationDone = true;
 	    	    			}
-	    	    			if (	m.getReturnType() == String.class ||
-	    	    					m.getReturnType() == Double.class || 
+	    	    			if (	m.getReturnType() == Double.class || 
 	    	    					m.getReturnType() == double.class ||
 	    	    					m.getReturnType() == Integer.class ||
 	    	    					m.getReturnType() == int.class ||
@@ -476,7 +475,13 @@ public class SocketConnector implements IConnector, Runnable {
 	    	    			{
 	    	    				result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
 	    	    				invokationDone = true;
-	    	    			} else {
+	    	    			} 
+	    	    			else if (m.getReturnType() == String.class) {
+	    	    				//To be JSON-compliant, we need to double quote the strings
+	    	    				result += Helpers.stringify((m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString());
+	    	    				invokationDone = true;
+	    	    			}
+	    	    			else {
 	    	    				
 	    	    				List<Class<?>> rTypes = new ArrayList<Class<?>>();
 	    	    				
