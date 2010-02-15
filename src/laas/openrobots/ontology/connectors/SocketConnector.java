@@ -272,6 +272,11 @@ public class SocketConnector implements IConnector, Runnable {
 					if (count > 0) { 
 						buffer.flip();					
 						req = parseBuffer(buffer);
+						
+						if (req != null && req.size() == 0) {
+							Logger.log("Got an empty query! (only #end#) Discarding it.\n", VerboseLevel.ERROR);
+							req = null;
+						}
 					}
 		    		
 		        } catch (IOException e) {
