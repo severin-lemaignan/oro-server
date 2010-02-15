@@ -76,7 +76,7 @@ public class Helpers {
 	
 	static Random handOfGod;
 	
-	{
+	static {
 		handOfGod = new Random(System.currentTimeMillis());
 	}
 	
