@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
@@ -20,6 +21,7 @@ import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
+
 
 /**
  * Implement a very simple natural language processor, based on regex.
@@ -35,6 +37,11 @@ import laas.openrobots.ontology.service.RPCMethod;
  * <li><tt>[what|which] [{object_type}|] [do|does] {subject} {predicate}</tt>: will query 
  * the knowledge base and return the list of objects that matches <tt>{subject} 
  * {predicate} ?obj</tt> (plus <tt>?obj rdf:type {object_type}</tt> is it's defined).</li>
+ * <li><tt>what is {object}?</tt>: will query the knowledge base and return the 
+ * type of the object.</li>
+ * <li><tt>{object_id} [has name|name is|has name] {object_name}</tt> or <tt>?? 
+ * name of {object_id} is {object_name}</tt>: will add to the knowledge base a 
+ * label to the concept.</li>
  * </ul>
  * 
  * The method will try its best (ie, invoke {@link IOntologyBackend#lookup(String, ResourceType)})
@@ -44,6 +51,8 @@ import laas.openrobots.ontology.service.RPCMethod;
  *
  */
 public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
+	
+	enum doCleaning {NO_CLEANING, CLEANING};
 
 	IOntologyBackend oro;
 	
@@ -52,6 +61,17 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 	
 	Pattern whatPattern;
 	Matcher whatMatcher;
+	
+	Pattern whatIsPattern;
+	Matcher whatIsMatcher;
+	
+	Pattern nameIsPattern;
+	Matcher nameIsMatcher;
+	Pattern nameIsPattern2;
+	Matcher nameIsMatcher2;
+	
+	Pattern whereIsPattern;
+	Matcher whereIsMatcher;
 	
 	/**
 	 * Initializes the plugin with the server instance of the knowledge storage.
@@ -72,6 +92,28 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 				"[Ww](?:hat|hich)(?: ([\\w]+))? do(?:es)? ([\\w]+) ([\\w]+) ?\\?");
 		
 		whatMatcher = whatPattern.matcher("");
+		
+		//should match sentence like: What is blue_bottle?
+		whatIsPattern = Pattern.compile(
+				"[Ww]hat is ([\\w]+) ?\\?");
+		
+		whatIsMatcher = whatIsPattern.matcher("");
+		
+		//should match sentence like: What is blue_bottle?
+		nameIsPattern = Pattern.compile(
+				"[\\w,\\' ]*?name of ([\\w]+) is ([\\w ]+)");
+		nameIsPattern2 = Pattern.compile(
+		"([\\w]+) [\\w,\\' ]*?(?:is called|has name|name is) ([\\w ]+)");
+		
+		nameIsMatcher = nameIsPattern.matcher("");
+		nameIsMatcher2 = nameIsPattern2.matcher("");
+		
+		//should match sentence like: What is blue_bottle?
+		whereIsPattern = Pattern.compile(
+				"[Ww]here is ([\\w]+) ?\\?");
+		
+		whereIsMatcher = whereIsPattern.matcher("");
+		
 	}
 	
 	/**
@@ -95,15 +137,33 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		
 		addMatcher.reset(sentence);
 		whatMatcher.reset(sentence);
+		whatIsMatcher.reset(sentence);
+		nameIsMatcher.reset(sentence);
+		nameIsMatcher2.reset(sentence);
+		whereIsMatcher.reset(sentence);
 		
 		if (addMatcher.matches())
 			res = handleAdd(addMatcher.group(1));
 		else if (whatMatcher.matches())
 			res = handleFind(whatMatcher.group(2), whatMatcher.group(3), whatMatcher.group(1));
-		else
+		else if (whatIsMatcher.matches())
+			res = handleFind(whatIsMatcher.group(1), "rdf:type", null);
+		else if (nameIsMatcher.matches())
+			res = handleAdd(nameIsMatcher.group(1) + " rdfs:label " + nameIsMatcher.group(2));
+		else if (nameIsMatcher2.matches())
+			res = handleAdd(nameIsMatcher2.group(1) + " rdfs:label " + nameIsMatcher2.group(2));
+		else if (whereIsMatcher.matches())
+			res = handleFind(nameIsMatcher2.group(1), " rdfs:label " + nameIsMatcher2.group(2));
+		else {
+			Logger.log("Didn't understand the sentence.\n", VerboseLevel.VERBOSE);
 			res = "";
+		}
 		
 		return res;
+	}
+	
+	private String handleGetClass(String concept) {
+		return "";
 	}
 	
 	private String handleFind(String subj, String pred, String typeObj) {
@@ -126,9 +186,11 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		// Try to find is the subject of the query already exists
 		
 		//TODO Rather crude stemming :-)
-		if (!pred.endsWith("s"))
+		/*actually, I remove it because it's annoying for predicates like knowsAbout
+		  if (!pred.endsWith("s") && !pred.equals("rdf:type") && !pred.equals("rdfs:subClassOf"))
 			if (pred.matches("[aeiou]$")) pred = pred + "es";
 			else pred = pred + "s";
+		*/
 
 		Set<String> possiblePred = oro.lookup(pred, ResourceType.OBJECT_PROPERTY);
 		possiblePred.addAll(oro.lookup(pred, ResourceType.DATATYPE_PROPERTY));
@@ -166,8 +228,8 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 				for (String r : rawResult)
 					res += r + ", ";
 				//TODO: this formatting regex won't match - ' and other similar characters
-				res = res.replaceAll("([\\w, ]+),([\\w ]+), ", "$1 and$2, I think.");
-				res = res.replaceFirst("(?:(\\w+), )$", "Only $1.");
+				res = res.replaceAll("([\\w:\\-, ]+),([\\w:s\\- ]+), ", "$1 and$2, I think.");
+				res = res.replaceFirst("(?:(\\w:\\-+), )$", "Only $1.");
 			}
 			
 		} catch (IllegalStatementException e) {

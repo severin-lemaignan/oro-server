@@ -54,6 +54,7 @@ public class PluginLoader {
 
 		String className = manifest.getValue("Bundle-SymbolicName");
 		String pluginName = manifest.getValue("Bundle-Name");
+		String pluginVersion = manifest.getValue("Bundle-Version");
 
 		if (className == null || className.isEmpty())
 			throw new InvalidPluginException("The plugin manifest for " + jarFile + " contains no class name.");
@@ -150,7 +151,7 @@ public class PluginLoader {
 		}
 
 		
-		Logger.log("Plugin \"" + pluginName + "\" successfully loaded and initialized.\n");
+		Logger.log("Plugin \"" + pluginName + "\" v." + pluginVersion + " successfully loaded and initialized.\n");
 		
 		return module;
 
