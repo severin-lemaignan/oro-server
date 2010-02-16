@@ -1,5 +1,5 @@
 #Makefile for oro-server
-# (c) LAAS-CNRS 2009
+# (c) LAAS-CNRS 2010
 
 PREFIX ?= /usr/local
 
@@ -30,7 +30,7 @@ CP?= cp
 ########## Variables for Javadoc documentation ##########
 WINDOWTITLE = 'ORO: the OpenRobots Ontology - Server documentation'
 HEADER = '<b>ORO: the OpenRobots Ontology</b><br/><font size="-1">Server documentation - build on $(shell date +%F)</font>'
-BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><br><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2009</font>'
+BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2010</font>'
 GROUPCORE = "Core Packages" "$(BASE_PACKAGE)*"
 GROUPMODULES  = "Modules Packages" "$(BASE_PACKAGE).modules*"
 #GROUPSERVER  = "Connectors Packages" "$(BASE_PACKAGE).connectors*"
@@ -51,7 +51,7 @@ oro-jar: oro-build
 
 oro-build :
 	$(INSTALL) -d $(BUILD_DIR)
-	$(JAVAC) -classpath $(CLASSPATH) -d $(BUILD_DIR) `find -name "*.java"`
+	$(JAVAC) -classpath $(CLASSPATH) -d $(BUILD_DIR) `find $(SRC_DIR)/laas -name "*.java"`
 
 install: oro-server
 	$(INSTALL) -d ${PREFIX}/java/oro-server/lib
