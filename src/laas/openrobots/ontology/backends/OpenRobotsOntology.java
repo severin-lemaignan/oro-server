@@ -41,6 +41,7 @@ package laas.openrobots.ontology.backends;
 ///////////////
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -757,6 +758,18 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.enterCriticalSection(Lock.READ);
 		onto.write(file);
 		onto.leaveCriticalSection();
+		
+	}
+	
+	@RPCMethod(
+			category = "administration",
+			desc="exports the current ontology model to an OWL file. The file " +
+					"will be saved to the current directory with an automatically" +
+					"generated name."
+	)
+	public void save() throws OntologyServerException {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+		save(sdf.format(Calendar.getInstance().getTime()) + "-snapshot.owl");
 		
 	}
 
