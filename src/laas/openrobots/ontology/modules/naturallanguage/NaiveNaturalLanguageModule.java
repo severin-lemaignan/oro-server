@@ -4,6 +4,7 @@
 package laas.openrobots.ontology.modules.naturallanguage;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -153,7 +154,7 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		else if (nameIsMatcher2.matches())
 			res = handleAdd(nameIsMatcher2.group(1) + " rdfs:label " + nameIsMatcher2.group(2));
 		else if (whereIsMatcher.matches())
-			res = handleFind(nameIsMatcher2.group(1), " rdfs:label " + nameIsMatcher2.group(2));
+			res = handleFind(nameIsMatcher2.group(1), " isAt " , nameIsMatcher2.group(2));
 		else {
 			Logger.log("Didn't understand the sentence.\n", VerboseLevel.VERBOSE);
 			res = "";
@@ -213,6 +214,7 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		}
 		
 		try {
+			stmts.add(oro.createPartialStatement("?obj rdfs:label ?label"));
 			stmts.add(oro.createPartialStatement(subj + " " + pred + " ?obj"));
 			
 			if (typeObj != null)
@@ -221,11 +223,15 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 			Logger.log("Sending expression " +
 					stmts.toString() + "\n", VerboseLevel.DEBUG);
 			
-			Set<String> rawResult = oro.find("obj", stmts, null);
+			//Try to get the labels
+			Set<String> rawResult = oro.find("label", stmts, null);
+			//if (rawResult.isEmpty()) rawResult = oro.find("obj", stmts, null);
+			
 			//TODO fetch the labels
 			if (rawResult.isEmpty()) res = "Nothing!";
 			else {
 				for (String r : rawResult)
+					
 					res += r + ", ";
 				//TODO: this formatting regex won't match - ' and other similar characters
 				res = res.replaceAll("([\\w:\\-, ]+),([\\w:s\\- ]+), ", "$1 and$2, I think.");
@@ -256,6 +262,27 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		
 		//replace "is/are" by "rdf:type"
 		stmt = stmt.replaceFirst("([\\w]+) (?:type|is|am|are) ([\\w]+)", "$1 rdf:type $2");
+		
+		//put into quote the 3 parameters. 
+		Matcher tokenizer= Pattern.compile("([\\w:\\-]+) ([\\w:\\-]+) ([\\w:\\- ]+)\\.?").matcher(stmt);
+		tokenizer.matches();
+		String object = "";
+		Set<List<String>> lookup = oro.lookup(tokenizer.group(2));
+		if (lookup.isEmpty()) {
+			object = tokenizer.group(2).replace(' ', '_');
+			try {
+				oro.add(oro.createStatement(object + " rdfs:label " + tokenizer.group(2)), 
+						MemoryProfile.DEFAULT,
+						false);
+			} catch (IllegalStatementException e) {
+				Logger.log("Couldn't add label \"" + tokenizer.group(2) + "\" " +
+						"for object " + object + ". Continuing.", VerboseLevel.SERIOUS_ERROR);
+			}
+		}
+		else
+			object = Helpers.pickRandom(lookup).get(0);
+			
+		stmt = tokenizer.group(1) + " " + tokenizer.group(2) + " " + object;
 		
 		Logger.log("Processing a \"add\" command with statement [" +
 				stmt + "]\n", VerboseLevel.VERBOSE);
