@@ -268,7 +268,7 @@ public interface IOntologyBackend extends IServiceProvider {
 			boolean onlyDirect) throws NotFoundException;
 
 	/**
-	 * Returns the set of all [id, type] (with type one of INSTANCE, CLASS, 
+	 * Returns the set of all [id, type, label] (with type one of INSTANCE, CLASS, 
 	 * OBJECT_PROPERTY, DATATYPE_PROPERTY, UNDEFINED) of concepts whose labels
 	 *  or id match the given parameter.
 	 * 
@@ -279,7 +279,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see #lookup(String, ResourceType)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract Set<List<String>> lookup(String id) throws NotFoundException;
+	public abstract Set<List<String>> lookup(String id);
 
 	/**
 	 * Returns the set of all id of concepts whose labels or ids match the given
@@ -291,8 +291,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see ResourceType
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
-	public abstract Set<String> lookup(String id, ResourceType type) throws NotFoundException;
-
+	public abstract Set<String> lookup(String id, ResourceType type);
 	
 	/**
 	 * Remove all statements matching the partial statement.
