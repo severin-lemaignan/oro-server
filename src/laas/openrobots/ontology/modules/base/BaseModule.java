@@ -757,4 +757,43 @@ public class BaseModule implements IServiceProvider {
 		return oro.lookup(id, ResourceType.fromString(type));
 	}
 	
+
+	/**
+	 * Returns the label associated to a concept whose name is 'id'.
+	 * If the concept has several labels, a random one is picked.
+	 * If the concept has no label, the concept id is returned.
+	 * 
+	 * @param the id to look for.
+	 * @return One of the labels associated to this id or the id itself if no 
+	 * label has been defined.
+	 */
+	@RPCMethod(
+			desc = "return the label of a concept, if available."
+	)
+	public String getLabel(String id) {
+		
+		Set<String> q = new HashSet<String>();
+		q.add(id + " rdfs:label ?label");
+		
+		Set<String> labels;
+		
+		try {
+			labels = find("?label", q);
+		} catch (InvalidQueryException e) {
+			Logger.log("Unable to query the ontology for the label of id: " + id +
+					". Will return the id and continue.",
+					VerboseLevel.SERIOUS_ERROR);			
+			return id;
+		} catch (IllegalStatementException e) {
+			Logger.log("Unable to query the ontology for the label of id: " + id +
+					". Will return the id and continue.",
+					VerboseLevel.SERIOUS_ERROR);			
+			return id;
+		}
+		
+		if (labels.isEmpty()) return id;
+		
+		return Helpers.pickRandom(labels);
+	}
+	
 }
