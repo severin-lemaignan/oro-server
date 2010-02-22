@@ -807,7 +807,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 					
-		Namespaces.setDefault(parameters.getProperty("default_namespace"));
+		Namespaces.loadNamespaces(parameters);
 		
 		if (onto == null) this.load();
 		

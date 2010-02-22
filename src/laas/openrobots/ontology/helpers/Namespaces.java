@@ -37,6 +37,7 @@
 package laas.openrobots.ontology.helpers;
 
 import java.util.Hashtable;
+import java.util.Properties;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.ontology.OntProperty;
@@ -70,23 +71,17 @@ public class Namespaces {
 	 * Standard XML Schema namespace ({@value})
 	 */
 	public static final String xsd_ns = "http://www.w3.org/2001/XMLSchema#";
-	
-	/**
-	 * The LAAS OpenRobots ontology namespace ({@value})
-	 */
-	public static final String oro_ns = "http://www.laas.fr/~slemaign/onto/openrobots#";
-	
+		
 	/**
 	 * The default namespace. This static field is set up at runtime from the configuration file.
 	 */
 	public static String DEFAULT_NS = "";
-	
+		
 	private static Hashtable<String, String> namespaces;
 	
 	static
 	{
 		namespaces = new Hashtable<String, String>();
-		namespaces.put("oro", oro_ns);
 		namespaces.put("owl", owl_ns);
 		namespaces.put("rdf", rdf_ns);
 		namespaces.put("rdfs", rdfs_ns);
@@ -290,6 +285,26 @@ public class Namespaces {
 	{
 		if(defaultNS != null) DEFAULT_NS = defaultNS;
 	}
+
+	public static void loadNamespaces(Properties parameters) {
+		for (int i = 1 ; i <= 10 ; i++) {
+			String ns = parameters.getProperty("namespace" + i, "");
+			if (ns != "") {
+				String ns2[] = ns.split("::", 2);
+				if (ns2.length == 2) {
+					namespaces.put(ns2[0], ns2[1]);
+					Logger.log("Registered namespace " + ns2[1] + " (" + 
+					ns2[0] + ")\n", VerboseLevel.VERBOSE);
+				} else
+					Logger.log("Wrong syntax for namespace " + ns + " in " +
+							"configuration file: 'short_ns::long_ns' is expected.\n",
+							VerboseLevel.ERROR);
+			}
+		}
+		
+		setDefault(namespaces.get(parameters.getProperty("default_namespace", "")));
+		
+	}
 	
 	/** Returns a filter to keep only properties in the default ORO namespace,
 	 * thus removing properties inferred from RDF or OWL models.
@@ -303,5 +318,7 @@ public class Namespaces {
 	            }
 			};
 	}
+
+
 
 }
