@@ -277,22 +277,34 @@ public class OroServer implements IServiceProvider {
 			
 			Logger.log("Looking fo external plugins...\n");
 			
-			FilenameFilter filter = new FilenameFilter() {
-	            	public boolean accept(File f, String s) {return s.endsWith("jar") ? true : false; }
-				};
-         
-			for (File jarFile : f.listFiles(filter)) {
-				Logger.log(jarFile.toString() + "\n");
-				IModule module;
-				try {
-					module = pl.loadJAR("file://" + jarFile.getPath());
-					addNewServiceProviders(module.getServiceProvider());
-				}
-				catch (PluginNotFoundException e) {
-					Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
-				}
-				catch (InvalidPluginException e) {
-					Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
+			if (!f.exists())
+			{
+				Logger.log("Plugin path " + f + " doesn't exist! Continuing\n", VerboseLevel.ERROR);
+			}
+			else {
+				FilenameFilter filter = new FilenameFilter() {
+		            	public boolean accept(File f, String s) {return s.endsWith("jar") ? true : false; }
+					};
+	         
+				if (f.listFiles(filter).length == 0)
+				{
+					Logger.log("No plugin found. Continuing.\n");
+				} 
+				else {
+					for (File jarFile : f.listFiles(filter)) {
+						Logger.log(jarFile.toString() + "\n");
+						IModule module;
+						try {
+							module = pl.loadJAR("file://" + jarFile.getPath());
+							addNewServiceProviders(module.getServiceProvider());
+						}
+						catch (PluginNotFoundException e) {
+							Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
+						}
+						catch (InvalidPluginException e) {
+							Logger.log("Error while loading the plugin: " + e.getMessage() + ". Skipping it.\n", VerboseLevel.SERIOUS_ERROR);
+						}
+					}
 				}
 			}
 				
