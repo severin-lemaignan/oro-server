@@ -295,7 +295,7 @@ public class OroServer implements IServiceProvider {
 						Logger.log(jarFile.toString() + "\n");
 						IModule module;
 						try {
-							module = pl.loadJAR("file://" + jarFile.getPath());
+							module = pl.loadJAR("file://" + jarFile.getAbsolutePath());
 							addNewServiceProviders(module.getServiceProvider());
 						}
 						catch (PluginNotFoundException e) {
