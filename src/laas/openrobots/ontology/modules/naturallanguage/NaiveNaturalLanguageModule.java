@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.hp.hpl.jena.ontology.OntClass;
+
 
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -40,7 +42,7 @@ import laas.openrobots.ontology.service.RPCMethod;
  * {predicate} ?obj</tt> (plus <tt>?obj rdf:type {object_type}</tt> is it's defined).</li>
  * <li><tt>what is {object}?</tt>: will query the knowledge base and return the 
  * type of the object.</li>
- * <li><tt>{object_id} [has name|name is|has name] {object_name}</tt> or <tt>?? 
+ * <li><tt>{object_id} [has name|name is|is called] {object_name}</tt> or <tt>?? 
  * name of {object_id} is {object_name}</tt>: will add to the knowledge base a 
  * label to the concept.</li>
  * </ul>
@@ -100,7 +102,7 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		
 		whatIsMatcher = whatIsPattern.matcher("");
 		
-		//should match sentence like: What is blue_bottle?
+		//should match sentence like: blue_bottle is called My bottle.
 		nameIsPattern = Pattern.compile(
 				"[\\w,\\' ]*?name of ([\\w]+) is ([\\w ]+)");
 		nameIsPattern2 = Pattern.compile(
@@ -148,7 +150,7 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		else if (whatMatcher.matches())
 			res = handleFind(whatMatcher.group(2), whatMatcher.group(3), whatMatcher.group(1));
 		else if (whatIsMatcher.matches())
-			res = handleFind(whatIsMatcher.group(1), "rdf:type", null);
+			res = handleGetType(whatIsMatcher.group(1));
 		else if (nameIsMatcher.matches())
 			res = handleAdd(nameIsMatcher.group(1) + " rdfs:label " + nameIsMatcher.group(2));
 		else if (nameIsMatcher2.matches())
@@ -163,8 +165,33 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		return res;
 	}
 	
-	private String handleGetClass(String concept) {
-		return "";
+	private String handleGetType(String concept) {
+		String res="";
+		boolean foundSeveralConcepts = false;
+		
+		Logger.log("Trying to find out the type of " + concept + "\n", 
+				VerboseLevel.VERBOSE);
+		
+		Set<String> ids = oro.lookup(concept, ResourceType.INSTANCE);
+		
+		if (ids.size() == 0) return "I don't know " + concept + "! :-(";
+		
+		if (ids.size() > 1) foundSeveralConcepts = true;
+		
+		
+		for (OntClass c : oro.getClassesOf(oro.getResource(Helpers.pickRandom(ids)), true)) {
+			res += Helpers.getLabel(c) + ", ";
+		}
+		
+		//TODO: this formatting regex won't match - ' and other similar characters
+		res = res.replaceAll("([\\w:\\-, ]+),([\\w:s\\- ]+), ", "$1 and$2, isn't it?");
+		res = res.replaceFirst("(.*)(?:, )$", "A $1 I think.");
+		
+		if (foundSeveralConcepts) res += " But I must say I'm a bit confused " +
+				"because I know several things that are called " + concept +"...";
+		
+		
+		return res;
 	}
 	
 	private String handleFind(String subj, String pred, String typeObj) {
@@ -214,8 +241,8 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		}
 		
 		try {
-			stmts.add(oro.createPartialStatement("?obj rdfs:label ?label"));
 			stmts.add(oro.createPartialStatement(subj + " " + pred + " ?obj"));
+			stmts.add(oro.createPartialStatement("?obj rdfs:label ?label"));
 			
 			if (typeObj != null)
 				stmts.add(oro.createPartialStatement("?obj rdf:type " + typeObj));
@@ -224,18 +251,19 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 					stmts.toString() + "\n", VerboseLevel.DEBUG);
 			
 			//Try to get the labels
+			//TODO prbl here: if 2 concepts matches but only one have a label, we will silently
+			//miss the other.
 			Set<String> rawResult = oro.find("label", stmts, null);
-			//if (rawResult.isEmpty()) rawResult = oro.find("obj", stmts, null);
-			
-			//TODO fetch the labels
+			//if (rawResult.isEmpty()) rawResult = oro.find("obj", stmts, null); 
+
 			if (rawResult.isEmpty()) res = "Nothing!";
 			else {
-				for (String r : rawResult)
-					
+				for (String r : rawResult)					
 					res += r + ", ";
+				
 				//TODO: this formatting regex won't match - ' and other similar characters
 				res = res.replaceAll("([\\w:\\-, ]+),([\\w:s\\- ]+), ", "$1 and$2, I think.");
-				res = res.replaceFirst("(?:(\\w:\\-+), )$", "Only $1.");
+				res = res.replaceFirst("(.*)(?:, )$", "Only $1.");
 			}
 			
 		} catch (IllegalStatementException e) {
@@ -267,15 +295,17 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		Matcher tokenizer= Pattern.compile("([\\w:\\-]+) ([\\w:\\-]+) ([\\w:\\- ]+)\\.?").matcher(stmt);
 		tokenizer.matches();
 		String object = "";
-		Set<List<String>> lookup = oro.lookup(tokenizer.group(2));
+		Set<List<String>> lookup = oro.lookup(tokenizer.group(3));
 		if (lookup.isEmpty()) {
-			object = tokenizer.group(2).replace(' ', '_');
+			//if we don't know the object of the statement, we create a new object
+			//with the given name as label.
+			object = tokenizer.group(3).replace(' ', '_').toLowerCase();
 			try {
-				oro.add(oro.createStatement(object + " rdfs:label " + tokenizer.group(2)), 
+				oro.add(oro.createStatement(object + " rdfs:label " + Helpers.protectValue(tokenizer.group(3))), 
 						MemoryProfile.DEFAULT,
 						false);
 			} catch (IllegalStatementException e) {
-				Logger.log("Couldn't add label \"" + tokenizer.group(2) + "\" " +
+				Logger.log("Couldn't add label \"" + tokenizer.group(3) + "\" " +
 						"for object " + object + ". Continuing.", VerboseLevel.SERIOUS_ERROR);
 			}
 		}

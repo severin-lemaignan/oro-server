@@ -3,5 +3,5 @@ Bundle-Name: Naive Natural Language Processor
 Bundle-SymbolicName: laas.openrobots.ontology.modules.naturallanguage.NaiveNaturalLanguageModule
 Bundle-Description: Add some naive natural language processing capabilities to ORO
 Bundle-Vendor: LAAS-CNRS 2010 - Séverin Lemaignan severin.lemaignan@laas.fr
-Bundle-Version: 1.2
+Bundle-Version: 1.4
 
