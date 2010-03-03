@@ -75,6 +75,7 @@ import laas.openrobots.ontology.service.RPCMethod;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
+import com.hp.hpl.jena.ontology.ConversionException;
 import com.hp.hpl.jena.ontology.DatatypeProperty;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.ObjectProperty;
@@ -136,6 +137,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	private ResultSet lastQueryResult;
 	private String lastQuery;
+	
+	private boolean isInInconsistentState;
 	
 	private Properties parameters;
 
@@ -326,14 +329,21 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			{
 				//notify the events subscribers.
 				//TODO: optimize this call in case of a serie of "add" -> onModelChange to be moved to a separate thread?
-				onModelChange();	
+				onModelChange();
+				if (isInInconsistentState) {
+					Logger.log("The ontology is back in a consistent state\n ", 
+							VerboseLevel.WARNING);
+					isInInconsistentState = false;
+				}
 			}
 			
 			onto.leaveCriticalSection();
 			
 		}
 		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
-			Logger.log("The last added statement lead the ontology in an inconsistent state!\n ", VerboseLevel.WARNING);
+			isInInconsistentState = true;
+			Logger.log("The ontology is in an inconsistent state! I couldn't " +
+					"update the events subscribers\n ", VerboseLevel.WARNING);
 		}
 		catch (Exception e)
 		{
@@ -619,12 +629,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#getClassesOf(com.hp.hpl.jena.ontology.Individual, boolean)
 	 */
 	@Override
-	public Set<OntClass> getClassesOf(Individual individual, boolean onlyDirect) throws NotFoundException {
+	public Set<OntClass> getClassesOf(OntResource resource, boolean onlyDirect) throws NotFoundException {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
-
 		
 		onto.enterCriticalSection(Lock.READ);
+		
+		Individual individual = resource.asIndividual();
+		
 		ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
 		while (it.hasNext())
 		{
@@ -727,6 +739,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public void remove(Statement stmt) {
 		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]\n");
 		
+		
 		onto.enterCriticalSection(Lock.WRITE);		
 		onto.remove(stmt);	
 		onto.leaveCriticalSection();
@@ -734,8 +747,21 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//force the rebuilt of the lookup table at the next lookup.
 		forceLookupTableUpdate = true;
 		
-		//notify the events subscribers.
-		onModelChange();
+		try {
+			//notify the events subscribers.
+			onModelChange();
+			
+			if (isInInconsistentState) {
+				Logger.log("The ontology is back in a consistent state\n ", 
+						VerboseLevel.WARNING);
+				isInInconsistentState = false;
+			}
+		}
+		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+			isInInconsistentState = true;
+			Logger.log("The ontology is in an inconsistent state! I couldn't " +
+					"update the events subscribers\n ", VerboseLevel.WARNING);
+		}
 
 	}
 

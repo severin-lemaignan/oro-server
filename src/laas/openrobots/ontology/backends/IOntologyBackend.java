@@ -264,7 +264,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract Set<OntResource> getInstancesOf(OntClass type,
 			boolean onlyDirect) throws NotFoundException;
 
-	public abstract Set<OntClass> getClassesOf(Individual individual,
+	public abstract Set<OntClass> getClassesOf(OntResource individual,
 			boolean onlyDirect) throws NotFoundException;
 
 	/**
