@@ -1,13 +1,9 @@
-oro-server 0.7.0 target
------------------------
-[DONE] - re-introduce module EVENT MANAGER
-[DONE] - implement different ontologies for different agents
 
 oro-server 0.8.0 target
 -----------------------
 - implement first version of module CURIOSITY
 - implement reinforcement learning into module MEMORY MANAGER
-[STARTED] - implement "consistency-safe" operations (add, removal...)
+[DONE] - implement "consistency-safe" operations (add, removal...)
 [STARTED] - implement automatic set generation based on similarities
 
 

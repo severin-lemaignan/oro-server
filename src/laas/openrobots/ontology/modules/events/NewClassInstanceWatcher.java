@@ -2,9 +2,6 @@ package laas.openrobots.ontology.modules.events;
 
 import java.util.ArrayList;
 
-import laas.openrobots.ontology.modules.alterite.AgentWatcher;
-
-
 /**
  * This class specializes {@link GenericWatcher} to easily create event watchers
  * that monitor new instances of a given class.

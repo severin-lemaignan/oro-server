@@ -4,6 +4,7 @@ bin/
 build/
 doc/
 .classpath
-oro-server.jar
+*.jar
 start
 *~
+*.owl

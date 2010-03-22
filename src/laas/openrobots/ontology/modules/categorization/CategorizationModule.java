@@ -487,13 +487,13 @@ public class CategorizationModule implements IServiceProvider {
 	 * <p>
 	 * The method return two things: 
 	 * <ul>
-	 * <li>a first set of properties that <b>totaly discriminate</b> the set of 
+	 * <li>a first set of properties that <b>totally discriminate</b> the set of 
 	 * individual. It means that if we get the value of this property, we can 
 	 * distinguish the individuals. Quite often, this set is empty because the
-	 * set can not be splitted by a single property.</li>
+	 * set can not be split by a single property.</li>
 	 * <li>a second set that contains the best property that can be 
 	 * used to split the set of individuals (of the set of best properties if 
-	 * several properties have the same efficency). If the first set is not empty,
+	 * several properties have the same efficiency). If the first set is not empty,
 	 * the second set should obviously contain the same property/ies.</li>
 	 * </ul>
 	 * </p>
@@ -501,7 +501,7 @@ public class CategorizationModule implements IServiceProvider {
 	 * <p>
 	 * The method proceeds as follows:
 	 * <ol>
-	 *  <li>Build a list of properties for each individuals, and sum their occurence:
+	 *  <li>Build a list of properties for each individuals, and sum their occurrence:
 	 *<pre>  
 	 *            p1        p2        p3
 	 *-------------------------------------
@@ -513,7 +513,7 @@ public class CategorizationModule implements IServiceProvider {
 	 *      |p|=  4         3         2
 	 *</pre></li>
 	 *  <li>For each property, count the number of groups it forms (ie, the number
-	 *  of disctint values) </li>
+	 *  of distinct values) </li>
 	 *  <pre>
 	 *         | p1:hasClass | p2:hasColor | p3:eats
 	 *---------+-------------+-------------+--------
@@ -526,7 +526,7 @@ public class CategorizationModule implements IServiceProvider {
 	 *</pre>
 	 *  <li>Remove properties that lead to only 1 group (ie, non selective
 	 *  properties)</li>
-	 *  <li>Return the property that has the highest occurence, and then the best
+	 *  <li>Return the property that has the highest occurrence, and then the best
 	 *  selectivity (ie the biggest amount of groups). If several properties are
 	 *  equal, return all of them.</li>
 	 * </ol>

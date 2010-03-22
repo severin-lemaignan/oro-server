@@ -292,7 +292,7 @@ public class OroServer implements IServiceProvider {
 				} 
 				else {
 					for (File jarFile : f.listFiles(filter)) {
-						Logger.log(jarFile.toString() + "\n");
+						Logger.log(jarFile.toString() + "\n", VerboseLevel.DEBUG);
 						IModule module;
 						try {
 							module = pl.loadJAR("file://" + jarFile.getAbsolutePath());
