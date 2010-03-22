@@ -952,9 +952,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
-			//TODO: Workaround for http://clark-parsia.trac.cvsdude.com/pellet-devel/ticket/356
-			onto.setStrictMode(false);
-			//onto.setStrictMode(true);
+			onto.setStrictMode(true);
 			
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
@@ -971,11 +969,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				Logger.log("\t- Scenario-specific knowledge loaded and merged.\n");
 			
 			Logger.log("\t- " + onto_model_reasonner_name + " initialized.\n");
+			
+			//Perform an initial classification
+			
+			try {
+				checkConsistency();
+				Logger.log("\t- Good news: the initial ontology is consistent.\n");
+			} catch (InconsistentOntologyException e) {
+				Logger.log("Attention! The initial ontology is inconsistent!", VerboseLevel.IMPORTANT);
+			}
+			
 			Logger.cr();
 			
-			
 		} catch (ReasonerException re){
-			Logger.log("Fatal error at ontology initialization: error with the reasonner\n", VerboseLevel.FATAL_ERROR);
+			Logger.log("Fatal error at ontology initialization: error with the reasoner\n", VerboseLevel.FATAL_ERROR);
 			re.printStackTrace();
 			System.exit(1);
 		} catch (JenaException je){
