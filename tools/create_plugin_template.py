@@ -62,7 +62,7 @@ DOC_DIR ?= $(PREFIX)/share/doc/oro-plugins/$(BUNDLE_NAME)
 
 #Set here the path to your oro-server JAR package
 ORO_SERVER ?= $(PREFIX)/java/oro-server/lib
-PLUGINS_DIR ?= $(ORO_SERVER)/java/oro-server/plugins
+PLUGINS_DIR ?= $(PREFIX)/java/oro-server/plugins
 
 #Add here dependency on other Java libs
 CLASSPATH = $(ORO_SERVER)/oro-server.jar

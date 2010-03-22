@@ -15,7 +15,7 @@ MEDIA_DIR = ../../media
 
 #Set here the path to your oro-server JAR package
 ORO_SERVER ?= $(PREFIX)/java/oro-server/lib
-PLUGINS_DIR ?= $(ORO_SERVER)/java/oro-server/plugins
+PLUGINS_DIR ?= $(PREFIX)/java/oro-server/plugins
 
 JENA_LIBS = $(PREFIX)/java/jena/lib
 PELLET_LIBS = $(PREFIX)/java/pellet/lib
