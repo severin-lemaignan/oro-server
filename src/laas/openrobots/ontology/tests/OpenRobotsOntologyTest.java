@@ -53,7 +53,6 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.ResourceType;
-import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -61,7 +60,6 @@ import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
-import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -1766,7 +1764,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test checks that the Alterite module works as expected.
 	 * @throws IllegalStatementException 
+	 * TODO: Move this test in unittests specific to the plugins
 	 */
+	/*
 	public void testAlteriteModule() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
@@ -1798,5 +1798,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+	*/
 	
 }
