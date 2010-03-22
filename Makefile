@@ -5,9 +5,16 @@ PREFIX ?= /usr/local
 
 BUILD_DIR = build
 SRC_DIR = src
-DOC_DIR = ${PREFIX}/share/doc/oro-server
 
-#holds diagrams, etc.
+DOC_DIR ?= ${PREFIX}/share/doc/oro-server
+
+#default plugins directory
+PLUGINS_DIR ?= ${PREFIX}/java/oro-server/plugins
+
+#default ontologies directory
+ONTOLOGIES_DIR ?= ${PREFIX}/share/ontologies
+
+#holds diagrams, CSS, etc.
 MEDIA_DIR = media
 
 BASE_PACKAGE = laas.openrobots.ontology
@@ -37,11 +44,20 @@ GROUPMODULES  = "Modules Packages" "$(BASE_PACKAGE).modules*"
 GROUPTESTS = "Tests Packages" "$(BASE_PACKAGE).tests*"
 ##########################################################
 
-all : oro-server doc
+all : oro-server
 
 oro-server: oro-jar
 	/bin/echo -e '#!/bin/sh\n$(JAVA) -Djava.library.path=$(PREFIX)/lib -jar $(PREFIX)/java/oro-server/lib/oro-server.jar $$1' > oro-server
 	chmod +x oro-server
+	
+	#Replace paths in configuration files
+	sed 's*@PLUGINS_PATH@*$(PLUGINS_DIR)*' etc/oro-server/oro.conf.in > etc/oro-server/oro.conf.in2
+	sed 's*@ONTOLOGIES_PATH@*$(ONTOLOGIES_DIR)*' etc/oro-server/oro.conf.in2 > etc/oro-server/oro.conf
+	$(CLEAN) etc/oro-server/oro.conf.in2
+	sed 's*@PLUGINS_PATH@*$(PLUGINS_DIR)*' etc/oro-server/oro_test.conf.in > etc/oro-server/oro_test.conf.in2
+	sed 's*@ONTOLOGIES_PATH@*$(ONTOLOGIES_DIR)*' etc/oro-server/oro_test.conf.in2 > etc/oro-server/oro_test.conf
+	$(CLEAN) etc/oro-server/oro_test.conf.in2
+	
 	echo "If you have the test ontology oro_test.owl, you can now run 'make test' to run the unit tests"
 
 oro-jar: oro-build
@@ -53,7 +69,7 @@ oro-build :
 	$(INSTALL) -d $(BUILD_DIR)
 	$(JAVAC) -classpath $(CLASSPATH) -d $(BUILD_DIR) `find $(SRC_DIR)/laas -name "*.java"`
 
-install: oro-server
+install: oro-server install-doc
 	$(INSTALL) -d ${PREFIX}/java/oro-server/lib
 	$(INSTALL) oro-server.jar ${PREFIX}/java/oro-server/lib
 	$(INSTALL) -d ${PREFIX}/etc/oro-server
@@ -64,6 +80,7 @@ install: oro-server
 distclean: clean doc-clean
 	$(CLEAN) oro-server
 	$(CLEAN) oro-server.jar
+	$(CLEAN) etc/oro-server/*.conf
 	$(CLEAN) *.log
 	$(CLEAN) *.owl
 	$(CLEAN) *.tar.gz
@@ -90,13 +107,13 @@ install-doc:
 	-group $(GROUPTESTS) \
 	-link http://jena.sourceforge.net/javadoc \
 	-J-Xmx180m \
-	-stylesheetfile $(SRC_DIR)/javadoc.css \
+	-stylesheetfile $(MEDIA_DIR)/javadoc.css \
 	-subpackages $(BASE_PACKAGE)
 	$(INSTALL) -t $(DOC_DIR) $(MEDIA_DIR)/*
 
 doc-clean:
 	$(CLEAN) $(DOC_DIR)
 
-test: oro-server
-	$(JAVA) -classpath $(CLASSPATH):${PREFIX}/java/oro-server/lib/$<.jar -DORO_TEST_CONF=${PREFIX}/etc/oro-server/oro_test.conf junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
+test:
+	$(JAVA) -classpath $(CLASSPATH):${PREFIX}/java/oro-server/lib/oro-server.jar -DORO_TEST_CONF=${PREFIX}/etc/oro-server/oro_test.conf junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
 

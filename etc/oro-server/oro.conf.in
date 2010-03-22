@@ -12,13 +12,13 @@
 # - serious_error: only errors requiring intervention on the server are displayed.
 # - silent: nothing at all is displayed.
 
-verbosity = debug
+verbosity = info
 
 ################################ External modules ##############################
 
 # plugins_path: path where ORO must look for plugins (JAR files).
 
-plugins_path = /home/slemaign/openrobots/java/oro-server/plugins
+plugins_path = @PLUGINS_PATH@
 
 ################################# Ontology #####################################
 
@@ -26,7 +26,28 @@ plugins_path = /home/slemaign/openrobots/java/oro-server/plugins
 # knowledge is stored. This sum of facts, rules, relationships form the ground 
 # of knowledge used by the cognitive kernel (including the reasonner).
 
-oro_common_sense = /home/slemaign/openrobots/share/ontologies/testsuite.oro.owl
+oro_common_sense = @ONTOLOGIES_PATH@/commonsense.oro.owl
+
+# oro_robot_instance: this ontology file stores robot specific knowledge,
+# including the facts that the robot will infer.
+# You can provide some generic, robot-related, knowledge (and rules), but you
+# can as well remove this option. In this case, a blank ontology will be 
+# created during the oro-server initialization.
+
+oro_robot_instance = @ONTOLOGIES_PATH@/robot.oro.owl
+
+# oro_agent_instance: this ontology file stores specific knowledge relevant
+# to a generic agent.
+# It is used as base for cognitive models of agents when they appear.
+
+oro_agent_instance = @ONTOLOGIES_PATH@/agent.oro.owl
+
+# oro_scenario: should point to the OWL file used as storage for knowledge
+# related to a specific scenario.
+# These instances describe the a priori knowledge available to the robot. You 
+# can safely remove this option if you don't have scenario-specific knowledge.
+
+#oro_scenario = @ONTOLOGIES_PATH@/scenarios/jidology.owl
 
 ################################ Reasonner ####################################
 
@@ -63,6 +84,8 @@ language = en
 #the shortname must be separated from namespace by '::'.
 
 namespace1 = oro::http://www.laas.fr/~slemaign/onto/openrobots#
+#namespace1 = cyc::http://sw.opencyc.org/concept/
+#namespace2 = oro::http://ias.cs.tum.edu/kb/commonsense.owl#
 
 #default namespace: set the default namespace.
 

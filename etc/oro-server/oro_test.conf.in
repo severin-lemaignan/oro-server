@@ -18,7 +18,7 @@ verbosity = debug
 
 # plugins_path: path where ORO must look for plugins (JAR files).
 
-plugins_path = /home/slemaign/openrobots/java/oro-server/plugins
+plugins_path = @PLUGINS_PATH@
 
 ################################# Ontology #####################################
 
@@ -26,7 +26,7 @@ plugins_path = /home/slemaign/openrobots/java/oro-server/plugins
 # knowledge is stored. This sum of facts, rules, relationships form the ground 
 # of knowledge used by the cognitive kernel (including the reasonner).
 
-oro_common_sense = /home/slemaign/openrobots/share/ontologies/testsuite.oro.owl
+oro_common_sense = @ONTOLOGIES_PATH@/testsuite.oro.owl
 
 ################################ Reasonner ####################################
 

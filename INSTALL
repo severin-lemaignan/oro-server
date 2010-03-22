@@ -20,13 +20,36 @@ Installation
 
 > make PREFIX=[your prefix] install
 
-For the documentation:
+We install an "oro-server" binary in PREFIX/bin, the "oro-server.jar" library
+in PREFIX/java/oro-server/lib and configuration files in PREFIX/etc/oro-server.
 
-> make PREFIX=[your prefix] install-doc
+Two other important environment variables:
+
+* PLUGINS_DIR: path to the installation directory of your plugins. By default,
+PREFIX/java/oro-server/plugins
+
+* ONTOLOGIES_DIR: default directory for your ontologies. By default, 
+PREFIX/share/ontologies
+
+These two variables are used to pre-configure your configuration files.
+
+
+Plugins
+-------
+
+Plugins template can be generated with tools/create_plugin_template.py
+
+Then:
+
+> cd [your plugin]
+> make PREFIX=[your prefix] install
 
 
 Details, examples, barbapapa
 ----------------------------
 
-https://www.laas.fr/~slemaign/official/work/oro-server.html
+https://www.laas.fr/~slemaign/oro-server
+
+or:
+severin.lemaignan@laas.fr
 
