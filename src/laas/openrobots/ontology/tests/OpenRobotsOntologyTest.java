@@ -84,7 +84,7 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
  */
 public class OpenRobotsOntologyTest extends TestCase {
 
-	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
+	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_test.conf";
 	Properties conf;
 	
 	public OpenRobotsOntologyTest() {
@@ -110,6 +110,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Wrong tokenization using commas.", 5, Helpers.tokenize(strToTokenize, ',').size());
 		assertEquals("Wrong tokenization using spaces.", 4, Helpers.tokenize(strToTokenize, ' ').size());
 		
+		
+		/**** Test stringification ****/
 		System.out.println("OK.\nStringification...");
 		
 		assertEquals("\"toto\"", Helpers.stringify("toto"));
@@ -123,12 +125,16 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("[\"toto\",\"tata\"]", Helpers.stringify(t1));
 		
 		Set<String> t2 = new HashSet<String>();
+		assertEquals("[]", Helpers.stringify(t2));
+		
 		t2.add("toto");
 		t2.add("titi");
 		String res = Helpers.stringify(t2);
 		assertTrue(res.equals("[\"toto\",\"titi\"]") || res.equals("[\"titi\",\"toto\"]"));
 		
 		Map<Integer, String> t3 = new HashMap<Integer, String>();
+		assertEquals("{}", Helpers.stringify(t3));
+		
 		t3.put(1, "toto");
 		t3.put(2, "tata");
 		assertEquals("{1:\"toto\",2:\"tata\"}", Helpers.stringify(t3));
@@ -137,16 +143,49 @@ public class OpenRobotsOntologyTest extends TestCase {
 		t1bis.add("tutu");		
 		
 		Set<List<String>> t4 = new HashSet<List<String>>();
+		assertEquals("[]", Helpers.stringify(t4));
+		
 		t4.add(t1);
 		t4.add(t1bis);
 		res = Helpers.stringify(t4);
 		assertTrue(res.equals("[[\"toto\",\"tata\"],[\"tutu\"]]") || res.equals("[[\"tutu\"],[\"toto\",\"tata\"]]"));
 		
 		Map<Set<String>, List<String>> t5 = new HashMap<Set<String>, List<String>>();
+		assertEquals("{}", Helpers.stringify(t5));
+		
 		t5.put(t2, t1);
 		res = Helpers.stringify(t5);
 		assertTrue(res.equals("{[\"toto\",\"titi\"]:[\"toto\",\"tata\"]}") || res.equals("{[\"titi\",\"toto\"]:[\"toto\",\"tata\"]}"));
 		
+		/**** Test deserialization ****/
+		System.out.println("OK.\nDeserialization...");
+		
+		assertTrue(Helpers.deserialize("[]", List.class).isEmpty());
+		assertTrue(Helpers.deserialize("[]", Set.class).isEmpty());
+		assertTrue(Helpers.deserialize("{}", Map.class).isEmpty());
+		
+		try {
+			assertTrue(Helpers.deserialize("{}", Set.class).isEmpty());
+			fail();
+		}
+		catch (IllegalArgumentException e) {}
+		
+		try {
+			assertTrue(Helpers.deserialize("[]", Map.class).isEmpty());
+			fail();
+		}
+		catch (IllegalArgumentException e) {}
+		
+		assertTrue(Helpers.deserialize("[\"toto\",\"tata\"]", List.class).containsAll(t1) && t1.containsAll(Helpers.deserialize("[\"toto\",\"tata\"]", List.class)));
+		
+		assertTrue(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class).containsAll(t2) && t2.containsAll(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class)));
+		
+		Map<String, String> map = Helpers.deserialize("{1:\"toto\",2:\"tata\"}", Map.class);
+		
+		for (String i : map.keySet()) {
+			assertEquals(map.get(i), t3.get(Integer.parseInt(i)));
+		}
+				
 		System.out.println("OK.");
 	}
 	

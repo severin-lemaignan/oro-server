@@ -468,18 +468,25 @@ public class Helpers {
 			if ( !val.substring(0, 1).equals("[") || !val.substring(val.length() - 1, val.length()).equals("]"))
 					isValidSet = false;
 			
+		
 			val = val.substring(1, val.length() - 1); //remove the [] or {}
 			
 			//checks that every elements of the map is made of tokens separated by :
-			for (String s : tokenize(val, ','))
-				if (!isValidMap || !s.contains(":"))
-					isValidMap = false;
+			if (!val.equals("")) {
+				for (String s : tokenize(val, ','))
+					if (!isValidMap || !s.contains(":"))
+						isValidMap = false;
+			}
+				
+			
 			
 			assert(!(isValidMap && isValidSet));
 			
 			//if the string looks like a map and a map is indeed expected...
 			if (isValidMap && Map.class.isAssignableFrom(type)){
 				Map<String, String> result = new HashMap<String, String>();
+				
+				if (val.equals("")) return (T) result;
 				
 				for (String s : tokenize(val, ','))
 					result.put(	cleanValue(s.trim().split(":", 2)[0]), 
@@ -490,6 +497,9 @@ public class Helpers {
 			//if the string looks like a set and a set of a list is indeed expected...
 			else if (isValidSet && Set.class.isAssignableFrom(type)){
 				Set<String> result = new HashSet<String>();
+				
+				if (val.equals("")) return (T) result;
+				
 				for (String s : tokenize(val, ','))
 					result.add(cleanValue(s));
 				return (T) result;
@@ -497,6 +507,9 @@ public class Helpers {
 			//if the string looks like a set and a list of a list is indeed expected...
 			else if (isValidSet && List.class.isAssignableFrom(type)){
 				List<String> result = new ArrayList<String>();
+				
+				if (val.equals("")) return (T) result;
+				
 				for (String s : tokenize(val, ','))
 					result.add(cleanValue(s));
 				return (T) result;
