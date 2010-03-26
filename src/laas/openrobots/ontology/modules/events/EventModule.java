@@ -39,7 +39,7 @@ public class EventModule implements IServiceProvider {
 	}
 	
 	/**
-	 * Creates a new event bind to a connector.
+	 * Creates a new event bound to a connector.
 	 * 
 	 * @param eventType
 	 * @param eventPattern
@@ -89,6 +89,8 @@ public class EventModule implements IServiceProvider {
 	{
 		EventType eType = null;
 		IWatcher.TriggeringType eTriggeringType = null;
+		
+		if (variable == "") variable = null;
 		
 		try {
 			eType = EventType.valueOf(type.toUpperCase());

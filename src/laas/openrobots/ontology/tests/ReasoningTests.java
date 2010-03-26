@@ -25,7 +25,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  */
 public class ReasoningTests extends TestCase {
 	
-	final String ORO_TEST_CONF = "oro_test.conf";
+	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_test.conf";
 	Properties conf;
 	
 	public ReasoningTests() {
@@ -56,7 +56,7 @@ public class ReasoningTests extends TestCase {
 		runtime.gc();
 		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
 		   
-		long max = 10000;
+		long max = 1000;
 		for (long i = 0 ; i < max ; i++)
 			try {
 				onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
@@ -131,7 +131,7 @@ public class ReasoningTests extends TestCase {
 		runtime.gc();
 		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
 		   
-		long max = 10000;
+		long max = 1000;
 		for (long i = 0 ; i < max ; i++)
 			try {
 				oro.add(oro.createStatement("individual" + i +" age 10^^xsd:int"), MemoryProfile.DEFAULT, false);

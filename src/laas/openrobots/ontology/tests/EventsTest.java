@@ -63,7 +63,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  */
 public class EventsTest extends TestCase {
 
-	final String ORO_TEST_CONF = "oro_test.conf";
+	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_test.conf";
 	Properties conf;
 	
 	public EventsTest() {
