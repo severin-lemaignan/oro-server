@@ -145,8 +145,10 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @param safe If true, the statement is added only if it does not 
 	 * @return True is the statement has been actually added to the model 
 	 * (actually useful only in conjunction with the {@code safe} parameter enabled).
+	 * @throws IllegalStatementException Currently only thrown if a concept is asserted 
+	 * to be both an instance and a class.
 	 */
-	public abstract boolean add(Statement statement, MemoryProfile memProfile, boolean safe);
+	public abstract boolean add(Statement statement, MemoryProfile memProfile, boolean safe) throws IllegalStatementException;
 		
 	/**
 	 * Checks if a statement is asserted or can be inferred from the ontology. 

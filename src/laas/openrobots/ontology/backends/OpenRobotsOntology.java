@@ -275,14 +275,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	/***************************************
-	 *           Public methods            *
+	 *           Public methods            * 
+	 *									   *
 	 **************************************/
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#add(com.hp.hpl.jena.rdf.model.Statement, laas.openrobots.ontology.modules.memory.MemoryProfile)
 	 */
 	@Override
-	public boolean add(Statement statement, MemoryProfile memProfile, boolean safe)
+	public boolean add(Statement statement, MemoryProfile memProfile, boolean safe) throws IllegalStatementException
 	{
 		
 		try {
@@ -345,9 +346,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			Logger.log("The ontology is in an inconsistent state! I couldn't " +
 					"update the events subscribers\n ", VerboseLevel.WARNING);
 		}
+		catch (ConversionException e) {
+			Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
+					"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
+			throw new IllegalStatementException("Impossible to assert " + statement + 
+					". A concept can not be a class and an instance at the same time in OWL DL.");
+
+		}
 		catch (Exception e)
 		{
-			Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.ERROR);
+			Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.FATAL_ERROR);
 			e.printStackTrace();
 			Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
 			System.exit(1);
