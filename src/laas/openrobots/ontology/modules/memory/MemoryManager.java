@@ -40,6 +40,7 @@ public class MemoryManager extends Thread {
 		p_memoryProfile = onto.createProperty(Namespaces.addDefault("stmtMemoryProfile"));
 	}
 	
+	@Override
 	public void run() {
 		
 		Set<ReifiedStatement> stmtToRemove = new HashSet<ReifiedStatement>();
@@ -115,6 +116,7 @@ public class MemoryManager extends Thread {
 		watchedStmt.add(rsStmt);
 	}
 	
+	@Override
 	public void finalize() {
 		serverIsRunning = false;
 	}

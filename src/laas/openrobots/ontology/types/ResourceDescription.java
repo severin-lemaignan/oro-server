@@ -46,6 +46,7 @@ public class ResourceDescription implements Serializable {
 		this.languageCode = languageCode;
 	}
 
+	@Override
 	public String toString() {
 		
 		ResourceType type = Helpers.getType(resource);
@@ -158,7 +159,8 @@ public class ResourceDescription implements Serializable {
 		//Clean a bit the list of statements.	
 		ExtendedIterator<Statement> stmtList = rawStmtList.filterKeep(
 				new Filter<Statement>() {
-			            public boolean accept(Statement stmt) {
+			            @Override
+						public boolean accept(Statement stmt) {
 			                Property p = stmt.getPredicate();
 			                RDFNode o = stmt.getObject();
 			                

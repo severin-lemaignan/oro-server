@@ -832,7 +832,8 @@ public class CategorizationModule implements IServiceProvider {
 		//resource. It will be added back a bit later.
 		ExtendedIterator<Statement> stmtList = c.listProperties().filterKeep(
 			new Filter<Statement>() {
-	            public boolean accept(Statement stmt) {
+	            @Override
+				public boolean accept(Statement stmt) {
 	                Property p = stmt.getPredicate();
 	                RDFNode o = stmt.getObject();
 	                
@@ -889,7 +890,7 @@ public class CategorizationModule implements IServiceProvider {
 				for (Property p : values.get(n)) {
 					for (OntProperty op : suspectOntProperties) {
 						
-						if (!p.equals((Property)op)) {
+						if (!p.equals(op)) {
 							OntProperty op2 = oro.createProperty(p.getURI()); 
 							if(!op.hasEquivalentProperty(op2)) {
 								if (op2.hasSubProperty(op, false)) {

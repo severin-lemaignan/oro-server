@@ -68,7 +68,7 @@ public class ReasoningTests extends TestCase {
 		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
+		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
 
 		Set<String> partialStatements = new HashSet<String>();
 		partialStatements.add("?individual eats flowers");
@@ -143,7 +143,7 @@ public class ReasoningTests extends TestCase {
 		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + (long)((mem-mem2) / (1024*1024)) + "MB (ie " + (long)((mem-mem2)/max) + "B by statments)." );
+		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
 
 		Set<PartialStatement> partialStatements = new HashSet<PartialStatement>();
 

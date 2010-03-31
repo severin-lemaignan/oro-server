@@ -25,7 +25,8 @@ public class Pair<L, R> {
         return new Pair<A, B>(left, right);
     }
  
-    public final boolean equals(Object o) {
+    @Override
+	public final boolean equals(Object o) {
         if (!(o instanceof Pair))
             return false;
  
@@ -40,14 +41,16 @@ public class Pair<L, R> {
         return o1.equals(o2);
     }
  
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         int hLeft = getLeft() == null ? 0 : getLeft().hashCode();
         int hRight = getRight() == null ? 0 : getRight().hashCode();
  
         return hLeft + (57 * hRight);
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
     	return "<" + getLeft().toString() + ", " + getRight().toString() + ">";
     }
     

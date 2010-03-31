@@ -37,7 +37,6 @@
 package laas.openrobots.ontology.tests;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,8 +53,6 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.ResourceType;
-import laas.openrobots.ontology.connectors.SocketConnector;
-import laas.openrobots.ontology.connectors.SocketConnector.ClientWorker;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -66,10 +63,6 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
-import laas.openrobots.ontology.service.IService;
-import laas.openrobots.ontology.service.RPCMethod;
-import laas.openrobots.ontology.service.ServiceImpl;
-
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;

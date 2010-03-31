@@ -311,7 +311,8 @@ public class Namespaces {
 	 */
 	public static Filter<OntProperty> getDefaultNsFilter() {
 		 return new Filter<OntProperty>(){
-	            public boolean accept(OntProperty p) {
+	            @Override
+				public boolean accept(OntProperty p) {
 	                if (p.getNameSpace().equals(DEFAULT_NS))                
 	                	return true;
 	                return false;

@@ -231,7 +231,7 @@ public class BaseModule implements IServiceProvider {
 			throw e;
 		}
 		
-		Logger.log("no problems.\n", VerboseLevel.IMPORTANT, false);
+		Logger.log("no problems.\n", false);
 		return true;
 		
 	}
@@ -476,9 +476,9 @@ public class BaseModule implements IServiceProvider {
 			*/
 			
 			if (obj.isResource())
-				objString = ((Resource) obj.as(Resource.class)).getLocalName();
+				objString = (obj.as(Resource.class)).getLocalName();
 			else if (obj.isLiteral())
-				objString = ((Literal) obj.as(Literal.class)).getLexicalForm();
+				objString = (obj.as(Literal.class)).getLexicalForm();
 			else
 				objString = obj.toString();
 
