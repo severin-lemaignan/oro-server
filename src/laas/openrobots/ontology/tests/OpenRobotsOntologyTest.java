@@ -37,6 +37,7 @@
 package laas.openrobots.ontology.tests;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,6 +54,8 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.ResourceType;
+import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.connectors.SocketConnector.ClientWorker;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -63,6 +66,9 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+import laas.openrobots.ontology.service.IService;
+import laas.openrobots.ontology.service.RPCMethod;
+import laas.openrobots.ontology.service.ServiceImpl;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
@@ -180,6 +186,28 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("OK.\nDeserialization...");
 		
 		try {
+			
+			assertTrue(Helpers.deserialize("1", String.class).equals("1"));
+			assertTrue(Helpers.deserialize("1", Integer.class).equals(new Integer(1)));
+			assertTrue(Helpers.deserialize("1", Double.class).equals(new Double(1.0)));
+			assertTrue(Helpers.deserialize("true", Boolean.class));
+			assertTrue(Helpers.deserialize("TrUe", Boolean.class));
+			assertFalse(Helpers.deserialize("false", Boolean.class));
+			assertFalse(Helpers.deserialize("toto", Boolean.class));
+			
+			try {
+				Helpers.deserialize("toto", Integer.class);
+				fail();
+			}
+			catch (IllegalArgumentException e) {}
+			
+			try {
+				Helpers.deserialize("toto", Double.class);
+				fail();
+			}
+			catch (IllegalArgumentException e) {}
+			
+			
 			assertTrue(Helpers.deserialize("[]", List.class).isEmpty());
 			assertTrue(Helpers.deserialize("[]", Set.class).isEmpty());
 			assertTrue(Helpers.deserialize("{}", Map.class).isEmpty());
@@ -1822,6 +1850,51 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+	
+	/**
+	 * This test partially covers the SocketConnector functionnalities.
+	 * 
+	 * It mainly tests request handling.
+	 * 
+	 * TODO: Really difficult to implement because of the SocketConnector structure...
+	 */
+	/*
+	public void testSocketConnector() {
+
+		System.out.println("[UNITTEST] ***** TEST: Socket Connector *****");
+		
+		MethodTestHolder mth = new MethodTestHolder();
+		
+		HashMap<String, IService> registredServices = new HashMap<String, IService>();
+		
+		for (Method m : mth.getClass().getMethods()) {
+			RPCMethod a = m.getAnnotation(RPCMethod.class);
+			if (a != null) {				
+				IService service = new ServiceImpl(
+										m.getName(), 
+										a.category(), 
+										a.desc(), 
+										m, 
+										mth);
+				
+				String name = m.getName()+OroServer.formatParameters(m);
+				registredServices.put(name, service);
+			}
+		}
+		
+		SocketConnector sc = new SocketConnector(null, registredServices);
+		
+		ClientWorker cw = null;
+		try {
+			cw = new SocketConnector.ClientWorker(null);
+		}
+		catch() {};
+		
+
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	*/
 	
 	/**
 	 * This test checks that the Alterite module works as expected.
