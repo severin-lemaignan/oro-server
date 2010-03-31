@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Pair;
@@ -445,7 +446,13 @@ public class SocketConnector implements IConnector, Runnable {
 			    	 							"NotImplementedException\n" +
 			    	 							"missing parameters for method " + queryName + ".";
 			    	 					return result + "\n" + MESSAGE_TERMINATOR;
-		    	    				}
+		    	    				} catch (OntologyServerException e) {
+		    	    					Logger.log(e.getLocalizedMessage(), VerboseLevel.ERROR);
+			    	 					result = "error\n" +
+			    	 							"OntologyServerException\n" +
+			    	 							e.getLocalizedMessage();
+			    	 					return result + "\n" + MESSAGE_TERMINATOR;
+									}
 		    	    			}
 		    	    			
 		    	    			if (i != list.size() - 1) {

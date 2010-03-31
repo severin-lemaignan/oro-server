@@ -36,7 +36,10 @@
 
 package laas.openrobots.ontology.helpers;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -57,6 +60,7 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
 import com.hp.hpl.jena.datatypes.RDFDatatype;
@@ -435,9 +439,7 @@ public class Helpers {
 		return str;
 	}
     
-    //TODO : Add unit test!
-    public static <T> T deserialize(String val, Class<T> type) {
-		//TODO: not typed because... <- that's what I call a bad excuse
+    public static <T> T deserialize(String val, Class<T> type) throws OntologyServerException {
     	
     		//Save it for errors message, in case something goes wrong
     		String originalValue = val;
@@ -518,15 +520,19 @@ public class Helpers {
 			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getSimpleName() + " was expected by the method, received \"" + originalValue + "\" instead)");
 	}
 		  
-	/** Remove leading and trailing quotes and whitespace if needed from a string. 
+	/** Remove leading and trailing quotes and whitespace if needed from a 
+	 * string and unescape escaped sequences. 
 	 * 
 	 * @param value the string to clean.
-	 * @return The same string with quotes and whitespaces trimmed.
+	 * @return The same, unescaped string with quotes and whitespaces trimmed.
+	 * @throws OntologyServerException if a unparsable unicode character is found
 	 */
-	public static String cleanValue(String value) {
+	public static String cleanValue(String value) throws OntologyServerException {
 		String res = value.trim();
 		if ((res.startsWith("\"") && res.endsWith("\"")) || (res.startsWith("'") && res.endsWith("'")))
 			res = res.substring(1, res.length() - 1);
+		
+		res = unescapeJava(res);
 		
 		return res;
 	}
@@ -557,5 +563,137 @@ public class Helpers {
 
 		return list.get(handOfGod.nextInt(size));		
 	}
+	
+    /**
+     * <p>Unescapes any Java literals found in the <code>String</code>.
+     * For example, it will turn a sequence of <code>'\'</code> and
+     * <code>'n'</code> into a newline character, unless the <code>'\'</code>
+     * is preceded by another <code>'\'</code>.</p>
+     *
+     * This method comes from Apache Foundation, is released under Apache 
+     * License 2.0 and can be found in org.apache.commons.lang.StringEscapeUtils
+     *  
+     * @param str  the <code>String</code> to unescape, may be null
+     * @return a new unescaped <code>String</code>, <code>null</code> if null string input
+     * @throws OntologyServerException if a unparsable unicode character is found
+     */
+    public static String unescapeJava(String str) throws OntologyServerException {
+        if (str == null) {
+            return null;
+        }
+        try {
+            StringWriter writer = new StringWriter(str.length());
+            unescapeJava(writer, str);
+            return writer.toString();
+        } catch (IOException ioe) {
+            // this should never ever happen while writing to a StringWriter
+            ioe.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * <p>Unescapes any Java literals found in the <code>String</code> to a
+     * <code>Writer</code>.</p>
+     *
+     * <p>For example, it will turn a sequence of <code>'\'</code> and
+     * <code>'n'</code> into a newline character, unless the <code>'\'</code>
+     * is preceded by another <code>'\'</code>.</p>
+     *
+     * <p>A <code>null</code> string input has no effect.</p>
+     *
+     * This method comes from Apache Foundation, is released under Apache 
+     * License 2.0 and can be found in org.apache.commons.lang.StringEscapeUtils 
+     * @param out  the <code>Writer</code> used to output unescaped characters
+     * @param str  the <code>String</code> to unescape, may be null
+     * @throws IllegalArgumentException if the Writer is <code>null</code>
+     * @throws IOException if error occurs on underlying Writer
+     * @throws OntologyServerException if a unparsable unicode character is found
+     */
+    public static void unescapeJava(Writer out, String str) throws IOException, OntologyServerException {
+        if (out == null) {
+            throw new IllegalArgumentException("The Writer must not be null");
+        }
+        if (str == null) {
+            return;
+        }
+        int sz = str.length();
+        StringBuffer unicode = new StringBuffer(4);
+        boolean hadSlash = false;
+        boolean inUnicode = false;
+        for (int i = 0; i < sz; i++) {
+            char ch = str.charAt(i);
+            if (inUnicode) {
+                // if in unicode, then we're reading unicode
+                // values in somehow
+                unicode.append(ch);
+                if (unicode.length() == 4) {
+                    // unicode now contains the four hex digits
+                    // which represents our unicode character
+                    try {
+                        int value = Integer.parseInt(unicode.toString(), 16);
+                        out.write((char) value);
+                        unicode.setLength(0);
+                        inUnicode = false;
+                        hadSlash = false;
+                    } catch (NumberFormatException nfe) {
+                        throw new OntologyServerException("Unable to parse unicode value: " + unicode);
+                    }
+                }
+                continue;
+            }
+            if (hadSlash) {
+                // handle an escaped value
+                hadSlash = false;
+                switch (ch) {
+                    case '\\':
+                        out.write('\\');
+                        break;
+                    case '\'':
+                        out.write('\'');
+                        break;
+                    case '\"':
+                        out.write('"');
+                        break;
+                    case 'r':
+                        out.write('\r');
+                        break;
+                    case 'f':
+                        out.write('\f');
+                        break;
+                    case 't':
+                        out.write('\t');
+                        break;
+                    case 'n':
+                        out.write('\n');
+                        break;
+                    case 'b':
+                        out.write('\b');
+                        break;
+                    case 'u':
+                        {
+                            // uh-oh, we're in unicode country....
+                            inUnicode = true;
+                            break;
+                        }
+                    default :
+                        out.write(ch);
+                        break;
+                }
+                continue;
+            } else if (ch == '\\') {
+                hadSlash = true;
+                continue;
+            }
+            out.write(ch);
+        }
+        if (hadSlash) {
+            // then we're in the weird case of a \ at the end of the
+            // string, let's output it anyway.
+            out.write('\\');
+        }
+    }
+
+
 
 }

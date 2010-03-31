@@ -110,6 +110,25 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Wrong tokenization using commas.", 5, Helpers.tokenize(strToTokenize, ',').size());
 		assertEquals("Wrong tokenization using spaces.", 4, Helpers.tokenize(strToTokenize, ' ').size());
 		
+		System.out.println("OK.\nCleaning values...");
+		
+		try {
+			assertTrue(Helpers.cleanValue("toto").equals("toto"));
+			assertTrue(Helpers.cleanValue("toto aime tata").equals("toto aime tata"));
+			assertTrue(Helpers.cleanValue("\"toto\"").equals("toto"));
+			assertTrue(Helpers.cleanValue("\'toto\'").equals("toto"));
+			assertTrue(Helpers.cleanValue("\'to\\nto\'").equals("to\nto"));
+			assertTrue(Helpers.cleanValue("\'toto aime tata\'").equals("toto aime tata"));
+			assertTrue(Helpers.cleanValue("\'toto \'aime\' tata\'").equals("toto \'aime\' tata"));
+			assertTrue(Helpers.cleanValue("\"toto \'aime\' tata\"").equals("toto \'aime\' tata"));
+			assertTrue(Helpers.cleanValue("\\\"toto \"aime\" tata\\\"").equals("\"toto \"aime\" tata\""));
+			assertTrue(Helpers.cleanValue("\"toto \\\"aime\\\" tata\"").equals("toto \"aime\" tata"));
+			assertTrue(Helpers.cleanValue("\"toto \\\'aime\\\' tata\"").equals("toto \'aime\' tata"));
+			assertTrue(Helpers.cleanValue("\'toto \\\'aime\\\' tata\'").equals("toto \'aime\' tata"));
+		} catch (OntologyServerException ose) {
+			fail();
+		}
+			
 		
 		/**** Test stringification ****/
 		System.out.println("OK.\nStringification...");
@@ -160,30 +179,34 @@ public class OpenRobotsOntologyTest extends TestCase {
 		/**** Test deserialization ****/
 		System.out.println("OK.\nDeserialization...");
 		
-		assertTrue(Helpers.deserialize("[]", List.class).isEmpty());
-		assertTrue(Helpers.deserialize("[]", Set.class).isEmpty());
-		assertTrue(Helpers.deserialize("{}", Map.class).isEmpty());
-		
 		try {
-			assertTrue(Helpers.deserialize("{}", Set.class).isEmpty());
+			assertTrue(Helpers.deserialize("[]", List.class).isEmpty());
+			assertTrue(Helpers.deserialize("[]", Set.class).isEmpty());
+			assertTrue(Helpers.deserialize("{}", Map.class).isEmpty());
+			
+			try {
+				assertTrue(Helpers.deserialize("{}", Set.class).isEmpty());
+				fail();
+			}
+			catch (IllegalArgumentException e) {}
+			
+			try {
+				assertTrue(Helpers.deserialize("[]", Map.class).isEmpty());
+				fail();
+			}
+			catch (IllegalArgumentException e) {}
+			
+			assertTrue(Helpers.deserialize("[\"toto\",\"tata\"]", List.class).containsAll(t1) && t1.containsAll(Helpers.deserialize("[\"toto\",\"tata\"]", List.class)));
+			
+			assertTrue(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class).containsAll(t2) && t2.containsAll(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class)));
+			
+			Map<String, String> map = Helpers.deserialize("{1:\"toto\",2:\"tata\"}", Map.class);
+			
+			for (String i : map.keySet()) {
+				assertEquals(map.get(i), t3.get(Integer.parseInt(i)));
+			}
+		} catch (OntologyServerException ose) {
 			fail();
-		}
-		catch (IllegalArgumentException e) {}
-		
-		try {
-			assertTrue(Helpers.deserialize("[]", Map.class).isEmpty());
-			fail();
-		}
-		catch (IllegalArgumentException e) {}
-		
-		assertTrue(Helpers.deserialize("[\"toto\",\"tata\"]", List.class).containsAll(t1) && t1.containsAll(Helpers.deserialize("[\"toto\",\"tata\"]", List.class)));
-		
-		assertTrue(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class).containsAll(t2) && t2.containsAll(Helpers.deserialize("[\"toto\",\"titi\"]", Set.class)));
-		
-		Map<String, String> map = Helpers.deserialize("{1:\"toto\",2:\"tata\"}", Map.class);
-		
-		for (String i : map.keySet()) {
-			assertEquals(map.get(i), t3.get(Integer.parseInt(i)));
 		}
 				
 		System.out.println("OK.");
