@@ -30,13 +30,24 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
+import com.hp.hpl.jena.ontology.ConversionException;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
+import com.hp.hpl.jena.util.iterator.ExtendedIterator;
+import com.hp.hpl.jena.util.iterator.Filter;
 
 public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer {
 	
 	private Map<String, AgentModel> agents;
 		
 	private Properties serverParameters;
+	
+	private IOntologyBackend oro;
 		
 	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException {
 		this(oro, OroServer.serverParameters);
@@ -45,7 +56,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws EventRegistrationException {
 		agents = new HashMap<String, AgentModel>();
 
-		
+		this.oro = oro;
 		this.serverParameters = serverParameters;
 		
 		//Add myself as the first agent.
@@ -72,7 +83,20 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	}
 	
 	public void add(String id){
-		agents.put(id, new AgentModel(id, serverParameters));
+		if (!checkAlreadyPresent(id)) {
+			agents.put(id, new AgentModel(id, serverParameters));
+		}
+	}
+	
+	public boolean checkAlreadyPresent(String id) {
+		
+		ExtendedIterator<OntResource> sameResource = oro.getResource(id).listSameAs();
+
+		while (sameResource.hasNext()){
+			if (sameResource.next()
+			return true;
+		}
+		return false;
 	}
 	
 	public Map<String, AgentModel> getAgents() {
@@ -173,7 +197,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		Logger.log(id + ": ");
 		
 
-		Logger.log("Searching resources in ontolgy");
+		Logger.log("Searching resources in the ontology...\n");
 		
 		Set<String> result = new HashSet<String>();
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
@@ -192,10 +216,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			for (String f : filters)
 				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
-		
-				
-		Logger.log("...done.\n");
-		
+			
 		return oro.find(varName, stmts, filters);
 	}
 	
