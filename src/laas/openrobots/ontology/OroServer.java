@@ -70,6 +70,7 @@ import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.EventModule;
+import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.service.IService;
 import laas.openrobots.ontology.service.IServiceProvider;
@@ -169,6 +170,20 @@ public class OroServer implements IServiceProvider {
 	 * be called.
 	 */
 	private volatile HashMap<String, IService> registredServices;
+	
+	/** 
+	 * This set holds the types that should not be exposed to oro-server clients
+	 *  but are required by some RPC methods (for instance to retrieve the
+	 *  context when the query was received).
+	 *  
+	 *  TODO: This is more like a workaround...
+	 */
+	public static final Set<Class> discardedTypeFromServiceArgs;
+	
+	static {
+		discardedTypeFromServiceArgs = new HashSet<Class>();
+		discardedTypeFromServiceArgs.add(IEventConsumer.class);
+	}
 	
 	private static OpenRobotsOntology oro = null;
 	
@@ -569,14 +584,18 @@ public class OroServer implements IServiceProvider {
 	/**
 	 * Formats in a human-readable way the parameters of a method.
 	 * 
+	 * This method skips all the parameters whose type belongs to
+	 * {@link #discardedTypeFromServiceArgs}
+	 * 
 	 * @param m The method
 	 * @return the in-parenthesis list of the method's parameters
 	 */
-	private String formatParameters(Method m) {
+	public static String formatParameters(Method m) {
 		//build the list of expected parameters
     	String params = "(";
     	for (Class<?> param : m.getParameterTypes())
-    		params += param.getSimpleName() + ", ";
+    		if (!discardedTypeFromServiceArgs.contains(param))
+    			params += param.getSimpleName() + ", ";
     	
     	if (!params.equals("("))
     		params = params.substring(0, params.length() - 2);
@@ -584,6 +603,16 @@ public class OroServer implements IServiceProvider {
     	params += ")";
     	
     	return params;
+	}
+	
+	public static int nbExposedParameters(Method m) {
+		//build the list of expected parameters
+    	int i = 0;
+    	for (Class<?> param : m.getParameterTypes())
+    		if (!discardedTypeFromServiceArgs.contains(param))
+    			i++;
+    	  	
+    	return i;
 	}
 	
 	private Map<String, IService> getDeclaredServices(Object o) {

@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
+import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
@@ -33,7 +35,6 @@ import laas.openrobots.ontology.modules.events.EventModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
-import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.service.IService;
 
 /** Implements a socket interface to {@code oro-server} RPC methods.<br/>
@@ -165,14 +166,22 @@ public class SocketConnector implements IConnector, Runnable {
 	int KEEP_ALIVE_SOCKET_DURATION;
 	
 	public static final String DEFAULT_PORT = "6969";
+	public static final String DEFAULT_KEEP_ALIVE_SOCKET_DURATION = "6000";
 	public static final String MESSAGE_TERMINATOR = "#end#";
 
 	private Charset charset = Charset.forName("UTF-8");
 	
-	int port;
-	ServerSocketChannel server = null;
+	private int port;
+	private ServerSocketChannel server = null;
+		
+	/**
+	 * serviceIndex holds a map of service name to keys in registredServices.
+	 * It allows a fast retrieval of the list of service that matchs a name.
+	 * 
+	 * serviceIndex also store, for each service, the number of exposed arguments.
+	 */
+	private HashMap<String, Set<Pair<IService, Integer>>> serviceIndex;
 	
-	HashMap<String, IService> registredServices;
 	private volatile boolean keepOn = true;
 	
 	/**
@@ -377,6 +386,12 @@ public class SocketConnector implements IConnector, Runnable {
 		public String handleRequest(List<String> list) {
 			  
 			  boolean methodFound = false;
+			  boolean hasRightArgsNb = false;
+			  boolean invokationDone = false;
+			  
+			  Method m = null;
+			  Object o = null;
+			  Object[] args = null;
 			  
 			  String result = "error\n\n";
 			  String queryName = list.get(0);
@@ -392,198 +407,231 @@ public class SocketConnector implements IConnector, Runnable {
 	    	}
 	    	else
 	    	{
+	    		
+	    		/* Check we know a service with the required name */
+	    		if (!serviceIndex.containsKey(queryName.toLowerCase())) {
+	    			Logger.log("Error while executing the request: method \""+ 
+	    					queryName + "\" not implemented.\n", VerboseLevel.ERROR);
+ 					result = "error\n" +
+ 							"NotImplementedException\n" +
+ 							"Method \""+ queryName + "\" not implemented.";
+ 					return result + "\n" + MESSAGE_TERMINATOR;
+	    		}
+	    		
 	    		/******* Iterate on registered methods ********/
-	    		for (String key : registredServices.keySet()){
+	    		for (Pair<IService, Integer> service : serviceIndex.get(queryName.toLowerCase())){
 	    			
-	    			Method m = registredServices.get(key).getMethod();
-
-	    			if (registredServices.get(key).getName().equalsIgnoreCase(queryName) && m.getParameterTypes().length == list.size() - 1)
+	    			if (service.getRight() == (list.size() - 1)) //Do we have the right amount of arguments?
 	    	    	{
-	    	    		methodFound = true;
-	    	    		boolean invokationDone = false;
-	    	    		
-	    	    		try {
-	    	    			
-	    	    			Object o = registredServices.get(key).getObj();
-	    	    			
-	    	    			result = "ok\n";
-	    	    			
-	    	    			Object[] args = new Object[m.getParameterTypes().length];
-	    	    			
+	    				hasRightArgsNb = true;
     	    			
-	    	    			if (	list.size() != 1 && 
-	    	    					m.getParameterTypes().length == 0)
-	    	    			{
-	    	    				Logger.log("Error while executing the request: method \""+ queryName + "\" expects no parameters.\n", VerboseLevel.ERROR);
-	    	 					result = "error\n" +
-	    	 							"NotImplementedException\n" +
-	    	 							"Method " + queryName + " expects no parameters."; 
-	    	 					return result + "\n" + MESSAGE_TERMINATOR;
-	    	    			}
-
-	    	    			int i = 0;
-	    	    			int shiftSpecialCases = 0;
+    	    			m = service.getLeft().getMethod();
+    	    			o = service.getLeft().getObj();
 	    	    			
-	    	    			if (list.size() > 1) {
-		    	    			for (Class<?> param : m.getParameterTypes()) {
-		    	    				
-		    	    				try {
-		    	    					//TODO: This is hackish.
-			    	    				if (param.equals(IEventConsumer.class))	{
-			    	    					args[i] = this;
-			    	    					shiftSpecialCases ++;
-			    	    				}
-			    	    				else {
-			    	    					Object ob = Helpers.deserialize(list.get(i + 1), param);
-			    	    					Logger.log("Parameter: " + ob.toString() + "\n", VerboseLevel.DEBUG);
-			    	    					args[i + shiftSpecialCases] = ob; 
-				    	    				i++;
-			    	    				}
-		    	    				} catch (IndexOutOfBoundsException e)
-		    	    				{
-		    	    					Logger.log("Error while executing the request: missing parameters for method \""+ queryName + "\".\n", VerboseLevel.ERROR);
-			    	 					result = "error\n" +
-			    	 							"NotImplementedException\n" +
-			    	 							"missing parameters for method " + queryName + ".";
-			    	 					return result + "\n" + MESSAGE_TERMINATOR;
-		    	    				} catch (OntologyServerException e) {
-		    	    					Logger.log(e.getLocalizedMessage(), VerboseLevel.ERROR);
-			    	 					result = "error\n" +
-			    	 							"OntologyServerException\n" +
-			    	 							e.getLocalizedMessage();
-			    	 					return result + "\n" + MESSAGE_TERMINATOR;
-									}
-		    	    			}
-		    	    			
-		    	    			if (i != list.size() - 1) {
-		    	    				Logger.log("Error while executing the request: too many parameters provided for " +
-		    	    						"method \""+ queryName + "\" (" + i + " were expected).\n", VerboseLevel.ERROR);
-		    	 					result = "error\n" +
-		    	 							"NotImplementedException\n" +
-		    	 							"Too many parameters provided for " +
-		    	    						"method \""+ queryName + "\" (" + i + " were expected).";
-		    	 					return result + "\n" + MESSAGE_TERMINATOR;
-		    	    			}
-	    	    			}
-	    	    			
-	    	    			if (m.getReturnType() == void.class)
-	    	    			{
-	    	    				if (m.getParameterTypes().length == 0) m.invoke(o); else m.invoke(o, args);
-	    	    				invokationDone = true;
-	    	    			}
-	    	    			if (	m.getReturnType() == Double.class || 
-	    	    					m.getReturnType() == double.class ||
-	    	    					m.getReturnType() == Integer.class ||
-	    	    					m.getReturnType() == int.class ||
-	    	    					m.getReturnType() == Boolean.class ||
-	    	    					m.getReturnType() == boolean.class ||
-	    	    					m.getReturnType() == Float.class ||
-	    	    					m.getReturnType() == float.class) 
-	    	    			{
-	    	    				result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
-	    	    				invokationDone = true;
-	    	    			} 
-	    	    			else if (m.getReturnType() == String.class) {
-	    	    				//To be JSON-compliant, we need to double quote the strings
-	    	    				result += Helpers.stringify((m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString());
-	    	    				invokationDone = true;
-	    	    			}
-	    	    			else {
+    	    			result = "ok\n";
+    	    			
+    	    			args = new Object[m.getParameterTypes().length];
+  	    			
+    	    			int i = 0;
+    	    			int shiftSpecialCases = 0;
+    	    			
+    	    			//Now, check we have the expected types
+    	    			methodFound = true;
+    	    			for (Class<?> param : m.getParameterTypes()) {
 	    	    				
-	    	    				List<Class<?>> rTypes = new ArrayList<Class<?>>();
-	    	    				
-	    	    				rTypes.add(m.getReturnType());
-	    	    				
-	    	    				rTypes.addAll(Arrays.asList(m.getReturnType().getInterfaces()));
-	    	    				
-
-		    	    			for (Class<?> rType : rTypes ) {
-		    	    				if (rType == Serializable.class) {
-		    	    					result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
-		    	    					invokationDone = true;
-		    	    					break;
-		    	    				}
-		    	    				//TODO : Lot of cleaning to do here
-		    	    				if (rType == Map.class) {
-		    	    					result += Helpers.stringify(((Map<?, ?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
-		    	    					invokationDone = true;
-		    	    					break;
-		    	    				}
-		    	    				
-		    	    				if (rType == Set.class) {
-		    	    					result += Helpers.stringify(((Set<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
-		    	    					invokationDone = true;
-		    	    					break;
-		    	    				}
-		    	    				
-		    	    				if (rType == List.class) {
-		    	    					result += Helpers.stringify(((List<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
-		    	    					invokationDone = true;
-		    	    					break;
-		    	    				}
-	
-		    	    			}
-	    	    			}
-	    	    			
-	    	    			if (!invokationDone) {
-	    	    				Logger.log("Error while executing the request: no way to serialize the return value of method '"+ queryName + "' (return type is " + m.getReturnType().getName() + ").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
-	    						result ="error\n" +
-	    								"\n" +
-	    								"No way to serialize return value of method '" + queryName + "' (return type is " + m.getReturnType().getName() + ").";	
-	    	    			}
-	    	    			
-	    	    			
-						} catch (IllegalArgumentException e) {
-							Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
-							result = "error\n" +
-									e.getClass().getName() + "\n" +
-									e.getLocalizedMessage().replace("\"", "'");
-							
-						} catch (ClassCastException e) {
-							Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
-							result = "error\n" +
+	    					//TODO: This is hackish.
+    	    				if (OroServer.discardedTypeFromServiceArgs.contains(param)) {
+    	    					shiftSpecialCases ++;
+    	    					
+    	    					if (param.equals(IEventConsumer.class))
+    	    							args[i] = this;
+    	    					
+    	    				}
+    	    				else {
+    	    					try {
+	    	    					Object ob = Helpers.deserialize(list.get(i + 1), param);
+	    	    					Logger.log("Parameter: " + ob.toString() + "\n", VerboseLevel.DEBUG);
+	    	    					args[i + shiftSpecialCases] = ob; 
+		    	    				i++;
+    	    					}
+    	    					catch (IllegalArgumentException iae) {
+    	    						methodFound = false;
+    	    						break;
+    	    					}
+		    					catch (OntologyServerException e) { //This exception occurs when a unicode string couldn't be unescaped
+									Logger.log(e.getLocalizedMessage(), VerboseLevel.ERROR);
+									result = "error\n" +
+											"OntologyServerException\n" +
+											e.getLocalizedMessage();
+								}
+    	    				}
+    	    				
+    	    			}
+    	    			
+    	    			if (methodFound)
+    	    				break;
+	    	    	}
+	    			
+	    		} //End of for-loop on the service that match the query name
+	    		
+	    		if (!hasRightArgsNb) {
+    				String msg = "Error while executing the request: wrong number " +
+    						"of parameters provided for " +
+    						"method \""+ queryName + "\" (" + (list.size() - 1) + 
+    						" were provided).";
+					Logger.log(msg + "\n", VerboseLevel.ERROR);
+ 					result = "error\n" +
+ 							"NotImplementedException\n" +
+ 							msg;
+ 					return result + "\n" + MESSAGE_TERMINATOR;
+    			}
+    			
+    			if (!methodFound) {
+    				String msg = "Error while executing the request: no method " +
+    						"prototype for " + queryName + " match the given " +
+							"arguments.";
+					Logger.log(msg + "\n", VerboseLevel.ERROR);
+ 					result = "error\n" +
+ 							"NotImplementedException\n" +
+ 							msg;
+ 					return result + "\n" + MESSAGE_TERMINATOR;
+    			}
+	    	    		
+	    		/** Now, do the invocation **/
+	    		
+	    		assert (m != null && o != null && args != null);
+	    		
+	    		try {
+					if (m.getReturnType() == void.class)
+					{
+						if (m.getParameterTypes().length == 0) m.invoke(o); else m.invoke(o, args);
+						invokationDone = true;
+					}
+					if (	m.getReturnType() == Double.class || 
+							m.getReturnType() == double.class ||
+							m.getReturnType() == Integer.class ||
+							m.getReturnType() == int.class ||
+							m.getReturnType() == Boolean.class ||
+							m.getReturnType() == boolean.class ||
+							m.getReturnType() == Float.class ||
+							m.getReturnType() == float.class) 
+					{
+						result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
+						invokationDone = true;
+					} 
+					else if (m.getReturnType() == String.class) {
+						//To be JSON-compliant, we need to double quote the strings
+						result += Helpers.stringify((m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString());
+						invokationDone = true;
+					}
+					else {
+						
+						List<Class<?>> rTypes = new ArrayList<Class<?>>();
+						
+						rTypes.add(m.getReturnType());
+						
+						rTypes.addAll(Arrays.asList(m.getReturnType().getInterfaces()));
+						
+		
+		    			for (Class<?> rType : rTypes ) {
+		    				if (rType == Serializable.class) {
+		    					result += (m.getParameterTypes().length == 0) ? m.invoke(o).toString() : m.invoke(o, args).toString();
+		    					invokationDone = true;
+		    					break;
+		    				}
+		    				//TODO : Lot of cleaning to do here
+		    				if (rType == Map.class) {
+		    					result += Helpers.stringify(((Map<?, ?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    					invokationDone = true;
+		    					break;
+		    				}
+		    				
+		    				if (rType == Set.class) {
+		    					result += Helpers.stringify(((Set<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    					invokationDone = true;
+		    					break;
+		    				}
+		    				
+		    				if (rType == List.class) {
+		    					result += Helpers.stringify(((List<?>)(((m.getParameterTypes().length == 0) ? m.invoke(o) : m.invoke(o, args)))));
+		    					invokationDone = true;
+		    					break;
+		    				}
+		
+		    			}
+					}
+					
+					if (!invokationDone) {
+						Logger.log("Error while executing the request: no way to serialize the return value of method '"+ queryName + "' (return type is " + m.getReturnType().getName() + ").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
+						result ="error\n" +
+								"OontologyServerException\n" +
+								"No way to serialize return value of method '" + queryName + "' (return type is " + m.getReturnType().getName() + ").";	
+					}
+    			
+				} catch (IllegalArgumentException e) {
+					Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
+					result = "error\n" +
 							e.getClass().getName() + "\n" +
 							e.getLocalizedMessage().replace("\"", "'");
-							
-						} catch (IllegalAccessException e) {
-							Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
-							result = "error\n" +
-							e.getClass().getName() + "\n" +
-							e.getLocalizedMessage().replace("\"", "'");	
-							
-						} catch (InvocationTargetException e) {
-							Logger.log("Error while executing the request '" + queryName + "': " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage() + "\n", VerboseLevel.ERROR);
-							result = "error\n" + 
-									e.getCause().getClass().getName() + "\n" +
-									e.getCause().getLocalizedMessage().replace("\"", "'");							
-						
-						}
-						
-						break;
-	    	    		
-	    	    	}
-	    		}
-	    		if (!methodFound){
-	    			Logger.log("Error while executing the request: method \""+ queryName + "\" not implemented by the ontology server.\n", VerboseLevel.ERROR);
+					
+				} catch (ClassCastException e) {
+					Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
 					result = "error\n" +
-							"NotImplementedException\n" +
-							"Method " + queryName + " not implemented by the ontology server.";						
-	    	    }
-	    		
+					e.getClass().getName() + "\n" +
+					e.getLocalizedMessage().replace("\"", "'");
+					
+				} catch (IllegalAccessException e) {
+					Logger.log("Error while executing the request '" + queryName + "': " + e.getClass().getName() + " -> " + e.getLocalizedMessage() + "\n", VerboseLevel.ERROR);
+					result = "error\n" +
+					e.getClass().getName() + "\n" +
+					e.getLocalizedMessage().replace("\"", "'");	
+					
+				} catch (InvocationTargetException e) {
+					Logger.log("Error while executing the request '" + queryName + "': " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage() + "\n", VerboseLevel.ERROR);
+					result = "error\n" + 
+							e.getCause().getClass().getName() + "\n" +
+							e.getCause().getLocalizedMessage().replace("\"", "'");							
+				
+	    		}
+   		
 	    		return result + "\n" + MESSAGE_TERMINATOR;
 	    	}
 		  }
 	    
 	}
 		
-	public SocketConnector(
-			Properties params,
-			HashMap<String, IService> registredServices) {
+		public SocketConnector(
+				Properties params,
+				HashMap<String, IService> registredServices) {
+			
+			if (params != null) {
+				port = Integer.parseInt(params.getProperty("port", DEFAULT_PORT)); //defaulted to port DEFAULT_PORT if no port provided in the configuration file.
+				KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(params.getProperty("keep_alive_socket_duration", "60")); //defaulted to 1 min if no duration is provided in the configuration file.
+			}
+			else {
+				port = Integer.parseInt(DEFAULT_PORT);
+				KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(DEFAULT_KEEP_ALIVE_SOCKET_DURATION);
+			}
+				  
+		// Fills the serviceIndex map.
 		
-		port = Integer.parseInt(params.getProperty("port", DEFAULT_PORT)); //defaulted to port DEFAULT_PORT if no port provided in the configuration file.
-		KEEP_ALIVE_SOCKET_DURATION = Integer.parseInt(params.getProperty("keep_alive_socket_duration", "60")); //defaulted to 1 min if no duration is provided in the configuration file.
+		serviceIndex = new HashMap<String, Set<Pair<IService,Integer>>>();
 		
-		this.registredServices = registredServices;
+		for (String key : registredServices.keySet()){
+			
+			Method m = registredServices.get(key).getMethod();
+			String name = registredServices.get(key).getName().toLowerCase();
+			
+			if (!serviceIndex.containsKey(name))
+				serviceIndex.put(name, new HashSet<Pair<IService,Integer>>());
+			
+			Pair<IService, Integer> entry = new Pair<IService, Integer>(
+					registredServices.get(key), 
+					OroServer.nbExposedParameters(m));
+			
+			serviceIndex.get(name).add(entry);
+			
+		}
 	}
 
 	@Override

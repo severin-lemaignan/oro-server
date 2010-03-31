@@ -70,7 +70,7 @@ public class EventModule implements IServiceProvider {
 	@RPCMethod(
 			category = "events",
 			desc = "registers an event. Expected parameters are: type, triggering " +
-					"type, event pattern. The last parameter is set automatically."
+					"type, event pattern."
 	)
 	public UUID registerEvent(String type, String triggeringType, List<String> pattern, IEventConsumer consumer)
 				throws InvalidEventDescriptorException, EventRegistrationException
@@ -82,7 +82,7 @@ public class EventModule implements IServiceProvider {
 	@RPCMethod(
 			category = "events",
 			desc = "registers an event. Expected parameters are: type, triggering " +
-					"type, variable, event pattern. The last parameter is set automatically."
+					"type, variable, event pattern."
 	)
 	public UUID registerEvent(String type, String triggeringType, String variable, List<String> pattern, IEventConsumer consumer)
 				throws InvalidEventDescriptorException, EventRegistrationException
