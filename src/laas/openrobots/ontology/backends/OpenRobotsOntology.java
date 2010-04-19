@@ -285,83 +285,97 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public boolean add(Statement statement, MemoryProfile memProfile, boolean safe) throws IllegalStatementException
 	{
+		Set<Statement> toAdd = new HashSet<Statement>();
+		toAdd.add(statement);
 		
-		try {
-
-			Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]");
-			
-			onto.enterCriticalSection(Lock.WRITE);
-			
-			onto.add(statement);
-			
-			//If we are in safe mode, we check that the ontology is not inconsistent.
-			if (safe) {
-				try {
-				checkConsistency();
-				} catch (InconsistentOntologyException ioe)
+		return add(toAdd, memProfile, safe);
+	}
+	
+	/* (non-Javadoc)
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#add(com.hp.hpl.jena.rdf.model.Statement, laas.openrobots.ontology.modules.memory.MemoryProfile)
+	 */
+	@Override
+	public boolean add(Set<Statement> statements, MemoryProfile memProfile, boolean safe) throws IllegalStatementException
+	{
+		
+		boolean allHaveBeenInserted = true;
+		
+		for (Statement statement : statements) {
+			try {
+	
+				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]");
+				
+				onto.enterCriticalSection(Lock.WRITE);
+				
+				onto.add(statement);
+				
+				//If we are in safe mode, we check that the ontology is not inconsistent.
+				if (safe) {
+					try {
+					checkConsistency();
+					} catch (InconsistentOntologyException ioe)
+					{
+						onto.remove(statement);	
+						onto.leaveCriticalSection();
+						Logger.log("...I won't add " + statement + " because it " +
+								"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
+						allHaveBeenInserted = false;
+						continue;
+					}
+				}
+				
+				Logger.cr();
+					
+				if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
 				{
-					onto.remove(statement);	
-					onto.leaveCriticalSection();
-					Logger.log("...I won't add it because it leads to inconsistencies!\n");
-					return false;
+					//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
+					String rsName = "rs_" + Math.abs(statement.hashCode()); 
+					
+					onto.createReifiedStatement(Namespaces.addDefault(rsName), statement);
+					
+					Statement metaStmt = createStatement(rsName + " stmtCreatedOn " + onto.createTypedLiteral(Calendar.getInstance()));
+					//Statement metaStmt = oro.createStatement(rsName + " stmtCreatedOn " + toXSDDate(new Date())); //without timezone
+					Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
+					onto.add(metaStmt);
+					onto.add(metaStmt2);
+
 				}
-			}
-			
-			Logger.cr();
 				
-			if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
+				onto.leaveCriticalSection();
+				
+			}
+			catch (ConversionException e) {
+				Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
+						"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
+				throw new IllegalStatementException("Impossible to assert " + statement + 
+						". A concept can not be a class and an instance at the same time in OWL DL.");
+	
+			}
+			catch (Exception e)
 			{
-				//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
-				String rsName = "rs_" + Math.abs(statement.hashCode()); 
-				
-				onto.createReifiedStatement(Namespaces.addDefault(rsName), statement);
-				
-				Statement metaStmt = createStatement(rsName + " stmtCreatedOn " + onto.createTypedLiteral(Calendar.getInstance()));
-				//Statement metaStmt = oro.createStatement(rsName + " stmtCreatedOn " + toXSDDate(new Date())); //without timezone
-				Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
-				onto.add(metaStmt);
-				onto.add(metaStmt2);
-				
-				
-				//notify the events subscribers.
-				onModelChange(rsName);
+				Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.FATAL_ERROR);
+				e.printStackTrace();
+				Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
+				System.exit(1);
 			}
-			else
-			{
-				//notify the events subscribers.
-				//TODO: optimize this call in case of a serie of "add" -> onModelChange to be moved to a separate thread?
-				onModelChange();
-				if (isInInconsistentState) {
-					Logger.log("The ontology is back in a consistent state\n ", 
-							VerboseLevel.WARNING);
-					isInInconsistentState = false;
-				}
-			}
-			
-			onto.leaveCriticalSection();
-			
 		}
-		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+		
+		//TODO: optimization possible for reified statement with onModelChange(rsName)
+		try  {
+			//notify the events subscribers.
+			onModelChange();
+			if (isInInconsistentState) {
+				Logger.log("The ontology is back in a consistent state\n ", 
+						VerboseLevel.WARNING);
+				isInInconsistentState = false;
+			}
+		} catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
 			isInInconsistentState = true;
 			Logger.log("The ontology is in an inconsistent state! I couldn't " +
 					"update the events subscribers\n ", VerboseLevel.WARNING);
 		}
-		catch (ConversionException e) {
-			Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
-					"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
-			throw new IllegalStatementException("Impossible to assert " + statement + 
-					". A concept can not be a class and an instance at the same time in OWL DL.");
-
-		}
-		catch (Exception e)
-		{
-			Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.FATAL_ERROR);
-			e.printStackTrace();
-			Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
-			System.exit(1);
-		}
 		
-		return true;
+		return allHaveBeenInserted;
 	}
 
 	

@@ -59,11 +59,15 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
+		Set<Statement> stmtsToAdd = new HashSet<Statement>();
+		
 		for (String rawStmt : rawStmts) {
 			if (rawStmt == null)
 				throw new IllegalStatementException("Got a null statement to add!");
-			oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, false);
+			stmtsToAdd.add(oro.createStatement(rawStmt));			
 		}
+		
+		oro.add(stmtsToAdd, MemoryProfile.DEFAULT, false);
 			
 	}
 	

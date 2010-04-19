@@ -136,19 +136,33 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract OntModel getModel();
 
 	/**
-	 * Adds a new statement (assertion) to the ontology. Does nothing is the statement already exists.<br/>
-	 * A memory profile is associated to the statement: statements associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} are stored and never removed from the ontology while other memory profiles allow the ontology to "forget" about certains facts after a given amount of time.
+	 * Adds a set of new statements (assertion) to the ontology. If one of the
+	 * statements already exists, it won't be inserted.<br/>
+	 * A memory profile is associated to all the statements: statements 
+	 * associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} 
+	 * are stored and never removed from the ontology while other memory 
+	 * profiles allow the ontology to "forget" about certains facts after a 
+	 * given amount of time.
 	 *   
-	 * @param statement The new statement.
+	 * @param statements A set of statements to be inserted in the model.
 	 * @param memProfile The memory profile associated to this statement.
 	 * @param safe If true, the statement is added only if it does not 
-	 * @return True is the statement has been actually added to the model 
+	 * @return True if all the statements have been actually added to the model 
 	 * (actually useful only in conjunction with the {@code safe} parameter enabled).
 	 * @throws IllegalStatementException Currently only thrown if a concept is asserted 
 	 * to be both an instance and a class.
 	 */
-	public abstract boolean add(Statement statement, MemoryProfile memProfile, boolean safe) throws IllegalStatementException;
-		
+	boolean add(Set<Statement> statements, MemoryProfile memProfile,
+			boolean safe) throws IllegalStatementException;
+
+	/**
+	 * Adds a new statement (assertion) to the ontology.
+	 * 
+	 * @see #add(Set, MemoryProfile, boolean)
+	 */
+	public abstract boolean add(Statement statement, MemoryProfile memProfile, 
+			boolean safe) throws IllegalStatementException;
+	
 	/**
 	 * Checks if a statement is asserted or can be inferred from the ontology. 
 	 * The check is done in an open world (everything is true except if it's 

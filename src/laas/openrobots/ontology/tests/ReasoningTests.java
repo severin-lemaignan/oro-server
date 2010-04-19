@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import com.hp.hpl.jena.rdf.model.Statement;
+
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
@@ -36,6 +38,84 @@ public class ReasoningTests extends TestCase {
 		conf = OroServer.getConfiguration(confFile);
 	}
 	
+	
+	public void testBench1Insert() {
+
+		System.out.println("[UNITTEST] ***** TEST: Benchmark 1 - 1000 inserts *****");
+		
+		
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		
+		long startTime = System.currentTimeMillis();
+		
+		System.out.println("Starting to stress the ontology...");
+
+		
+		Runtime runtime = Runtime.getRuntime();
+		runtime.gc();
+		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
+		   
+		long max = 1000;
+		for (long i = 0 ; i < max ; i++)
+			try {
+				//onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
+				onto.add(onto.createStatement("RED_BOTTLE hasWeight " + i), MemoryProfile.DEFAULT, false);
+			} catch (IllegalStatementException e) {
+				fail("Error while adding a statement " + i);
+				e.printStackTrace();
+			}
+		
+		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
+		
+		runtime.gc();
+		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
+		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
+
+	}
+	
+	public void testBench2Insert() {
+
+		System.out.println("[UNITTEST] ***** TEST: Benchmark 2 - 1000 grouped inserts *****");
+		
+		
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		
+		Set<Statement> stmts = new HashSet<Statement>();
+		
+		long startTime = System.currentTimeMillis();
+		
+		System.out.println("Starting to stress the ontology...");
+
+		
+		Runtime runtime = Runtime.getRuntime();
+		runtime.gc();
+		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
+		   
+		long max = 1000;
+		for (long i = 0 ; i < max ; i++) {
+			try {
+				//onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
+				stmts.add(onto.createStatement("RED_BOTTLE hasWeight " + i));	
+			} catch (IllegalStatementException e) {
+				fail("Error while adding statement " + i);
+				e.printStackTrace();
+			}
+		}		
+		
+		try {
+			onto.add(stmts, MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e) {
+			fail();
+		}
+		
+		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
+		
+		runtime.gc();
+		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
+		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
+
+	}
+	
 	/**
 	 * This test tries to stress the ontology with a lot of statements addition and queries with huge resultsets.
 	 */
@@ -59,7 +139,8 @@ public class ReasoningTests extends TestCase {
 		long max = 1000;
 		for (long i = 0 ; i < max ; i++)
 			try {
-				onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
+				//onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
+				onto.add(onto.createStatement("RED_BOTTLE hasWeight " + i), MemoryProfile.DEFAULT, false);
 			} catch (IllegalStatementException e) {
 				fail("Error while adding a statement " + i);
 				e.printStackTrace();
