@@ -383,7 +383,7 @@ public class SocketConnector implements IConnector, Runnable {
 			  return null;
 		}
 
-		public String handleRequest(List<String> list) {
+		public String handleRequest(List<String> raw_query) {
 			  
 			  boolean methodFound = false;
 			  boolean hasRightArgsNb = false;
@@ -394,9 +394,9 @@ public class SocketConnector implements IConnector, Runnable {
 			  Object[] args = null;
 			  
 			  String result = "error\n\n";
-			  String queryName = list.get(0);
+			  String queryName = raw_query.get(0);
 			  
-			  Logger.log(">> Got incoming request: " + queryName + " with " + (list.size() - 1) + " parameters\n", VerboseLevel.DEBUG);
+			  Logger.log(">> Got incoming request: " + queryName + " with " + (raw_query.size() - 1) + " parameters\n", VerboseLevel.DEBUG);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
 	    		Logger.log("Closing communication with client " + getName() + ".\n");
@@ -421,7 +421,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    		/******* Iterate on registered methods ********/
 	    		for (Pair<IService, Integer> service : serviceIndex.get(queryName.toLowerCase())){
 	    			
-	    			if (service.getRight() == (list.size() - 1)) //Do we have the right amount of arguments?
+	    			if (service.getRight().intValue() == (raw_query.size() - 1)) //Do we have the right amount of arguments?
 	    	    	{
 	    				hasRightArgsNb = true;
     	    			
@@ -449,7 +449,7 @@ public class SocketConnector implements IConnector, Runnable {
     	    				}
     	    				else {
     	    					try {
-	    	    					Object ob = Helpers.deserialize(list.get(i + 1), param);
+	    	    					Object ob = Helpers.deserialize(raw_query.get(i + 1), param);
 	    	    					Logger.log("Parameter: " + ob.toString() + "\n", VerboseLevel.DEBUG);
 	    	    					args[i + shiftSpecialCases] = ob; 
 		    	    				i++;
@@ -477,7 +477,7 @@ public class SocketConnector implements IConnector, Runnable {
 	    		if (!hasRightArgsNb) {
     				String msg = "Error while executing the request: wrong number " +
     						"of parameters provided for " +
-    						"method \""+ queryName + "\" (" + (list.size() - 1) + 
+    						"method \""+ queryName + "\" (" + (raw_query.size() - 1) + 
     						" were provided).";
 					Logger.log(msg + "\n", VerboseLevel.ERROR);
  					result = "error\n" +
@@ -488,7 +488,7 @@ public class SocketConnector implements IConnector, Runnable {
     			
     			if (!methodFound) {
     				String msg = "Error while executing the request: no method " +
-    						"prototype for " + queryName + " match the given " +
+    						"prototype for '" + queryName + "' match the given " +
 							"arguments.";
 					Logger.log(msg + "\n", VerboseLevel.ERROR);
  					result = "error\n" +
