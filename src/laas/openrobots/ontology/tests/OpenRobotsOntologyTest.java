@@ -1,5 +1,5 @@
 /*
- * ©LAAS-CNRS (2008-2009)
+ * ©LAAS-CNRS (2008-20010)
  * 
  * contributor(s) : Séverin Lemaignan <severin.lemaignan@laas.fr>
  * 
@@ -1884,45 +1884,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		catch() {};
 		
 
-		
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-	*/
-	
-	/**
-	 * This test checks that the Alterite module works as expected.
-	 * @throws IllegalStatementException 
-	 * TODO: Move this test in unittests specific to the plugins
-	 */
-	/*
-	public void testAlteriteModule() throws IllegalStatementException {
-
-		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
-		
-		AlteriteModule alterite = null;
-		
-		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
-		
-		try {
-			alterite = new AlteriteModule(oro);
-		} catch (EventRegistrationException e) {
-			fail("We should be able to register the AgentWatcher event!");
-		}
-		
-		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
-		
-		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT, false);
-		
-		assertEquals("Now we are two: myself and gerard", 2, alterite.listAgents().size());
-		
-		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
-		
-		System.out.println("Oooh! A lot of new agents!");
-		for (String s : alterite.listAgents())
-			System.out.println(s);
-		
-		assertEquals("myself + all the animals are now agents!", 5, alterite.listAgents().size());
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

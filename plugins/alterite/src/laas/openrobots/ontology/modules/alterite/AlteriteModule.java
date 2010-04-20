@@ -21,6 +21,8 @@ import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
+import laas.openrobots.ontology.modules.alterite.AgentModel;
+import laas.openrobots.ontology.modules.alterite.AgentWatcher;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
@@ -30,16 +32,11 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
-import com.hp.hpl.jena.ontology.ConversionException;
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-import com.hp.hpl.jena.util.iterator.Filter;
+
 
 public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer {
 	
