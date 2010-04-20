@@ -90,11 +90,13 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	
 	public boolean checkAlreadyPresent(String id) {
 		
-		ExtendedIterator<OntResource> sameResource = oro.getResource(id).listSameAs();
+		ExtendedIterator<? extends Resource> sameResource = oro.getResource(id).listSameAs();
 
+		Set<String> agentList = agents.keySet();
+		
 		while (sameResource.hasNext()){
-			if (sameResource.next()
-			return true;
+			if (agentList.contains(sameResource.next().getLocalName()))
+				return true;
 		}
 		return false;
 	}
@@ -117,9 +119,28 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		if (OroServer.BLINGBLING)
 			Logger.log("22, v'la les agents!\n", VerboseLevel.WARNING);
 		
-		for (String s : (Set<String>) Helpers.deserialize(e.getEventContext(), Set.class))
-			add(s);
+		try {
+			
+			for (String s : (Set<String>) Helpers.deserialize(e.getEventContext(), Set.class))
+				add(s);
+			
+		} catch (OntologyServerException ose) //thrown if an unparsable unicode character is encountered
+		{
+			Logger.log("\nBetter to exit now until proper handling of this " +
+				"exception is added by maintainers! You can help by sending a " +
+				"mail to openrobots@laas.fr with the exception stack.\n ", 
+				VerboseLevel.FATAL_ERROR);
+			System.exit(-1);
+		} catch (IllegalArgumentException iae) //thrown if the string couldn't be deserialized to the expect object.
+		{
+			Logger.log("\nBetter to exit now until proper handling of this " +
+					"exception is added by maintainers! You can help by sending a " +
+					"mail to openrobots@laas.fr with the exception stack.\n ", 
+					VerboseLevel.FATAL_ERROR);
+				System.exit(-1);
+		}
 		
+		//JAVA7: Note that in Java7, both exception can be grouped in one catch clause.
 	}
 	/**************************************************************************/
 	
@@ -133,16 +154,31 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	 */
 	@RPCMethod(
 			category = "agents",
-			desc="adds one or several statements (triplets S-P-O) to a specific agent model, in long term memory."
+			desc="adds one or several statements (triplets S-P-O) to a specific " +
+				"agent model, in long term memory."
 	)
-	public void addForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
-	{
+	public void addForAgent(String id, Set<String> rawStmts) 
+						throws 	IllegalStatementException, 
+								AgentNotFoundException
+	{		
 		addForAgent(id, rawStmts, MemoryProfile.DEFAULT.toString());
 	}
 
-	/** Add statements in a specific agent cognitive model with a specific memory model.
-	 * Statements are added in "safe mode", ie, only if they don't cause an 
-	 * inconsistency in the agent model.
+	@RPCMethod(
+			category = "agents",
+			desc="try to add news statements to a specific agent model in long " +
+				"term memory, if they don't lead to inconsistencies (return false " +
+				"if at least one stmt wasn't added)."
+	)
+	public boolean safeAdd(String id, Set<String> rawStmts) 
+						throws 	IllegalStatementException, 
+								AgentNotFoundException
+	{
+		return safeAdd(id, rawStmts, MemoryProfile.DEFAULT.toString());
+	}
+	
+	/** Add statements in a specific agent cognitive model with a specific 
+	 * memory model.
 	 * 
 	 * @param id The id of the agent
 	 * @param rawStmts a set of statements
@@ -154,17 +190,63 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	 */
 	@RPCMethod(
 			category = "agents",
-			desc="adds one or several statements (triplets S-P-O) to a specific agent model associated with a memory profile."
+			desc="adds one or several statements (triplets S-P-O) to a specific " +
+					"agent model associated with a memory profile."
 	)
-	public void addForAgent(String id, Set<String> rawStmts, String memProfile) throws IllegalStatementException, AgentNotFoundException
+	public void addForAgent(String id, Set<String> rawStmts, String memProfile) 
+						throws 	IllegalStatementException, 
+								AgentNotFoundException
 	{
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		
+		Set<Statement> stmtsToAdd = new HashSet<Statement>();
+		
 		for (String rawStmt : rawStmts) {
-			Logger.log(id + ": ");
-			oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToAdd.add(oro.createStatement(rawStmt));			
 		}
+		
+		Logger.log(id + ": ");
+		oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), false);
+
+	}
+	
+	/** Adds statements in a specific agent cognitive model with a specific 
+	 * memory model, but only if the statement doesn't cause any inconsistency.
+	 * 
+	 * If one statement cause an inconsistency, it won't be added, the return
+	 * value will be "false", and the process continue with the remaining 
+	 * statements. 
+	 * 
+	 * @param id The id of the agent
+	 * @param rawStmts a set of statements
+	 * @param memProfile the memory profile
+	 * @return false if at least one statement was not added because it would 
+	 * lead to inconsistencies.
+	 * @throws IllegalStatementException
+	 * @throws AgentNotFoundException 
+	 */
+	@RPCMethod(
+			desc="try to add news statements to a specific agent model with a " +
+				"specific memory profile, if they don't lead to inconsistencies " +
+				"(return false if at least one stmt wasn't added)."
+	)
+	public boolean safeAdd(String id, Set<String> rawStmts, String memProfile) 
+							throws 	IllegalStatementException, 
+									AgentNotFoundException
+	{
+		Set<Statement> stmtsToAdd = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToAdd.add(oro.createStatement(rawStmt));			
+		}
+		
+		Logger.log(id + ": ");
+		return oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), true);
 	}
 	
 	@RPCMethod(

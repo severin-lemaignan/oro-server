@@ -152,14 +152,16 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @throws IllegalStatementException Currently only thrown if a concept is asserted 
 	 * to be both an instance and a class.
 	 */
-	boolean add(Set<Statement> statements, MemoryProfile memProfile,
+	public abstract boolean add(Set<Statement> statements, MemoryProfile memProfile,
 			boolean safe) throws IllegalStatementException;
 
 	/**
 	 * Adds a new statement (assertion) to the ontology.
 	 * 
+	 * @deprecated Please use {@link #add(Set, MemoryProfile, boolean)} instead
 	 * @see #add(Set, MemoryProfile, boolean)
 	 */
+	@Deprecated
 	public abstract boolean add(Statement statement, MemoryProfile memProfile, 
 			boolean safe) throws IllegalStatementException;
 	
