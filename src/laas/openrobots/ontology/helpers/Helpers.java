@@ -439,7 +439,20 @@ public class Helpers {
 		return str;
 	}
     
-    public static <T> T deserialize(String val, Class<T> type) throws OntologyServerException {
+    /** Deserializes a string received from a client to a Java native object.
+     * 
+     * @param <T> type of the expected deserialized object.
+     * @param val the input string, in a JSON-like format
+     * @param type type of the expected deserialized object.
+     * @return the newly created object
+     * @throws OntologyServerException thrown if an unparsable unicode character
+     *  is encountered
+     * @throws IllegalArgumentException thrown if the string couldn't be 
+     * deserialized to the expect object. 
+     */
+    @SuppressWarnings("unchecked")
+	public static <T> T deserialize(String val, Class<T> type) 
+    				throws OntologyServerException, IllegalArgumentException {
     	
     		//Save it for errors message, in case something goes wrong
     		String originalValue = val;
@@ -517,7 +530,9 @@ public class Helpers {
 				return (T) result;
 			}
 			
-			else throw new IllegalArgumentException("Unable to deserialize the string! (a " + type.getSimpleName() + " was expected by the method, received \"" + originalValue + "\" instead)");
+			else throw new IllegalArgumentException("Unable to deserialize the" +
+					" string! (a " + type.getSimpleName() + " was expected by" +
+					" the method, received \"" + originalValue + "\" instead)");
 	}
 		  
 	/** Remove leading and trailing quotes and whitespace if needed from a 
