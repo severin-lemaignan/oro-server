@@ -12,6 +12,7 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -59,15 +60,7 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts) throws IllegalStatementException
 	{
-		Set<Statement> stmtsToAdd = new HashSet<Statement>();
-		
-		for (String rawStmt : rawStmts) {
-			if (rawStmt == null)
-				throw new IllegalStatementException("Got a null statement to add!");
-			stmtsToAdd.add(oro.createStatement(rawStmt));			
-		}
-		
-		oro.add(stmtsToAdd, MemoryProfile.DEFAULT, false);
+		add(rawStmts, MemoryProfile.DEFAULT.toString());
 			
 	}
 	
@@ -76,11 +69,7 @@ public class BaseModule implements IServiceProvider {
 	)
 	public boolean safeAdd(Set<String> rawStmts) throws IllegalStatementException
 	{
-		boolean r = true;
-		for (String rawStmt : rawStmts){
-			r &= oro.add(oro.createStatement(rawStmt), MemoryProfile.DEFAULT, true);
-		}
-		return r;
+		return safeAdd(rawStmts, MemoryProfile.DEFAULT.toString());
 	}
 
 	/**
@@ -147,19 +136,44 @@ public class BaseModule implements IServiceProvider {
 	)
 	public void add(Set<String> rawStmts, String memProfile) throws IllegalStatementException
 	{
-		for (String rawStmt : rawStmts) oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), false);
+		Set<Statement> stmtsToAdd = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToAdd.add(oro.createStatement(rawStmt));			
+		}
+		
+		oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), false);
 	}
 	
+	/** Adds statements with a specific memory model, but only if the statement 
+	 * doesn't cause any inconsistency.
+	 * 
+	 * If one statement cause an inconsistency, it won't be added, the return
+	 * value will be "false", and the process continue with the remaining 
+	 * statements. 
+	 * 
+	 * @param rawStmts a set of statements
+	 * @param memProfile the memory profile
+	 * @return false if at least one statement was not added because it would 
+	 * lead to inconsistencies.
+	 * @throws IllegalStatementException
+	 */
 	@RPCMethod(
 			desc="try to add news statements with a specific memory profile, if they don't lead to inconsistencies (return false if at least one stmt wasn't added)."
 	)
 	public boolean safeAdd(Set<String> rawStmts, String memProfile) throws IllegalStatementException
 	{
-		boolean r = true;
-		for (String rawStmt : rawStmts){
-			r &= oro.add(oro.createStatement(rawStmt), MemoryProfile.fromString(memProfile), true);
+		Set<Statement> stmtsToAdd = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToAdd.add(oro.createStatement(rawStmt));			
 		}
-		return r;
+
+		return oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), true);
 	}
 	
 	/**
