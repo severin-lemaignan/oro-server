@@ -1097,13 +1097,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
-				
-		try {
-			oro.checkConsistency();
-		} catch (InconsistentOntologyException e) {
-			fail("Initial ontology should be detected as consistent!");
-		}
-		
+
+		assertTrue("Initial ontology should be detected as consistent!", oro.checkConsistency());
 				
 		try {
 			onto.add(onto.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT, false);
@@ -1112,28 +1107,20 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 		
 		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
-		try {
-			oro.checkConsistency();
-			fail("Ontology should be detected as inconsistent! Cows are not plants!");
-		} catch (InconsistentOntologyException e) {			
-		}
+		assertFalse("Ontology should be detected as inconsistent! Cows are not plants!", oro.checkConsistency());
 		
 		try {
 			oro.remove("cow rdf:type Plant");
-			oro.checkConsistency();
-		} catch (InconsistentOntologyException e) {
-			fail();
+			assertTrue(oro.checkConsistency());
 		} catch (IllegalStatementException e) {
 			fail();
 		}
 		
 		try {
 			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT, false);
-			oro.checkConsistency();
-			fail("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!");
+			assertFalse("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!", oro.checkConsistency());
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
-		} catch (InconsistentOntologyException e) {
 		}
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");

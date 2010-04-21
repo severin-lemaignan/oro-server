@@ -233,13 +233,16 @@ public class BaseModule implements IServiceProvider {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#checkConsistency()
+
+	/**
+	 * Checks if the ontology is consistent.
+	 * 
+	 * @return true if the ontology is consistent, false otherwise.
 	 */
 	@RPCMethod(
 			desc="checks that the ontology is semantically consistent"
 	)
-	public Boolean checkConsistency() throws InconsistentOntologyException {
+	public Boolean checkConsistency() {
 		Logger.log("Checking ontology consistency...", VerboseLevel.IMPORTANT);
 		
 		try {
@@ -247,7 +250,7 @@ public class BaseModule implements IServiceProvider {
 		}
 		catch (InconsistentOntologyException e){
 			Logger.log("ontology inconsistent!\n", VerboseLevel.WARNING, false);
-			throw e;
+			return false;
 		}
 		
 		Logger.log("no problems.\n", false);
