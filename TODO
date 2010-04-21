@@ -1,3 +1,21 @@
+oro-server 0.7.5 target
+-----------------------
+- pas de creation d'agent apres un reload() !! + bug 119
+- Si le register event echoue (genre ontology inconsistent), liboro crash -> terminate called after throwing an instance of 'oro::OntologyServerException'
+  what():  Internal error! Wrong number of result element returned by the server.
+- si un add trigger plus d'un event, only one is actually thrown
+- Telnet session: 
+add
+
+sadas
+#end#
+->
+Exception in thread "ClientWorker java.nio.channels.SocketChannel[connected local=/0:0:0:0:0:0:0:1:6969 remote=/0:0:0:0:0:0:0:1:55958]" java.lang.StringIndexOutOfBoundsException: String index out of range: 1
+	at java.lang.String.substring(String.java:1946)
+	at laas.openrobots.ontology.helpers.Helpers.deserialize(Helpers.java:480)
+	at laas.openrobots.ontology.connectors.SocketConnector$ClientWorker.handleRequest(SocketConnector.java:452)
+	at laas.openrobots.ontology.connectors.SocketConnector$ClientWorker.run(SocketConnector.java:303)
+	at java.lang.Thread.run(Thread.java:636)
 
 oro-server 0.8.0 target
 -----------------------
