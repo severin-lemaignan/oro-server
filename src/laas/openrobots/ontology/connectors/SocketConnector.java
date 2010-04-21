@@ -332,7 +332,7 @@ public class SocketConnector implements IConnector, Runnable {
 											evt.getLeft() + "\n" +
 											(e.getEventContext() != "" ?
 													e.getEventContext() + "\n":
-													"") +
+													"\n") +
 											MESSAGE_TERMINATOR + "\n";
 												
 							client.write(charset.encode(evtMsg));
