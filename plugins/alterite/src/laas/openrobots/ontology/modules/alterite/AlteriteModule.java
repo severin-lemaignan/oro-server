@@ -19,6 +19,7 @@ import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
+import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.alterite.AgentModel;
@@ -32,6 +33,8 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -269,7 +272,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 									String varName, 
 									Set<String> statements, 
 									Set<String> filters) 
-						throws IllegalStatementException, AgentNotFoundException, InvalidQueryException
+						throws IllegalStatementException, OntologyServerException
 	{
 		IOntologyBackend oro = getModelForAgent(id);
 		
@@ -278,7 +281,6 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 
 		Logger.log("Searching resources in the ontology...\n");
 		
-		Set<String> result = new HashSet<String>();
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
 		if (varName.startsWith("?")) varName = varName.substring(1);
@@ -296,7 +298,28 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
 			
-		return oro.find(varName, stmts, filters);
+		Set<RDFNode> raw = oro.find(varName, stmts, filters);
+		Set<String> res = new HashSet<String>();
+		
+		for (RDFNode n : raw) {
+			try {
+				Resource node = n.as(Resource.class);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					res.add(Namespaces.toLightString(node));
+			} catch (ClassCastException e) {
+				try {
+					Literal l = n.as(Literal.class);
+					res.add(l.getLexicalForm());
+				} catch (ClassCastException e2) {
+					Logger.log("Failed to convert the result of the 'find' to a string!",
+							VerboseLevel.SERIOUS_ERROR);
+					throw new OntologyServerException("Failed to convert the " +
+							"result of the 'find' to a string!");
+				}
+			}
+		}
+
+		return res;
 	}
 	
 	@RPCMethod(
@@ -307,7 +330,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public Set<String> findForAgent(String id, 
 									String varName, 
 									Set<String> statements) 
-						throws IllegalStatementException, AgentNotFoundException, InvalidQueryException
+						throws IllegalStatementException, OntologyServerException
 	{
 		return findForAgent(id, varName, statements, null);
 	}

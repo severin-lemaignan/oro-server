@@ -24,6 +24,7 @@ import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
@@ -247,11 +248,11 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * 
 	 * @param query A well-formed SPARQL query to perform on the ontology. {@code PREFIX} statements may be omitted if they are the standard ones (namely, owl, rdf, rdfs) or the LAAS OpenRobots ontology (oro) one.
 	 * @param query 
-	 * @return The result of the query as a Jena ResultSet.
+	 * @return The result of the query as a set of RDFNode (either resources or literals).
 	 * @see #queryAsXML(String)
 	 * @throws QueryParseException thrown if the argument is not a valid SPARQL query.
 	 */
-	public abstract Set<String> query(String key, String query) throws InvalidQueryException;
+	public abstract Set<RDFNode> query(String key, String query) throws InvalidQueryException;
 
 	/**
 	 * Tries to identify a resource given a set of partially defined statements 
@@ -264,11 +265,11 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @param filters a vector of string containing the various filters to be 
 	 * appended to the search. The syntax is the SPARQL one (as defined here:
 	 *  http://www.w3.org/TR/rdf-sparql-query/#tests).
-	 * @return a set of resources that match the statements.
+	 * @return a set of resources or literal (RDFNode) that match the statements.
 	 * @throws InvalidQueryException 
 	 * @see BaseModule#find(String, Set, Set) Examples of use
 	 */
-	public abstract Set<String> find(	String varName,	
+	public abstract Set<RDFNode> find(	String varName,	
 							Set<PartialStatement> statements, 
 							Set<String> filters) throws InvalidQueryException;
 

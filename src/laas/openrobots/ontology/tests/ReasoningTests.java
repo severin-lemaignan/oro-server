@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 
 import junit.framework.TestCase;
@@ -237,7 +238,7 @@ public class ReasoningTests extends TestCase {
 		
 		startTime = System.currentTimeMillis();
 		
-		Set<String> res = null;
+		Set<RDFNode> res = null;
 		try {
 			res = oro.find("individual", partialStatements, null);
 		} catch (InvalidQueryException e) {

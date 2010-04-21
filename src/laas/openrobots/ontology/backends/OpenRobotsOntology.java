@@ -448,12 +448,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
 	 */
-	public Set<String> query(String key, String query) throws InvalidQueryException
+	public Set<RDFNode> query(String key, String query) throws InvalidQueryException
 	{
 		//TODO: do some detection to check that the first param is the key, and throw nice exceptions when required.
 		
 		
-		Set<String> res = new HashSet<String>();
+		Set<RDFNode> res = new HashSet<RDFNode>();
 		
 		//Add the common prefixes.
 		query = Namespaces.prefixes() + query;
@@ -477,21 +477,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				
 		while (this.lastQueryResult.hasNext()) {
 			QuerySolution s = this.lastQueryResult.nextSolution();
-			try {
-				Resource node = s.getResource(key);
-				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
-					res.add(Namespaces.toLightString(node));
-			} catch (ClassCastException e) {
-				Literal l = s.getLiteral(key);
-				res.add(l.getLexicalForm());
-			}
+			res.add(s.get(key));
 		}
 		
 		return res;
 	}
 	
 	@Override
-	public Set<String> find(	String varName,	Set<PartialStatement> statements, 
+	public Set<RDFNode> find(	String varName,	Set<PartialStatement> statements, 
 							Set<String> filters) throws InvalidQueryException {
 		
 		String query = "SELECT ?" + varName + "\n" +

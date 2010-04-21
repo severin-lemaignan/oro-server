@@ -16,6 +16,7 @@ import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -261,11 +262,31 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="performs one SPARQL query on the ontology"
 	)
-	public Set<String> query(String key, String q) throws InvalidQueryException
+	public Set<String> query(String key, String q) throws InvalidQueryException, OntologyServerException
 	{
 		Logger.log("Processing query:\n" + q + "\n");
-
-		return oro.query(key, q);
+		
+		Set<RDFNode> raw = oro.query(key, q);
+		Set<String> res = new HashSet<String>();
+		
+		for (RDFNode n : raw) {
+			try {
+				Resource node = n.as(Resource.class);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					res.add(Namespaces.toLightString(node));
+			} catch (ClassCastException e) {
+				try {
+					Literal l = n.as(Literal.class);
+					res.add(l.getLexicalForm());
+				} catch (ClassCastException e2) {
+					Logger.log("Failed to convert the result of the query to a string!",
+							VerboseLevel.SERIOUS_ERROR);
+					throw new OntologyServerException("Failed to convert the " +
+							"result of the query to a string!");
+				}
+			}
+		}
+		return res;
 	}
 
 	/**
@@ -361,7 +382,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param filters a vector of string containing the various filters you want to append to your search. The syntax is the SPARQL one (as defined here: http://www.w3.org/TR/rdf-sparql-query/#tests).
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
-	 * @throws InvalidQueryException 
+	 * @throws OntologyServerException 
 	 * @see PartialStatement Syntax of partial statements
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
@@ -369,11 +390,10 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements plus restrictions about this resource."
 	)	
-	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException, InvalidQueryException {
+	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException, OntologyServerException {
 		
 		Logger.log("Searching resources in the ontology...\n");
 				
-		Set<String> result = new HashSet<String>();
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
 		if (varName.startsWith("?")) varName = varName.substring(1);
@@ -390,8 +410,29 @@ public class BaseModule implements IServiceProvider {
 			for (String f : filters)
 				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
+
+		Set<RDFNode> raw = oro.find(varName, stmts, filters);
+		Set<String> res = new HashSet<String>();
 		
-		return oro.find(varName, stmts, filters);
+		for (RDFNode n : raw) {
+			try {
+				Resource node = n.as(Resource.class);
+				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
+					res.add(Namespaces.toLightString(node));
+			} catch (ClassCastException e) {
+				try {
+					Literal l = n.as(Literal.class);
+					res.add(l.getLexicalForm());
+				} catch (ClassCastException e2) {
+					Logger.log("Failed to convert the result of the 'find' to a string!",
+							VerboseLevel.SERIOUS_ERROR);
+					throw new OntologyServerException("Failed to convert the " +
+							"result of the 'find' to a string!");
+				}
+			}
+		}
+
+		return res;
 	}
 
 	/**
@@ -430,7 +471,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param statements The partial statement statements defining (more or less) the resource your looking for.
 	 * @return A vector of resources which match the statements. An empty vector is no matching resource is found.
 	 * @throws IllegalStatementException 
-	 * @throws InvalidQueryException 
+	 * @throws OntologyServerException 
 	 * @see #find(String, Vector, Vector)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
@@ -438,10 +479,17 @@ public class BaseModule implements IServiceProvider {
 			category="querying",
 			desc="tries to identify a resource given a set of partially defined statements about this resource."
 	)	
-	public Set<String> find(String varName, Set<String> statements) throws IllegalStatementException, InvalidQueryException {
+	public Set<String> find(String varName, Set<String> statements) 
+				throws 	IllegalStatementException, 
+						OntologyServerException {
 		return find(varName, statements, null);
 	}
 
+	public Map<String, Set<String>> find(Set<String> variables,
+			Set<String> partialStatements) {
+		return null;
+	}
+	
 	/**
 	 * Returns the set of asserted and inferred statements whose the given node is part of. It represents the "usages" of a resource.<br/>
 	 * Usage example:<br/>
@@ -784,11 +832,12 @@ public class BaseModule implements IServiceProvider {
 	 * @param the id to look for.
 	 * @return One of the labels associated to this id or the id itself if no 
 	 * label has been defined.
+	 * @throws OntologyServerException 
 	 */
 	@RPCMethod(
 			desc = "return the label of a concept, if available."
 	)
-	public String getLabel(String id) {
+	public String getLabel(String id) throws OntologyServerException {
 		
 		Set<String> q = new HashSet<String>();
 		q.add(id + " rdfs:label ?label");

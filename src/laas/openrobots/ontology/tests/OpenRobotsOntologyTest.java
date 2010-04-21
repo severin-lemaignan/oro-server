@@ -67,6 +67,7 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -327,7 +328,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		 ****************/
 		long intermediateTime = System.currentTimeMillis();
 		
-		Set<String> result = null;
+		Set<RDFNode> result = null;
 		try {
 			result = onto.query("instances",
 							"SELECT ?instances \n" +
@@ -474,7 +475,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		long intermediateTime = System.currentTimeMillis();
 		
 		//Note: there are easier ways to query to ontology for simple cases (see find() for instance). But it comes later in the unit tests.
-		Set<String> result = null;
+		Set<RDFNode> result = null;
 		try {
 			result = onto.query("instances",
 					"SELECT ?instances \n" +
@@ -525,6 +526,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 					"?i rdf:type owl:Thing .\n" +
 					"?i oro:isFemale true}\n");
 		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		} catch (OntologyServerException e) {
 			e.printStackTrace();
 			fail();
 		}
@@ -768,6 +772,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		stmts.clear();
 		//TODO: this trigger insteresting behaviours! it *should* pass the test, but it doesn't... Pellet bug?
+		//Bug reported: https://softs.laas.fr/bugzilla/show_bug.cgi?id=115
 		//stmts.add("KingKong rdfs:subClassOf Monkey");
 		stmts.add("KingKong rdf:type Monkey");
 		stmts.add("KingKong rdfs:label \"king kong\"");
@@ -987,7 +992,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 				
-		Set<String> result = null;
+		Set<RDFNode> result = null;
 		try {
 			result = onto.query("instances", who_is_an_animal);
 		} catch (InvalidQueryException e5) {
@@ -1137,7 +1142,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test try to match a given set of statements against the ontology, and to get back the class of an object.
 	 */
-	public void testMatching() {
+	public void testFind() {
 
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -1205,6 +1210,41 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
+	
+	/**
+	 * This tests the find() method when it returns several variables.
+	 */
+	public void testFindMultipleVariables() {
+
+		System.out.println("[UNITTEST] ***** TEST: Find several variables *****");
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
+		
+		Map<String, Set<String>> matchingResources = null;
+		
+		Set<String> variables = new HashSet<String>();
+		variables.add("animal");
+		variables.add("food");
+		
+		Set<String> partial_statements = new HashSet<String>();
+		partial_statements.add("?animal eats ?food");
+
+		try {
+			matchingResources = oro.find(variables, partial_statements);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}	
+		
+		assertNotNull("find() didn't answered anything!",matchingResources);
+		
+		
+		//TODO Add a tests!
+
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+
 
 	/***********************************************************************
 	 *                       ADVANCED TESTS                                *

@@ -10,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 
 import laas.openrobots.ontology.PartialStatement;
@@ -19,6 +21,7 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
+import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -253,13 +256,13 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 			//Try to get the labels
 			//TODO prbl here: if 2 concepts matches but only one have a label, we will silently
 			//miss the other.
-			Set<String> rawResult = oro.find("label", stmts, null);
+			Set<RDFNode> rawResult = oro.find("label", stmts, null);
 			//if (rawResult.isEmpty()) rawResult = oro.find("obj", stmts, null); 
 
 			if (rawResult.isEmpty()) res = "Nothing!";
 			else {
-				for (String r : rawResult)					
-					res += r + ", ";
+				for (RDFNode r : rawResult)					
+					res += r.as(Resource.class).getLocalName() + ", ";
 				
 				//TODO: this formatting regex won't match - ' and other similar characters
 				res = res.replaceAll("([\\w:\\-, ]+),([\\w:s\\- ]+), ", "$1 and$2, I think.");
