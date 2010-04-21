@@ -175,7 +175,8 @@ public class Logger {
 	}
 
 	public static void cr(){
-		System.out.print("\n");
+		if (OroServer.VERBOSITY != VerboseLevel.SILENT)
+			System.out.print("\n");
 	}
 	
 	public static void printInBlue(String msg){
