@@ -87,6 +87,7 @@ distclean: clean doc-clean
 
 clean :
 	$(CLEAN) $(BUILD_DIR)
+	$(CLEAN) etc/oro-server/*.conf
 
 install-doc:
 	$(INSTALL) -d ${DOC_DIR}
