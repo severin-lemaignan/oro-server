@@ -66,6 +66,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.rdf.model.LiteralRequiredException;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;
@@ -704,7 +705,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	
 		Set<String> stmts = new HashSet<String>();
 		
-		stmts.add("gorilla rdfs:label KingKong"); //This statement create de facto a KingKong concept.
+		stmts.add("gorilla rdfs:label 'KingKong'");
 		stmts.add("gorilla rdfs:comment \"KingKong is nice\"");
 		
 		try {
@@ -932,6 +933,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 			
 			tmp = oro.createStatement("oro:fish oro:age \"150\"^^xsd:float");
 			assertTrue("The datatype has not been recognized!", tmp.getLiteral().getDatatype().getJavaClass() == Float.class);
+			
+			tmp = oro.createStatement("oro:fish oro:name Dudule");
+			assertTrue("Dudule should'nt be recognized as a string here, but as an instance.", tmp.getObject().isResource());
 			
 			tmp = oro.createStatement("oro:fish oro:name 'Dudule'");
 			assertTrue("The datatype has not been recognized!", tmp.getLiteral().getDatatype().getJavaClass() == String.class);
