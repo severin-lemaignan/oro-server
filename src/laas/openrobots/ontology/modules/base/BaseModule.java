@@ -74,6 +74,53 @@ public class BaseModule implements IServiceProvider {
 	}
 
 	/**
+	 * Update the value of a property.
+	 * 
+	 * This method is equivalent to a {@link #remove(Set)} followed by an {@link #add(Set)}.
+	 * 
+	 * ATTENTION: this method works only on <em>functional</em> properties (ie, 
+	 * properties that are subclasses of <pre>owl:FunctionalProperty</pre>.
+	 * 
+	 * For non-functional properties (or if the subject or predicate does not
+	 * exist), this method behaves like {@link #add(Set)}.
+	 * 
+	 * Example:
+	 * <pre>
+	 * add(["alice isLost true"])
+	 * -> ontology contains the fact "alice isLost true"
+	 * 
+	 * update(["alice isLost false"])
+	 * -> ontology contains the fact "alice isLost false"
+	 * </pre>
+	 * 
+	 * Please note that the newly created statement is put in the DEFAULT memory
+	 * profile, usually the long-term one.
+	 * 
+	 * @param statements A set of string representing statements to be updated.
+	 * @throws IllegalStatementException
+	 * 
+	 * @see #add(Set, String)
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	@RPCMethod(
+			desc="update the value of a functional property."
+	)
+	public void update(String stmt) throws IllegalStatementException
+	{
+		//add(rawStmts, MemoryProfile.DEFAULT.toString());
+			
+	}
+	
+	@RPCMethod(
+			desc="update the value of a functional property."
+	)
+	public void update(Set<String> stmts) throws IllegalStatementException
+	{
+		for (String stmt : stmts) update(stmt);	
+			
+	}
+	
+	/**
 	 * Adds a set of statements (assertions) to the ontology from their string representation in the given memory profile.<br/>
 	 * This method does nothing if the statements already exist with the same memory profile. If the same statements are added with a different memory profile, the shortest term memory container has priority.
 	 * 

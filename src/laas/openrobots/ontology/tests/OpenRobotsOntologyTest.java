@@ -739,6 +739,92 @@ public class OpenRobotsOntologyTest extends TestCase {
 	}
 	
 	/**
+	 * This test checks the statement update mechanism.
+	 */
+	public void testUpdate() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Update statement *****");
+		
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
+	
+		Set<String> stmts = new HashSet<String>();
+		
+		stmts.add("gorilla rdfs:label 'KingKong'"); //rdfs:label is not a functional property. The value shouldn't be replace.
+		
+		//Other asserted statement in testsuite.oro.owl
+		//gorilla isFemale false
+		//gorilla weight 100.2
+		//gorilla age 12
+		
+		Set<String> updatedStmts = new HashSet<String>();
+		updatedStmts.add("gorilla age 21");
+		updatedStmts.add("gorilla weight 99.5");
+		
+		Set<String> partial_statements = new HashSet<String>();
+				
+		try {
+			
+			
+			try {
+				/******************************************/
+				/* Test with a non-functional property    */
+				oro.update("gorilla rdfs:label \"King Monkey\"");
+				partial_statements.add("gorilla rdfs:label ?l");
+				assertTrue(oro.find("l", partial_statements).size() == 2);
+				partial_statements.clear();
+				
+				/******************************************/
+				/* Test with a functional property        */
+				oro.update("gorilla isFemale true");
+				
+				partial_statements.add("gorilla isFemale ?l");
+				Set<String> res = oro.find("l", partial_statements);
+				assertTrue(res.size() == 1);
+				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("true"));
+				partial_statements.clear();
+				
+				/******************************************/
+				/* Test with a set of updates             */
+				oro.update(updatedStmts);
+				
+				partial_statements.add("gorilla age ?a");
+				partial_statements.add("gorilla weight ?w");
+				
+				res = oro.find("a", partial_statements);
+				assertTrue(res.size() == 1);
+				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("21"));
+				
+				res = oro.find("w", partial_statements);
+				assertTrue(res.size() == 1);
+				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("99.5"));
+				
+				partial_statements.clear();
+				
+				/******************************************/
+				/* Test with a non-existent predicate     */
+				
+				oro.update("gorilla likeIcecream true");
+				
+				partial_statements.add("gorilla likeIcecream ?l");
+				res = oro.find("l", partial_statements);
+				assertTrue(res.size() == 1);
+				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("true"));
+				partial_statements.clear();
+				
+			} catch (OntologyServerException e) {
+				e.printStackTrace();
+			}
+			
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	
+	/**
 	 * This test checks that concept can be retrieved by their labels. 
 	 * @throws InterruptedException 
 	 */
