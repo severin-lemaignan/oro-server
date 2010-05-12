@@ -469,7 +469,7 @@ public class BaseModule implements IServiceProvider {
 				Resource node = n.as(Resource.class);
 				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
 					res.add(Namespaces.toLightString(node));
-			} catch (ClassCastException e) {
+			} catch (ResourceRequiredException e) {
 				try {
 					Literal l = n.as(Literal.class);
 					res.add(l.getLexicalForm());

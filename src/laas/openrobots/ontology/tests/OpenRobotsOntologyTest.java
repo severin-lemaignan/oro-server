@@ -1285,6 +1285,21 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		assertEquals("find() should now answer only 1 resources (baboon)", 1, matchingResources.size());
 		
+		
+		// Checking that we can retrieve string literals
+		partial_statements.add("baboon rdfs:label ?label");
+		
+		try {
+			matchingResources = oro.find("label", partial_statements);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
+		
+		assertEquals("find() should answer 2 resources (English + French labels)", 2, matchingResources.size());
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
