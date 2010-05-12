@@ -228,6 +228,7 @@ public class BaseModule implements IServiceProvider {
 	 * Remove a given statement (represented as a string) from the ontology. Does nothing if the statement doesn't exist.
 	 * 
 	 * @param stmt A string representing the statement to remove from the ontology.
+	 * @deprecated {@link #remove(Set)} should be used instead.
 	 * @see #add(Set)
 	 * @see IOntologyBackend#remove(Statement)
 	 * @see IOntologyBackend#createStatement(String) Syntax details regarding the string describing the statement.
@@ -305,8 +306,10 @@ public class BaseModule implements IServiceProvider {
 		
 	}
 	
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
+	/**
+	 * Maps {@link IOntologyBackend#query(String, String)} into a RPC call
+	 * 
+	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(String, String)
 	 */
 	@RPCMethod(
 			category="querying",

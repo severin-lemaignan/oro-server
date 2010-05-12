@@ -76,7 +76,7 @@ public class PartialStatement implements Statement {
 	 * 
 	 * This class implements {@link Statement}, but the {@link #getSubject()}, {@link #getPredicate()} and {@link #getObject()} method will return {@code null} if the corresponding part of the statement is unbounded. 
 	 * 
-	 * @param partialStatement The string represtentating the partial statement. For example, {@code "?mysterious oro:objProperty2 ?object"} or {@code "?subject oro:dataProperty1 true"} are valid.
+	 * @param partialStatement The string representing the partial statement. For example, {@code "?mysterious oro:objProperty2 ?object"} or {@code "?subject oro:dataProperty1 true"} are valid.
 	 * @param model The ontology this partial statement refers to.
 	 * @throws IllegalStatementException Currently thrown only if the statement doesn't contain three tokens.
 	 * @see OpenRobotsOntology#createStatement(String) Syntax details
