@@ -756,22 +756,19 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//gorilla isFemale false
 		//gorilla weight 100.2
 		//gorilla age 12
-		
-		Set<String> updatedStmts = new HashSet<String>();
-		updatedStmts.add("gorilla age 21");
-		updatedStmts.add("gorilla weight 99.5");
-		
+	
+	
 		Set<String> partial_statements = new HashSet<String>();
 				
 		try {
-			
+			oro.add(stmts);			
 			
 			try {
 				/******************************************/
 				/* Test with a non-functional property    */
 				oro.update("gorilla rdfs:label \"King Monkey\"");
 				partial_statements.add("gorilla rdfs:label ?l");
-				assertTrue(oro.find("l", partial_statements).size() == 2);
+				assertEquals(2, oro.find("l", partial_statements).size());
 				partial_statements.clear();
 				
 				/******************************************/
@@ -786,6 +783,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 				/******************************************/
 				/* Test with a set of updates             */
+				Set<String> updatedStmts = new HashSet<String>();
+				updatedStmts.add("gorilla age 21");
+				updatedStmts.add("gorilla weight 99.5");
+				
 				oro.update(updatedStmts);
 				
 				partial_statements.add("gorilla age ?a");
@@ -798,6 +799,26 @@ public class OpenRobotsOntologyTest extends TestCase {
 				res = oro.find("w", partial_statements);
 				assertTrue(res.size() == 1);
 				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("99.5"));
+				
+				partial_statements.clear();
+				
+				/******************************************/
+				/* Test2 with a set of updates             */
+				updatedStmts.clear();
+				updatedStmts.add("gorilla age 99");
+				updatedStmts.add("gorilla rdfs:label \"Lord of the rings\"");
+				
+				oro.update(updatedStmts);
+				
+				partial_statements.add("gorilla age ?a");
+				partial_statements.add("gorilla rdfs:label ?l");
+
+				res = oro.find("l", partial_statements);
+				assertEquals(3, res.size());
+
+				res = oro.find("a", partial_statements);
+				assertEquals(1, res.size());
+				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("99"));
 				
 				partial_statements.clear();
 				

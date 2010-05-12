@@ -12,7 +12,6 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
-import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -28,11 +27,13 @@ import laas.openrobots.ontology.types.ResourceDescription;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.ResourceRequiredException;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.Lock;
@@ -42,15 +43,46 @@ public class BaseModule implements IServiceProvider {
 
 	IOntologyBackend oro;
 	
+	/*This set stores *at initialization* the list of functional properties.
+	* This is used by the update() method to quickly discard update on non-
+	* functional properties.
+	* 
+	* \TODO Attention: if a functional property is added at runtime, it won't
+	* be correctly handled (ie, update() won't work for this property. This
+	* could be fixed by updating this set when a FunctionalProperty is added. Or
+	* use OntProperty#hasSubproperty() (but this will be slower)
+	*/
+	Set<OntProperty> functionalProperties;
+	
 	public BaseModule(IOntologyBackend oro) {
 		super();
 		this.oro = oro;
+		
+		// Initializing the list of functional properties
+		functionalProperties = new HashSet<OntProperty>();
+		Set<String> partialStatements = new HashSet<String>();
+		partialStatements.add("?f rdf:type owl:FunctionalProperty");
+		Set<String> functionalProps = null;
+		try {
+			functionalProps = find("f", partialStatements);
+		} catch (IllegalStatementException e) {
+			assert(false);
+		} catch (OntologyServerException e) {
+			assert(false);
+		}
+		
+		oro.getModel().enterCriticalSection(Lock.READ);
+		
+		for (String s : functionalProps)
+			functionalProperties.add(oro.getModel().getOntProperty(Namespaces.format(s)));
+		
+		oro.getModel().leaveCriticalSection();
 	}
 	
 	/**
 	 * Like {@link #add(Set<String>, String)} with the {@link MemoryProfile#DEFAULT} memory profile.
 	 * 
-	 * @param statements A vector of string representing statements to be inserted in the ontology.
+	 * @param statements A set of string representing statements to be inserted in the ontology.
 	 * @throws IllegalStatementException
 	 * 
 	 * @see #add(Set, String)
@@ -101,13 +133,24 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * @see #add(Set, String)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 * 
+	 * @TODO Optimize this implementation a bit?
 	 */
 	@RPCMethod(
 			desc="update the value of a functional property."
 	)
 	public void update(String stmt) throws IllegalStatementException
 	{
-		//add(rawStmts, MemoryProfile.DEFAULT.toString());
+		Statement s = oro.createStatement(stmt);
+		
+		if(functionalProperties.contains(s.getPredicate())) {
+		
+			clear(Namespaces.toLightString(s.getSubject()) + " " +
+					  Namespaces.toLightString(s.getPredicate()) + 
+				      " ?x");
+		}
+		
+		oro.add(s, MemoryProfile.DEFAULT, false);
 			
 	}
 	
