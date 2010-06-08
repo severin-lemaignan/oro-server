@@ -879,9 +879,29 @@ public class BaseModule implements IServiceProvider {
 		return result;
 	}
 	
+	/**
+	 * Returns a complete description of a resource identified by {@code id}, 
+	 * including its type, label (in a specified language, if available), plus: 
+	 *  - superclasses, subclasses and instances for classes
+	 *  - class for instances
+	 * 
+	 * These data are sent as a JSON serialization.
+	 * 
+	 * Reference for language code is available in RFC4646.
+	 * 
+	 * @see ResourceDescription
+	 * @param id the concept whose description is queried
+	 * @param language_code a standard language code.
+	 * @return a ResourceDescription object, serializable as a JSON string
+	 * @throws NotFoundException
+	 */
 	@RPCMethod(
 			category="querying",
-			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.). The second parameter specify the desired language (following RFC4646)."
+			desc = "returns a serialized ResourceDescription object that " +
+					"describe all the links of this resource with others " +
+					"resources (sub and superclasses, instances, properties, " +
+					"etc.). The second parameter specify the desired language " +
+					"(following RFC4646)."
 	)
 	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
 				
@@ -890,14 +910,29 @@ public class BaseModule implements IServiceProvider {
 		OntResource myResource = oro.getModel().getOntResource(Namespaces.format(id));
 		oro.getModel().leaveCriticalSection();
 		
-		if (myResource == null) throw new NotFoundException("The resource " + id + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
+		if (myResource == null) throw new NotFoundException("The resource " + 
+				id + " does not exists in the ontology (tip: if this resource " +
+						"is not in the default namespace, be sure to add the " +
+						"namespace prefix!)");
 		
 		return new ResourceDescription(myResource, language_code);
 	}
 		
+	/**
+	 * Like {@link #getResourceDetails(String, String)} with language set to
+	 * default language (as set in the server config file).
+	 * 
+	 * @see #getResourceDetails(String, String)
+	 * @param id the concept whose description is queried
+	 * @return a ResourceDescription object, serializable as a JSON string
+	 * @throws NotFoundException
+	 */
 	@RPCMethod(
 			category="querying",
-			desc = "returns a serialized ResourceDescription object that describe all the links of this resource with others resources (sub and superclasses, instances, properties, etc.)."
+			desc = "returns a serialized ResourceDescription object that " +
+					"describe all the links of this resource with others " +
+					"resources (sub and superclasses, instances, properties, " +
+					"etc.)."
 	)
 	public ResourceDescription getResourceDetails(String id) throws NotFoundException {
 				
@@ -905,7 +940,9 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	@RPCMethod(
-			desc = "try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property)."
+			desc = "try to identify a concept from its id or label, and return " +
+					"it, along with its type (class, instance, object_property, " +
+					"datatype_property)."
 	)
 	public Set<List<String>> lookup(String id) {	
 		return oro.lookup(id);
