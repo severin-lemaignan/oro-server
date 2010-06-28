@@ -133,33 +133,32 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * @see #add(Set, String)
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
-	 * 
-	 * @TODO Optimize this implementation a bit?
 	 */
 	@RPCMethod(
 			desc="update the value of a functional property."
 	)
-	public void update(String stmt) throws IllegalStatementException
+	public void update(Set<String> rawStmts) throws IllegalStatementException
 	{
-		Statement s = oro.createStatement(stmt);
+		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
 		
-		if(functionalProperties.contains(s.getPredicate())) {
-		
-			clear(Namespaces.toLightString(s.getSubject()) + " " +
-					  Namespaces.toLightString(s.getPredicate()) + 
-				      " ?x");
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToUpdate.add(oro.createStatement(rawStmt));			
 		}
 		
-		oro.add(s, MemoryProfile.DEFAULT, false);
+		for (Statement stmt : stmtsToUpdate) {
 			
-	}
-	
-	@RPCMethod(
-			desc="update the value of a functional property."
-	)
-	public void update(Set<String> stmts) throws IllegalStatementException
-	{
-		for (String stmt : stmts) update(stmt);	
+			if(functionalProperties.contains(stmt.getPredicate())) {
+			
+				clear(Namespaces.toLightString(stmt.getSubject()) + " " +
+						  Namespaces.toLightString(stmt.getPredicate()) + 
+					      " ?x");
+			}
+			
+		}
+		
+		oro.add(stmtsToUpdate, MemoryProfile.DEFAULT, false);
 			
 	}
 	

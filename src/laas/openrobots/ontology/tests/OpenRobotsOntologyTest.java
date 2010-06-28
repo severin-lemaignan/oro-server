@@ -764,22 +764,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 			oro.add(stmts);			
 			
 			try {
-				/******************************************/
-				/* Test with a non-functional property    */
-				oro.update("gorilla rdfs:label \"King Monkey\"");
-				partial_statements.add("gorilla rdfs:label ?l");
-				assertEquals(2, oro.find("l", partial_statements).size());
-				partial_statements.clear();
-				
-				/******************************************/
-				/* Test with a functional property        */
-				oro.update("gorilla isFemale true");
-				
-				partial_statements.add("gorilla isFemale ?l");
-				Set<String> res = oro.find("l", partial_statements);
-				assertTrue(res.size() == 1);
-				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("true"));
-				partial_statements.clear();
 				
 				/******************************************/
 				/* Test with a set of updates             */
@@ -792,7 +776,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				partial_statements.add("gorilla age ?a");
 				partial_statements.add("gorilla weight ?w");
 				
-				res = oro.find("a", partial_statements);
+				Set<String> res = oro.find("a", partial_statements);
 				assertTrue(res.size() == 1);
 				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("21"));
 				
@@ -806,29 +790,23 @@ public class OpenRobotsOntologyTest extends TestCase {
 				/* Test2 with a set of updates             */
 				updatedStmts.clear();
 				updatedStmts.add("gorilla age 99");
-				updatedStmts.add("gorilla rdfs:label \"Lord of the rings\"");
+				updatedStmts.add("gorilla rdfs:label \"Lord of the rings\""); //non-functional predicate
+				updatedStmts.add("gorilla likeIcecream true"); //non-existent predicate
 				
 				oro.update(updatedStmts);
 				
 				partial_statements.add("gorilla age ?a");
 				partial_statements.add("gorilla rdfs:label ?l");
+				partial_statements.add("gorilla likeIcecream ?c");
 
 				res = oro.find("l", partial_statements);
-				assertEquals(3, res.size());
+				assertEquals(2, res.size());
 
 				res = oro.find("a", partial_statements);
 				assertEquals(1, res.size());
 				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("99"));
 				
-				partial_statements.clear();
-				
-				/******************************************/
-				/* Test with a non-existent predicate     */
-				
-				oro.update("gorilla likeIcecream true");
-				
-				partial_statements.add("gorilla likeIcecream ?l");
-				res = oro.find("l", partial_statements);
+				res = oro.find("c", partial_statements);
 				assertTrue(res.size() == 1);
 				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("true"));
 				partial_statements.clear();
