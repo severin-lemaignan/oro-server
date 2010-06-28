@@ -294,13 +294,16 @@ public class BaseModule implements IServiceProvider {
 	}
 		
 	/**
-	 * Remove all statements matching the partial statement.
+	 * Removes all statements matching the partial statement.
 	 * 
 	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
 	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
 	 * @see PartialStatement
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
+	@RPCMethod(
+			desc="removes statements matching a given pattern"
+	)
 	public void clear(String partialStmt) throws IllegalStatementException {		
 		oro.clear(oro.createPartialStatement(partialStmt));
 	}
