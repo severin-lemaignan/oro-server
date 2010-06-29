@@ -51,57 +51,57 @@ public class ResourceDescription implements Serializable {
 		
 		ResourceType type = Helpers.getType(resource);
 		
-		String result = "{\n";
+		String result = "{";
 		
-			result += "\"name\":\"" + Helpers.getLabel(resource, languageCode) + "\",\n";
-			result += "\"id\":\"" + Helpers.getId(resource) + "\",\n";
-			result += "\"type\":\"" + type.toString().toLowerCase() + "\",\n";
+			result += "\"name\":\"" + Helpers.getLabel(resource, languageCode) + "\",";
+			result += "\"id\":\"" + Helpers.getId(resource) + "\",";
+			result += "\"type\":\"" + type.toString().toLowerCase() + "\",";
 			
-			result += "\"attributes\": [\n";
+			result += "\"attributes\": [";
 			
 
 			if (type == ResourceType.CLASS){
 			
-				result +="{\n";
+				result +="{";
 				
 					//(direct) super classes
-					result += "\"name\":\"Parents\",\n";
-					result += "\"id\":\"superClasses\",\n";
+					result += "\"name\":\"Parents\",";
+					result += "\"id\":\"superClasses\",";
 					result += "\"values\":[";
 					result += listOntResource(resource.asClass().listSuperClasses(true));
-					result += "\n]\n";
+					result += "]";
 				
-				result +="},{\n";
+				result +="},{";
 				
 					//(direct) subclasses
-					result += "\"name\":\"Children\",\n";
-					result += "\"id\":\"subClasses\",\n";
+					result += "\"name\":\"Children\",";
+					result += "\"id\":\"subClasses\",";
 					result += "\"values\":[";
 					result += listOntResource(resource.asClass().listSubClasses(true));
-					result += "\n]\n";
+					result += "]";
 
-				result +="},{\n";
+				result +="},{";
 				
 					//(direct) instances
-					result += "\"name\":\"Instances\",\n";
-					result += "\"id\":\"instances\",\n";
+					result += "\"name\":\"Instances\",";
+					result += "\"id\":\"instances\",";
 					result += "\"values\":[";
 					result += listOntResource(resource.asClass().listInstances(true));
-					result += "\n]\n";
+					result += "]";
 				
-				result +="}\n";
+				result +="}";
 			}
 			
 			else if (type == ResourceType.INSTANCE){
 				
-				result +="{\n";
+				result +="{";
 				
 					//(direct) super classes
-					result += "\"name\":\"Classes\",\n";
-					result += "\"id\":\"classes\",\n";
+					result += "\"name\":\"Classes\",";
+					result += "\"id\":\"classes\",";
 					result += "\"values\":[";
 					result += listOntResource(resource.asIndividual().listOntClasses(true));
-					result += "\n]\n";
+					result += "]";
 					
 				result +="},";
 					
@@ -114,8 +114,8 @@ public class ResourceDescription implements Serializable {
 			
 			
 			
-			result += "]\n";
-		result += "}\n";
+			result += "]";
+		result += "}";
 		
 		return result;
 	}
@@ -130,7 +130,7 @@ public class ResourceDescription implements Serializable {
 			if (!tmp.isAnon()) {
 				for (String rToRemove : resourcesToRemove) {
                 	if (!tmp.getURI().equalsIgnoreCase(rToRemove)) {
-                		result += "\n{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
+                		result += "{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
     					result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
     					if (it.hasNext()) result += ",";
                 	}
@@ -204,13 +204,13 @@ public class ResourceDescription implements Serializable {
 			
 				if (n.canAs(Individual.class)) {
 					Individual obj = n.as(Individual.class);
-					linkValues += "\n{\"name\":\"" + Helpers.getLabel(obj, languageCode) + "\", ";
+					linkValues += "{\"name\":\"" + Helpers.getLabel(obj, languageCode) + "\", ";
 					linkValues += "\"id\":\"" + Helpers.getId(obj) + "\"}";
 					
 					linkValues += ",";
 				}
 				else if(n.isLiteral()) {
-					linkValues += "\n{\"name\":\"" + n.toString() + "\", ";
+					linkValues += "{\"name\":\"" + n.toString() + "\", ";
 					linkValues += "\"id\":\"literal\"}";
 					
 					linkValues += ",";
@@ -220,13 +220,13 @@ public class ResourceDescription implements Serializable {
 	        //linkValues is empty if all the objects are anonymous.
 	        if (!linkValues.isEmpty()) {
 		        
-		        result += "{\n\"name\":\"" + pairs.getKey().getLocalName() + "\",\n";
-				result += "\"id\":\"properties\",\n";
+		        result += "{\"name\":\"" + pairs.getKey().getLocalName() + "\",";
+				result += "\"id\":\"properties\",";
 				result += "\"values\":[";
 				
 				result += linkValues.substring(0, linkValues.length() -1); //remove the last comma				
 				
-				result += "\n]\n},";
+				result += "]},";
 	        }
 
 		}
