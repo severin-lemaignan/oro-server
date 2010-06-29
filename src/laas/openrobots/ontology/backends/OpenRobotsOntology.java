@@ -147,6 +147,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private boolean modelChanged = true;
 	private boolean forceLookupTableUpdate = false; //useful to systematically rebuild the lookup table when a statement has been removed.
 	
+	/*This set stores *at initialization* the list of functional properties.
+	* This is used by the update() method to quickly discard update on non-
+	* functional properties.
+	* 
+	* \TODO Attention: if a functional property is added at runtime, it won't
+	* be correctly handled (ie, update() won't work for this property. This
+	* could be fixed by updating this set when a FunctionalProperty is added. Or
+	* use OntProperty#hasSubproperty() (but this will be slower)
+	*/
+	Set<OntProperty> functionalProperties;
+	
 	private MemoryManager memoryManager;
 
 	private EventProcessor eventProcessor;
@@ -779,6 +790,25 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 
 	}
+	
+
+	@Override
+	public void update(Set<Statement> stmts) throws IllegalStatementException {
+		for (Statement stmt : stmts) {
+			
+			if(functionalProperties.contains(stmt.getPredicate())) {
+			
+				clear(createPartialStatement(
+						Namespaces.toLightString(stmt.getSubject()) + " " +
+						Namespaces.toLightString(stmt.getPredicate()) + 
+					    " ?x"));
+			}
+			
+		}
+		
+		add(stmts, MemoryProfile.DEFAULT, false);
+		
+	}
 
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#save(java.lang.String)
@@ -844,15 +874,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	private void initialize(){
 		
-		this.lookupTable = new HashMap<String, Set<Pair<String, ResourceType>>>();
 		this.lastQuery = "";
 		this.lastQueryResult = null;
 					
 		Namespaces.loadNamespaces(parameters);
 		
 		if (onto == null) this.load();
-		
+
+		this.lookupTable = new HashMap<String, Set<Pair<String, ResourceType>>>();
 		this.rebuildLookupTable();
+		
+		this.functionalProperties = new HashSet<OntProperty>();
+		this.rebuildFunctionalPropertiesList();
+		
 		
 		memoryManager = new MemoryManager(onto);
 		memoryManager.start();
@@ -1112,5 +1146,36 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 	}
+	
+
+	/**
+	 * 	Initializes the list of functional properties
+	 */
+	private void rebuildFunctionalPropertiesList() {
+
+		Set<PartialStatement> partialStatements = new HashSet<PartialStatement>();
+		try {
+			partialStatements.add(createPartialStatement("?f rdf:type owl:FunctionalProperty"));
+		} catch (IllegalStatementException e1) {
+			Logger.log("Serious error while fetching functional properties! 'update()' won't work. Please contact the mainteners!", VerboseLevel.SERIOUS_ERROR);
+			return;
+		}
+		Set<RDFNode> functionalProps = null;
+		try {
+			functionalProps = find("f", partialStatements, null);
+		} catch (OntologyServerException e) {
+			Logger.log("Serious error while fetching functional properties! 'update()' won't work. Please contact the mainteners!", VerboseLevel.SERIOUS_ERROR);
+			return;
+		}
+		
+		getModel().enterCriticalSection(Lock.READ);
+		
+		for (RDFNode s : functionalProps)
+			functionalProperties.add(s.as(OntProperty.class));
+		
+		getModel().leaveCriticalSection();
+		
+	}
+
 
 }

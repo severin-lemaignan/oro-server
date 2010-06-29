@@ -337,6 +337,24 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @see #add(String)
 	 */
 	public abstract void remove(Statement stmt);
+	
+	/**
+	 * Update the value of a property.
+	 * 
+	 * This method is equivalent to a {@link #remove(Statement)} followed by an 
+	 * {@link #add(Set, MemoryProfile, boolean)}.
+	 * 
+	 * ATTENTION: this method works only on <em>functional</em> properties (ie, 
+	 * properties that are subclasses of <pre>owl:FunctionalProperty</pre>.
+	 * 
+	 * For non-functional properties (or if the subject or predicate does not
+	 * exist), this method behaves like {@link #add(Set)}.
+	 * 
+	 * @param stmts The set of statements to update in the ontology.
+	 * @throws IllegalStatementException 
+	 */
+	public abstract void update(Set<Statement> stmts) throws IllegalStatementException;
+
 
 	/**
 	 * Saves the in-memory ontology model to a RDF/XML file.

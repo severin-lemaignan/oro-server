@@ -42,41 +42,10 @@ import com.hp.hpl.jena.shared.NotFoundException;
 public class BaseModule implements IServiceProvider {
 
 	IOntologyBackend oro;
-	
-	/*This set stores *at initialization* the list of functional properties.
-	* This is used by the update() method to quickly discard update on non-
-	* functional properties.
-	* 
-	* \TODO Attention: if a functional property is added at runtime, it won't
-	* be correctly handled (ie, update() won't work for this property. This
-	* could be fixed by updating this set when a FunctionalProperty is added. Or
-	* use OntProperty#hasSubproperty() (but this will be slower)
-	*/
-	Set<OntProperty> functionalProperties;
-	
+		
 	public BaseModule(IOntologyBackend oro) {
 		super();
 		this.oro = oro;
-		
-		// Initializing the list of functional properties
-		functionalProperties = new HashSet<OntProperty>();
-		Set<String> partialStatements = new HashSet<String>();
-		partialStatements.add("?f rdf:type owl:FunctionalProperty");
-		Set<String> functionalProps = null;
-		try {
-			functionalProps = find("f", partialStatements);
-		} catch (IllegalStatementException e) {
-			assert(false);
-		} catch (OntologyServerException e) {
-			assert(false);
-		}
-		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		
-		for (String s : functionalProps)
-			functionalProperties.add(oro.getModel().getOntProperty(Namespaces.format(s)));
-		
-		oro.getModel().leaveCriticalSection();
 	}
 	
 	/**
@@ -131,7 +100,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param statements A set of string representing statements to be updated.
 	 * @throws IllegalStatementException
 	 * 
-	 * @see #add(Set, String)
+	 * @see {@link IOntologyBackend#update(Set)}
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
@@ -147,18 +116,7 @@ public class BaseModule implements IServiceProvider {
 			stmtsToUpdate.add(oro.createStatement(rawStmt));			
 		}
 		
-		for (Statement stmt : stmtsToUpdate) {
-			
-			if(functionalProperties.contains(stmt.getPredicate())) {
-			
-				clear(Namespaces.toLightString(stmt.getSubject()) + " " +
-						  Namespaces.toLightString(stmt.getPredicate()) + 
-					      " ?x");
-			}
-			
-		}
-		
-		oro.add(stmtsToUpdate, MemoryProfile.DEFAULT, false);
+		oro.update(stmtsToUpdate);
 			
 	}
 	
