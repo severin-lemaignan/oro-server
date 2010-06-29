@@ -398,8 +398,8 @@ public class SocketConnector implements IConnector, Runnable {
 			  
 			  Logger.log(">> Got incoming request: " + queryName + "(", VerboseLevel.DEBUG);
 			  for (int i = 1; i < raw_query.size() ; i++)
-				  Logger.log(raw_query.get(i) + ",", VerboseLevel.DEBUG);
-			  Logger.log(")\n", VerboseLevel.DEBUG);
+				  Logger.log(raw_query.get(i) + ",", VerboseLevel.DEBUG, false);
+			  Logger.log(")\n", VerboseLevel.DEBUG, false);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
 	    		Logger.log("Closing communication with client " + getName() + ".\n");

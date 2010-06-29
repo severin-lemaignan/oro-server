@@ -201,7 +201,8 @@ public class Helpers {
 	}
 	
 	public static String getId(OntResource resource) {
-		//return Namespaces.contract(resource.getURI());
+		return Namespaces.contract(resource.getURI());
+		/*
 		try {
 			return URLEncoder.encode(resource.getURI(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -209,6 +210,7 @@ public class Helpers {
 			System.exit(1);
 			return "";
 		}
+		*/
 
 	}
 	

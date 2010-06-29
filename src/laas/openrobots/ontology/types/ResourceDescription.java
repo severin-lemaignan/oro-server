@@ -210,7 +210,7 @@ public class ResourceDescription implements Serializable {
 					linkValues += ",";
 				}
 				else if(n.isLiteral()) {
-					linkValues += "{\"name\":\"" + n.toString() + "\", ";
+					linkValues += "{\"name\":\"" + n.toString().split("\\^\\^")[0] + "\", ";
 					linkValues += "\"id\":\"literal\"}";
 					
 					linkValues += ",";
