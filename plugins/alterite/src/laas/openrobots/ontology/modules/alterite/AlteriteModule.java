@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2010 LAAS-CNRS Séverin Lemaignan slemaign@laas.fr
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
+
 package laas.openrobots.ontology.modules.alterite;
 
 import java.util.HashMap;
@@ -251,7 +267,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	
 	@RPCMethod(
 			category = "agents",
-			desc="adds one or several statements (triplets S-P-O) to a specific agent model, in long term memory."
+			desc="removes one or several statements (triplets S-P-O) from a specific agent model, in long term memory."
 	)
 	public void removeForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
 	{
@@ -261,6 +277,48 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			Logger.log(id + ": ");
 			oro.remove(oro.createStatement(rawStmt));
 		}
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
+	)
+	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	{
+		IOntologyBackend oro = getModelForAgent(id);
+		
+		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToUpdate.add(oro.createStatement(rawStmt));			
+		}
+		
+		Logger.log(id + ": ");
+		oro.update(stmtsToUpdate);
+
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
+	)
+	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	{
+		IOntologyBackend oro = getModelForAgent(id);
+		
+		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			stmtsToUpdate.add(oro.createStatement(rawStmt));			
+		}
+		
+		Logger.log(id + ": ");
+		oro.update(stmtsToUpdate);
+
 	}
 	
 	@RPCMethod(
