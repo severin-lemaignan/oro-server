@@ -14,7 +14,7 @@
 <p>The main communication channel with <em>oro-server</em> is a simple socket interface. However several bridges and wrapper to higher-level framework are available (including a C++ object-oriented abstraction, a YARP connector, a JSON connector). New ones can be easily created on request.</p>
 
 <h2>List of available methods</h2>
-<i>(Last updated on 2010-02-15 15:03:50)</i>
+<i>(Last updated on 2010-07-05 18:45:50)</i>
 <ul class="RpcMethodsList">
 	<li>administration
 	<ul>
@@ -23,6 +23,7 @@
 	<li>{@linkplain laas.openrobots.ontology.OroServer#listSimpleMethods() <em>listSimpleMethods</em><i>()</i>}: returns a raw list of available methods.</li>
 	<li>{@linkplain laas.openrobots.ontology.OroServer#stats() <em>stats</em><i>()</i>}: returns some statistics on the server</li>
 	<li>{@linkplain laas.openrobots.ontology.backends.OpenRobotsOntology#reload() <em>reload</em><i>()</i>}: Reload the base ontologies, discarding all inserted of removed statements</li>
+	<li>{@linkplain laas.openrobots.ontology.backends.OpenRobotsOntology#save() <em>save</em><i>()</i>}: exports the current ontology model to an OWL file. The file will be saved to the current directory with an automaticallygenerated name.</li>
 	<li>{@linkplain laas.openrobots.ontology.backends.OpenRobotsOntology#save(String) <em>save</em><i>(String)</i>}: exports the current ontology model to an OWL file. The provided path must be writable by the server.</li>
 </ul>
 </li>
@@ -45,11 +46,14 @@
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#check(Set) <em>check</em><i>(Set)</i>}: checks that one or several statements are asserted or can be inferred from the ontology</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#checkConsistency() <em>checkConsistency</em><i>()</i>}: checks that the ontology is semantically consistent</li>
 	<li>{@linkplain laas.openrobots.ontology.OroServer#help() <em>help</em><i>()</i>}: returns a human-friendly list of available methods with their signatures and short descriptions.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getLabel(String) <em>getLabel</em><i>(String)</i>}: return the label of a concept, if available.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String) <em>lookup</em><i>(String)</i>}: try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property).</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String, String) <em>lookup</em><i>(String, String)</i>}: try to identify a concept from its id or label and its type (class, instance, object_property, datatype_property).</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set) <em>add</em><i>(Set)</i>}: adds one or several statements (triplets S-P-O) to the robot model, in long term memory.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set, String) <em>add</em><i>(Set, String)</i>}: adds one or several statements (triplets S-P-O) to the robot model associated with a memory profile.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#clear(String) <em>clear</em><i>(String)</i>}: removes statements matching a given pattern</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#remove(Set) <em>remove</em><i>(Set)</i>}: removes one or several statements (triplets S-P-O) from the ontology.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#update(Set) <em>update</em><i>(Set)</i>}: update the value of a functional property.</li>
 </ul>
 </li>
 	<li>concept comparison
@@ -61,7 +65,8 @@
 </li>
 	<li>events
 	<ul>
-	<li>{@linkplain laas.openrobots.ontology.modules.events.EventModule#registerEvent(String, String, String, List, IEventConsumer) <em>registerEvent</em><i>(String, String, String, List, IEventConsumer)</i>}: registers an event. Expected parameters are: type, triggering type, variable, event pattern. The last parameter is set automatically.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.events.EventModule#registerEvent(String, String, String, List) <em>registerEvent</em><i>(String, String, String, List)</i>}: registers an event. Expected parameters are: type, triggering type, variable, event pattern.</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.events.EventModule#registerEvent(String, String, List) <em>registerEvent</em><i>(String, String, List)</i>}: registers an event. Expected parameters are: type, triggering type, event pattern.</li>
 </ul>
 </li>
 	<li>natural language
