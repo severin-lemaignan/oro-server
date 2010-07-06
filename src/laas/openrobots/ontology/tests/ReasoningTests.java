@@ -18,7 +18,9 @@ package laas.openrobots.ontology.tests;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -44,8 +46,9 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  */
 public class ReasoningTests extends TestCase {
 	
-	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_test.conf";
+	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_bench.conf";
 	Properties conf;
+	List<Long> results = new ArrayList<Long>();
 	
 	public ReasoningTests() {
 		String confFile = System.getProperty("ORO_TEST_CONF");
@@ -82,7 +85,8 @@ public class ReasoningTests extends TestCase {
 				e.printStackTrace();
 			}
 		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
+		long duration = (System.currentTimeMillis() - startTime);
+		System.out.println(max + " statements added in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).");
 		
 		runtime.gc();
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
@@ -90,17 +94,17 @@ public class ReasoningTests extends TestCase {
 
 	}
 	
-	public void testBench2Insert() {
+	public void testBench2InsertQuery() {
 
-		System.out.println("[UNITTEST] ***** TEST: Benchmark 2 - 1000 grouped inserts *****");
+		long max = 10000;
+		
+		System.out.println("[UNITTEST] ***** TEST: Benchmark 2 - " + max + " grouped inserts *****");
 		
 		
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		
 		Set<Statement> stmts = new HashSet<Statement>();
-		
-		long startTime = System.currentTimeMillis();
-		
+			
 		System.out.println("Starting to stress the ontology...");
 
 		
@@ -108,11 +112,12 @@ public class ReasoningTests extends TestCase {
 		runtime.gc();
 		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
 		   
-		long max = 1000;
+
+		long startTime = System.currentTimeMillis();
+		
 		for (long i = 0 ; i < max ; i++) {
 			try {
-				//onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
-				stmts.add(onto.createStatement("RED_BOTTLE hasWeight " + i));	
+				stmts.add(onto.createStatement("individual" + i +" isOn apple"));
 			} catch (IllegalStatementException e) {
 				fail("Error while adding statement " + i);
 				e.printStackTrace();
@@ -125,128 +130,35 @@ public class ReasoningTests extends TestCase {
 			fail();
 		}
 		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
+		long duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println(max + " statements added in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).");
 		
 		runtime.gc();
 		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
 		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
-
-	}
-	
-	/**
-	 * This test tries to stress the ontology with a lot of statements addition and queries with huge resultsets.
-	 */
-	public void testLoadScalability() {
-
-		System.out.println("[UNITTEST] ***** TEST: Load scalability *****");
 		
-		
-		IOntologyBackend onto = new OpenRobotsOntology(conf);
-		BaseModule oro = new BaseModule(onto);
-		
-		long startTime = System.currentTimeMillis();
-		
-		System.out.println("Starting to stress the ontology...");
-
-		
-		Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
-		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
-		   
-		long max = 1000;
-		for (long i = 0 ; i < max ; i++)
-			try {
-				//onto.add(onto.createStatement("individual" + i +" eats flowers"), MemoryProfile.DEFAULT, false);
-				onto.add(onto.createStatement("RED_BOTTLE hasWeight " + i), MemoryProfile.DEFAULT, false);
-			} catch (IllegalStatementException e) {
-				fail("Error while adding a statement " + i);
-				e.printStackTrace();
-			}
-		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
-
-		Set<String> partialStatements = new HashSet<String>();
-		partialStatements.add("?individual eats flowers");
-
-		Set<String> matchingResources = null;
-		
-		startTime = System.currentTimeMillis();
-		try {
-			matchingResources = oro.find("individual", partialStatements);			
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-
-		
-		
-		assertEquals(max + " individuals should be returned.", max, matchingResources.size());
-		
-		System.out.println(max + " statements retrieved in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		partialStatements.clear();
-		matchingResources.clear();
-		
-		partialStatements.add("?animals rdf:type Animal");
-		
+		/********* CHECK CONSISTENCY **************/
 		startTime = System.currentTimeMillis();
 		
 		try {
-				matchingResources = oro.find("animals", partialStatements);
-		} catch (Exception e) {
+			onto.checkConsistency();
+		} catch (InconsistentOntologyException e) {
 			e.printStackTrace();
-			fail(e.getMessage());
+			fail();
 		}
+		
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Checked consistency in "+ duration + "ms.\n");
 
+		/********* RETRIEVE STATEMENTS **************/
 		
-		System.out.println(max + " statements retrieved through inference in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		assertEquals((max + 3) + " animals should be returned.", max + 3, matchingResources.size());
-				
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
-	
-	/**
-	 * This test tries to stress the ontology with a lot of statements addition and guesses.
-	 */
-	public void testLoadScalability2() {
-
-		System.out.println("[UNITTEST] ***** TEST: Load scalability 2 *****");
-		
-		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
-		
-		long startTime = System.currentTimeMillis();
-		
-		System.out.println("Starting to stress the ontology...");
-
-		
-		Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
-		long mem = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));  
-		   
-		long max = 1000;
-		for (long i = 0 ; i < max ; i++)
-			try {
-				oro.add(oro.createStatement("individual" + i +" age 10^^xsd:int"), MemoryProfile.DEFAULT, false);
-			} catch (IllegalStatementException e) {
-				fail("Error while adding statement "+i);
-				e.printStackTrace();
-			}
-		
-		System.out.println(max + " statements added in "+ (System.currentTimeMillis() - startTime) + "ms.");
-		
-		long mem2 = (runtime.freeMemory() + (runtime.maxMemory() - runtime.totalMemory()));
-		System.out.println("Memory used by addition of statements: " + ((mem-mem2) / (1024*1024)) + "MB (ie " + ((mem-mem2)/max) + "B by statments)." );
-
 		Set<PartialStatement> partialStatements = new HashSet<PartialStatement>();
 
+		/*** A/Direct instances ***/
 		try {
-			partialStatements.add(oro.createPartialStatement("?individual age 12^^xsd:int"));
+			partialStatements.add(onto.createPartialStatement("?individual rdf:type Animal"));
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -256,31 +168,109 @@ public class ReasoningTests extends TestCase {
 		
 		Set<RDFNode> res = null;
 		try {
-			res = oro.find("individual", partialStatements, null);
+			res = onto.find("individual", partialStatements, null);
 		} catch (InvalidQueryException e) {
 			e.printStackTrace();
 			fail();
 		}
 		
-		assertEquals(max + 1 + " individuals should be returned.", max + 1, res.size());
-		
-		System.out.println(max + " statements guessed in "+ (System.currentTimeMillis() - startTime) + "ms.");
-						
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Found " + res.size() + " individuals.");
+		System.out.println("Reasoning level 1: " + max + " statements retrieved in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).\n");
 
+		
+		res.clear();
+		
+		startTime = System.currentTimeMillis();
+
+		try {
+			res = onto.find("individual", partialStatements, null);
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Found " + res.size() + " individuals.");
+		System.out.println("Reasoning level 1 (second time): " + max + " statements retrieved in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).\n");
 	
-	public void testInstanceClassification(){
-		OpenRobotsOntology oro = new OpenRobotsOntology(conf);
+		/*** B/More complex inference ***/
+		partialStatements.clear();
+		try {
+			partialStatements.add(onto.createPartialStatement("?individual isAt ?plant"));
+			partialStatements.add(onto.createPartialStatement("?plant rdf:type Plant"));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+		res.clear();
+		startTime = System.currentTimeMillis();
+	
+
+		try {
+			res = onto.find("individual", partialStatements, null);
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Found " + res.size() + " individuals.");
+		System.out.println("Reasoning level 2: " + max + " statements retrieved in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).\n");
+
+		/*** C/Even more complex inference ***/
+		partialStatements.clear();
+		try {
+			partialStatements.add(onto.createPartialStatement("apple isUnder ?individual"));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+
+		res.clear();
+		
+		startTime = System.currentTimeMillis();
 		
 		try {
-			oro.checkConsistency();
+			res = onto.find("individual", partialStatements, null);
+		} catch (InvalidQueryException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Found " + res.size() + " individuals.");
+		System.out.println("Reasoning level 3: " + max + " statements retrieved in "+ duration + "ms (" + Math.ceil(1000 * max / duration) + " stmt/sec).\n");
+	
+		/********* CHECK CONSISTENCY **************/
+		startTime = System.currentTimeMillis();
+		
+		try {
+			onto.checkConsistency();
 		} catch (InconsistentOntologyException e) {
 			e.printStackTrace();
 			fail();
 		}
+		
+		duration = (System.currentTimeMillis() - startTime);
+		results.add(duration);
+		System.out.println("Checked consistency in "+ duration + "ms.\n");
+		
+		
+		System.out.println("\nRESULT SUMMARY\n");
+		for (Long i : results)
+			System.out.println(i);
+			
+
 	}
 	
+
 	private Properties getConfiguration(String configFileURI){
 		/****************************
 		 *  Parsing of config file  *
