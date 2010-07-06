@@ -309,12 +309,18 @@ public class CategorizationModule implements IServiceProvider {
 			
 			Set<OntClass> directSubClassesC = oro.getSubclassesOf(classInOro, true);
 			
+			//If c has no sub-classes, then it means that the two individuals 
+			//have the same class. Skip it.
+			if (directSubClassesC.isEmpty())
+				continue;
+			
 			Set<OntClass> directSubClassesCbis = new HashSet<OntClass>(directSubClassesC);
 					
 			// Keep only ancestors of A that are direct subclasses of the current
 			// common ancestors of both A and B.
 			Set<Statement> ancestorsForC = new HashSet<Statement>();
 			directSubClassesC.retainAll(typesA);
+			
 			
 			if (directSubClassesC.isEmpty())
 				directSubClassesC.add(c);
