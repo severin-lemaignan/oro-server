@@ -929,14 +929,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//	System.out.println(k);
 		//}
           
-		assertEquals("Three subclasses should be returned (Monkey, Insect and Ladybird).", 3, oro.getSubclassesOf("Animal").size());
-		assertEquals("Two direct subclasses should be returned (Monkey and Insect).", 2, oro.getDirectSubclassesOf("Animal").size());
+		assertEquals("Three subclasses should be returned (Monkey, MyAnimals, Insect and Ladybird).", 4, oro.getSubclassesOf("Animal").size());
+		assertEquals("Two direct subclasses should be returned (Monkey, MyAnimals and Insect).", 3, oro.getDirectSubclassesOf("Animal").size());
 		
 		assertTrue("These superclasses should be returned (Insect, Animal, owl:Thing (and possibly rdfs:Resource, depending on the reasonner).", (3 <= oro.getSuperclassesOf("Ladybird").size()) && (4 >= oro.getSuperclassesOf("Ladybird").size()));
 		assertEquals("One direct superclass should be returned (Insect).", 1, oro.getDirectSuperclassesOf("Ladybird").size());
 		
 		assertEquals("Three instances of animal should be returned (cow, baboon and gorilla).", 3, oro.getInstancesOf("Animal").size());
-		assertEquals("One direct instance of animal should be returned (cow).", 1, oro.getDirectInstancesOf("Animal").size());
+		assertEquals("One direct instance of plant should be returned (banana_tree, grass, apple).", 3, oro.getDirectInstancesOf("Plant").size());
 		
 		assertEquals("Eight subclasses of A should be returned.", 8, oro.getSubclassesOf("A").size());
 	
