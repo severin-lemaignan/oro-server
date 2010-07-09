@@ -864,9 +864,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail("The concepts type should be either INSTANCE or CLASS.");
 		*/
 		
+		Set<String> clearPattern = new HashSet<String>();
+		clearPattern.add("gorilla ?a ?b");
+		
 		try {
 			oro.remove(stmts);
-			oro.clear("gorilla ?a ?b");
+			oro.clear(clearPattern);
 		} catch (IllegalStatementException e1) {
 			e1.printStackTrace();
 		}
@@ -1124,8 +1127,11 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Two objects should be returned.", 2, result.size());
 		
 		//Let's clear infos about what the sparrow eats.
+		Set<String> clearPattern = new HashSet<String>();
+		clearPattern.add("sparrow eats ?food");
+		
 		try {
-			oro.clear("sparrow eats ?food");
+			oro.clear(clearPattern);
 		} catch (IllegalStatementException e) {
 			fail("Error while clearing statements!");
 			e.printStackTrace();
