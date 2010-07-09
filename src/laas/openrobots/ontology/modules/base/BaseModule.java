@@ -268,18 +268,27 @@ public class BaseModule implements IServiceProvider {
 	}
 		
 	/**
-	 * Removes all statements matching the partial statement.
+	 * Removes all statements matching any partial statements in a set.
 	 * 
-	 * @param partialStmt The lexical form of a partial statement representing a "mask" of statements to delete.
+	 * Attention, the implicit relation between each of the partial statements
+	 * in the set is a OR: the ontology is matched against each of the provided
+	 * partial statements, and for each of them, all matching statements are 
+	 * removed.
+	 * 
+	 * If need, the "AND" behaviour can be added. Please drop a mail to openrobots@laas.fr
+	 * 
+	 * @param partialStmts A set of partial statements (in their lexical form) representing a "mask" of statements to delete.
 	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
 	 * @see PartialStatement
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
-			desc="removes statements matching a given pattern"
+			desc="removes statements matching any pattern in the given set"
 	)
-	public void clear(String partialStmt) throws IllegalStatementException {		
-		oro.clear(oro.createPartialStatement(partialStmt));
+	public void clear(Set<String> partialStmts) throws IllegalStatementException {
+		
+		for (String s : partialStmts) 
+			oro.clear(oro.createPartialStatement(s));
 	}
 	
 	@RPCMethod(
