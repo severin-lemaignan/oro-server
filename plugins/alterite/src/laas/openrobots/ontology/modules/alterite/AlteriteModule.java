@@ -213,11 +213,11 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 				"term memory, if they don't lead to inconsistencies (return false " +
 				"if at least one stmt wasn't added)."
 	)
-	public boolean safeAdd(String id, Set<String> rawStmts) 
+	public boolean safeAddForAgent(String id, Set<String> rawStmts) 
 						throws 	IllegalStatementException, 
 								AgentNotFoundException
 	{
-		return safeAdd(id, rawStmts, MemoryProfile.DEFAULT.toString());
+		return safeAddForAgent(id, rawStmts, MemoryProfile.DEFAULT.toString());
 	}
 	
 	/** Add statements in a specific agent cognitive model with a specific 
@@ -272,14 +272,17 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	 * @throws AgentNotFoundException 
 	 */
 	@RPCMethod(
+			category = "agents",
 			desc="try to add news statements to a specific agent model with a " +
 				"specific memory profile, if they don't lead to inconsistencies " +
 				"(return false if at least one stmt wasn't added)."
 	)
-	public boolean safeAdd(String id, Set<String> rawStmts, String memProfile) 
+	public boolean safeAddForAgent(String id, Set<String> rawStmts, String memProfile) 
 							throws 	IllegalStatementException, 
 									AgentNotFoundException
 	{
+		IOntologyBackend oro = getModelForAgent(id);
+		
 		Set<Statement> stmtsToAdd = new HashSet<Statement>();
 		
 		for (String rawStmt : rawStmts) {
@@ -308,25 +311,18 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	
 	@RPCMethod(
 			category = "agents",
-			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
+			desc="removes statements from a specific matching any pattern in the given set."
 	)
-	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	public void clearForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
 	{
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
-		
 		for (String rawStmt : rawStmts) {
-			if (rawStmt == null)
-				throw new IllegalStatementException("Got a null statement to add!");
-			stmtsToUpdate.add(oro.createStatement(rawStmt));			
+			Logger.log(id + ": ");
+			oro.remove(oro.createStatement(rawStmt));
 		}
-		
-		Logger.log(id + ": ");
-		oro.update(stmtsToUpdate);
-
 	}
-	
+		
 	@RPCMethod(
 			category = "agents",
 			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
@@ -339,7 +335,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		
 		for (String rawStmt : rawStmts) {
 			if (rawStmt == null)
-				throw new IllegalStatementException("Got a null statement to add!");
+				throw new IllegalStatementException("Got a null statement to update!");
 			stmtsToUpdate.add(oro.createStatement(rawStmt));			
 		}
 		
