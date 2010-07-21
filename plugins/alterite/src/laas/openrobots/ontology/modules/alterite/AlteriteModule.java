@@ -30,7 +30,6 @@ import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
@@ -48,6 +47,8 @@ import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
+
 
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
@@ -74,15 +75,41 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 
 		this.oro = oro;
 		this.serverParameters = serverParameters;
-		
+
 		//Add myself as the first agent.
 		agents.put("myself", new AgentModel("myself", oro));
+		
+		//Add equivalent concept to 'myself'
+		ExtendedIterator<? extends Resource> sameResource = oro.getResource("myself").listSameAs();
+		while (sameResource.hasNext()) {
+			String syn = sameResource.next().getLocalName();
+			if (!syn.equals("myself")) {
+				Logger.log("Alterite module: adding " + syn + " as a synonym for myself.\n", VerboseLevel.INFO);
+				agents.put(syn, agents.get("myself"));
+			}			
+		}
+		
+		try {
+			Set<PartialStatement> ps = new HashSet<PartialStatement>();
+			ps.add(oro.createPartialStatement("?ag rdf:type Agent"));
+			ps.add(oro.createPartialStatement("?ag owl:differentFrom myself")); //attention! ag must be computed to be actually different from myself!
+			Set<RDFNode> existing_agents = oro.find("ag", ps, null);
+			
+			for (RDFNode ag : existing_agents) {
+				String id = ag.asResource().getLocalName();
+				Logger.log("Alterite module: adding agent " + id + ".\n", VerboseLevel.INFO);
+				agents.put(id, new AgentModel(id, serverParameters));
+			}
+		} catch (IllegalStatementException ise) {
+			assert(false);
+		} catch (InvalidQueryException iqe) {
+			assert(false);
+		}
 		
 		//Register a new event that waits of appearance of new agents.
 		//Each time a new agent appears, the this.consumeEvent() method is called.
 		IWatcher w = new AgentWatcher(this);
 
-		
 		try {
 			oro.registerEvent(w);
 		}
