@@ -287,6 +287,13 @@ public class OpenRobotsOntologyTest extends TestCase {
 			fail();
 		}
 		
+		try {
+			assertFalse("what do you think!! Superman is not a coward!", oro.check(oro.createStatement("superman isA coward")));
+		} catch (IllegalStatementException e) {
+			e.printStackTrace();
+			fail();
+		}
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
