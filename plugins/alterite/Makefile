@@ -1,7 +1,7 @@
 #Makefile for Alterite plugin for oro-server
 # (c) LAAS-CNRS 2010
 
-BUNDLE_NAME = Alterite
+BUNDLE_NAME = AlteriteModule
 BASE_PACKAGE = laas.openrobots.ontology.modules.alterite
 
 PREFIX ?= /usr/local
@@ -20,7 +20,7 @@ PLUGINS_DIR ?= $(PREFIX)/java/oro-server/plugins
 JENA_LIBS = $(PREFIX)/java/jena/lib
 PELLET_LIBS = $(PREFIX)/java/pellet/lib
 
-CLASSPATH = $(JENA_LIBS)/arq-2.8.1.jar:$(JENA_LIBS)/iri-0.7.jar:$(JENA_LIBS)/log4j-1.2.13.jar:$(JENA_LIBS)/icu4j-3.4.4.jar:$(JENA_LIBS)/jena-2.6.2.jar:$(JENA_LIBS)/xercesImpl-2.7.1.jar:$(JENA_LIBS)/junit-4.5.jar:$(JENA_LIBS)/slf4j-api-1.5.6.jar:$(JENA_LIBS)/slf4j-log4j12-1.5.6.jar:$(PELLET_LIBS)/aterm-java-1.6.jar:$(PELLET_LIBS)/pellet-core.jar:$(PELLET_LIBS)/pellet-datatypes.jar:$(PELLET_LIBS)/pellet-el.jar:$(PELLET_LIBS)/pellet-jena.jar:$(PELLET_LIBS)/pellet-query.jar:$(PELLET_LIBS)/pellet-rules.jar:$(PELLET_LIBS)/xsdlib/relaxngDatatype.jar:$(PELLET_LIBS)/xsdlib/xsdlib.jar:$(ORO_SERVER)/oro-server.jar
+CLASSPATH = $(JENA_LIBS)/arq-2.8.4.jar:$(JENA_LIBS)/iri-0.8.jar:$(JENA_LIBS)/log4j-1.2.13.jar:$(JENA_LIBS)/icu4j-3.4.4.jar:$(JENA_LIBS)/jena-2.6.3.jar:$(JENA_LIBS)/xercesImpl-2.7.1.jar:$(JENA_LIBS)/junit-4.5.jar:$(JENA_LIBS)/slf4j-api-1.5.8.jar:$(JENA_LIBS)/slf4j-log4j12-1.5.8.jar:$(PELLET_LIBS)/aterm-java-1.6.jar:$(PELLET_LIBS)/pellet-core.jar:$(PELLET_LIBS)/pellet-datatypes.jar:$(PELLET_LIBS)/pellet-el.jar:$(PELLET_LIBS)/pellet-jena.jar:$(PELLET_LIBS)/pellet-query.jar:$(PELLET_LIBS)/pellet-rules.jar:$(PELLET_LIBS)/xsdlib/relaxngDatatype.jar:$(PELLET_LIBS)/xsdlib/xsdlib.jar:$(PELLET_LIBS)/jgrapht/jgrapht-jdk1.5.jar:$(ORO_SERVER)/oro-server.jar
 
 JAVA?= java
 JAVAC?= javac

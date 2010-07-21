@@ -11,9 +11,7 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="/oro-server/plugins/alterite/src&lt;laas.openrobots.ontology.modules.alterite{AlteriteModule.java"/>
-        <javaElement handleIdentifier="/oro-server/plugins/alterite/src&lt;laas.openrobots.ontology.modules.alterite{AgentWatcher.java"/>
-        <file path="/oro-server/plugins/alterite/src/laas/openrobots/ontology/modules/alterite/package.html"/>
-        <javaElement handleIdentifier="/oro-server/plugins/alterite/src&lt;laas.openrobots.ontology.modules.alterite{AgentModel.java"/>
+        <javaElement handleIdentifier="=oro-server/plugins/alterite/src&lt;laas.openrobots.ontology.modules.alterite{AlteriteModule.java"/>
+        <file path="/oro-server/LICENSE"/>
     </selectedElements>
 </jardesc>

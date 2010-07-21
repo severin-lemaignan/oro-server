@@ -3,6 +3,6 @@ Bundle-Name: Altérite Module
 Bundle-SymbolicName: laas.openrobots.ontology.modules.alterite.AlteriteModule
 Bundle-Description: Allows explicit representation of other agents with independent models of the world.
 Bundle-Vendor: LAAS-CNRS
-Bundle-Version: 1.2
+Bundle-Version: 1.4
 Bundle-ClassPath: .
 Require-Bundle: .
