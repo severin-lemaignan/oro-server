@@ -622,6 +622,8 @@ public class BaseModule implements IServiceProvider {
 				continue;
 			*/
 			
+			//TODO: if changing that, change it as well in getInfosForAgent 
+			
 			if (obj.isResource())
 				objString = (obj.as(Resource.class)).getLocalName();
 			else if (obj.isLiteral())

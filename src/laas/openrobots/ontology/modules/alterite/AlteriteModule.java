@@ -27,9 +27,11 @@ import java.util.UUID;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
@@ -51,10 +53,12 @@ import laas.openrobots.ontology.exceptions.InvalidQueryException;
 
 
 import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ResourceRequiredException;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 
@@ -67,27 +71,33 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	
 	private IOntologyBackend oro;
 		
-	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException {
+	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException, InvalidModelException {
 		this(oro, OroServer.serverParameters);
 	}
 	
-	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws EventRegistrationException {
+	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws EventRegistrationException, InvalidModelException {
 		agents = new HashMap<String, AgentModel>();
 
 		this.oro = oro;
 		this.serverParameters = serverParameters;
 
-		//Add myself as the first agent.
-		agents.put("myself", new AgentModel("myself", oro));
-		
-		//Add equivalent concept to 'myself'
-		ExtendedIterator<? extends Resource> sameResource = oro.getResource("myself").listSameAs();
-		while (sameResource.hasNext()) {
-			String syn = sameResource.next().getLocalName();
-			if (!syn.equals("myself")) {
-				Logger.log("Alterite module: adding " + syn + " as a synonym for myself.\n", VerboseLevel.INFO);
-				agents.put(syn, agents.get("myself"));
-			}			
+		try {
+			oro.getResource("myself");
+			
+			//Add myself as the first agent.
+			agents.put("myself", new AgentModel("myself", oro));
+			
+			//Add equivalent concept to 'myself'
+			ExtendedIterator<? extends Resource> sameResource = oro.getResource("myself").listSameAs();
+			while (sameResource.hasNext()) {
+				String syn = sameResource.next().getLocalName();
+				if (!syn.equals("myself")) {
+					Logger.log("Alterite module: adding " + syn + " as a synonym for myself.\n", VerboseLevel.INFO);
+					agents.put(syn, agents.get("myself"));
+				}			
+			}
+		} catch(NotFoundException nfe) {
+			Logger.log("AlteriteModule: couldn't find 'myself'. Starting without it.\n", VerboseLevel.IMPORTANT);
 		}
 		
 		try {
@@ -106,6 +116,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		} catch (InvalidQueryException iqe) {
 			assert(false);
 		}
+
+		
 		
 		//Register a new event that waits of appearance of new agents.
 		//Each time a new agent appears, the this.consumeEvent() method is called.
@@ -126,8 +138,9 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		return this;
 	}
 	
-	public void add(String id){
+	public void add(String id) throws InvalidModelException{
 		if (!checkAlreadyPresent(id)) {
+			Logger.log("A new agent appeared: " + id + "\n", VerboseLevel.INFO);
 			agents.put(id, new AgentModel(id, serverParameters));
 		}
 	}
@@ -170,14 +183,14 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			
 		} catch (OntologyServerException ose) //thrown if an unparsable unicode character is encountered
 		{
-			Logger.log("\nBetter to exit now until proper handling of this " +
+			Logger.log("\nYou hit a serious bug! Better to exit now until proper handling of this " +
 				"exception is added by maintainers! You can help by sending a " +
 				"mail to openrobots@laas.fr with the exception stack.\n ", 
 				VerboseLevel.FATAL_ERROR);
 			System.exit(-1);
 		} catch (IllegalArgumentException iae) //thrown if the string couldn't be deserialized to the expect object.
 		{
-			Logger.log("\nBetter to exit now until proper handling of this " +
+			Logger.log("\nYou hit a serious bug! Better to exit now until proper handling of this " +
 					"exception is added by maintainers! You can help by sending a " +
 					"mail to openrobots@laas.fr with the exception stack.\n ", 
 					VerboseLevel.FATAL_ERROR);
@@ -343,6 +356,74 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		Logger.log(id + ": ");
 		oro.update(stmtsToUpdate);
 
+	}
+	
+	/**
+	 * Returns the set of asserted and inferred statements whose the given node 
+	 * is part of, in the specifi agent model. It represents the "usages" of a 
+	 * resource.<br/>
+	 * 
+	 * Usage example:<br/>
+	 * <pre>
+	 * IOntologyServer myOntology = new OpenRobotsOntology();
+	 * Model results = myOntology.getInfos("ns:individual1");
+	 * 
+	 * NodeIterator types = results.listObjectsOfProperty(myOntology.createProperty("rdf:type"));
+	 *
+	 * for ( ; types.hasNext() ; )
+	 * {
+	 *	System.out.println(types.nextNode().toString());
+	 * }
+	 * </pre>
+	 * This example would print all the types (classes) of the instance {@code ns:individual1}.
+	 * 
+	 * @param id the agent model to query.
+	 * @param lex_resource the lexical form of an existing resource.
+	 * @return a RDF model containing all the statements related the the given resource.
+	 * @throws NotFoundException thrown if the lex_resource doesn't exist in the ontology.
+	 * @throws AgentNotFoundException 
+	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
+	 */
+	@RPCMethod(
+			category="agent",
+			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the usages of a resource."
+	)
+	public Set<String> getInfosForAgent(String id, String lex_resource) 
+								throws NotFoundException, AgentNotFoundException
+	{
+		IOntologyBackend oro = getModelForAgent(id);
+		
+		Logger.log(id + ": ");
+		
+		
+		Logger.log("Looking for statements about " + lex_resource + ".\n");
+		
+		Set<String> result = new HashSet<String>();
+		
+		Model infos = oro.getSubmodel(oro.getResource(lex_resource));
+
+		StmtIterator stmts = infos.listStatements();
+
+		while (stmts.hasNext()) {
+			Statement stmt = stmts.nextStatement();
+			RDFNode obj = stmt.getObject();
+			//Property p = stmt.getPredicate();
+			
+			String objString;
+		
+			if (obj.isResource())
+				objString = (obj.as(Resource.class)).getLocalName();
+			else if (obj.isLiteral())
+				objString = (obj.as(Literal.class)).getLexicalForm();
+			else
+				objString = obj.toString();
+
+			result.add(	stmt.getSubject().getLocalName() + " " + 
+						stmt.getPredicate().getLocalName() + " " +
+						objString);
+		}
+		
+		return result;
 	}
 	
 	@RPCMethod(

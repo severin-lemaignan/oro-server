@@ -21,6 +21,7 @@ import java.util.Properties;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -48,18 +49,20 @@ public class AgentModel {
 		this.model = model;
 	}
 	
-	public AgentModel(String id, Properties parameters) {
+	public AgentModel(String id, Properties parameters) throws InvalidModelException {
 		super();
 		this.id = id;
 		this.model = createAgentModel(parameters);
 	}
 	
 	
-	private IOntologyBackend createAgentModel(Properties parameters) 
+	private IOntologyBackend createAgentModel(Properties parameters) throws InvalidModelException 
 	{
 		OntModel onto = null;
 		
-		if (parameters == null) return null;
+		if (parameters == null) 
+			throw new InvalidModelException("Couldn't create " +
+				"a model: no parameters given");
 		
 		String oroCommonSenseUri = parameters.getProperty("oro_common_sense");
 		String oroAgentInstanceUri = parameters.getProperty("oro_agent_instance");

@@ -33,13 +33,17 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.ResourceType;
+import laas.openrobots.ontology.exceptions.AgentNotFoundException;
+import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
+import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Namespaces;
+import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
@@ -1965,6 +1969,83 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//**********************************************************************
 				
 				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	
+	/**
+	 * This test checks that the Alterite module works as expected regarding
+	 * addition of agents.
+	 * @throws IllegalStatementException 
+	 */
+	public void testAlteriteModule1() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		AlteriteModule alterite = null;
+		
+		oro.add(oro.createStatement("myself rdf:type Agent"), MemoryProfile.DEFAULT, false);
+		
+		try {
+			alterite = new AlteriteModule(oro, conf);
+		} catch (EventRegistrationException e) {
+			fail("We should be able to register the AgentWatcher event!");
+		} catch (InvalidModelException e) {
+		}
+		
+		assertEquals("Only myself is an agent!", 1, alterite.listAgents().size());
+		
+		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT, false);
+		
+		assertEquals("Now we are two: myself and gerard", 2, alterite.listAgents().size());
+		
+		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
+		
+		System.out.println("Oooh! A lot of new agents!");
+		for (String s : alterite.listAgents())
+			System.out.println(s);
+		
+		assertEquals("myself + all the animals are now agents!", 5, alterite.listAgents().size());
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This test checks Alterite module general methods.
+	 * @throws IllegalStatementException 
+	 */
+	public void testAlteriteModule2() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: Alterite Module 2 *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		AlteriteModule alterite = null;
+		
+		oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
+		
+		try {
+			alterite = new AlteriteModule(oro, conf);
+		} catch (EventRegistrationException e) {
+			fail("We should be able to register the AgentWatcher event!");
+		} catch (InvalidModelException e) {
+			fail();
+		}
+
+		
+		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
+		
+		try {
+			
+			Set<String> res = alterite.getInfosForAgent("baboon", "banana");
+
+			for (String s : res)
+				System.out.println(s);
+			
+		} catch (AgentNotFoundException e) {
+			fail("Agent 'baboon' should be found!");
+		}
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
