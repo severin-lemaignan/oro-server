@@ -53,6 +53,7 @@ import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.ResourceRequiredException;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
@@ -387,7 +388,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 				Resource node = n.as(Resource.class);
 				if (node != null && !node.isAnon()) //node == null means that the current query solution contains no resource named after the given key.
 					res.add(Namespaces.toLightString(node));
-			} catch (ClassCastException e) {
+			} catch (ResourceRequiredException e) {
 				try {
 					Literal l = n.as(Literal.class);
 					res.add(l.getLexicalForm());
