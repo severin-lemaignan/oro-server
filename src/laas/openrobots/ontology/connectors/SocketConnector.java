@@ -413,8 +413,9 @@ public class SocketConnector implements IConnector, Runnable {
 			  String queryName = raw_query.get(0);
 			  
 			  Logger.log(">> Got incoming request: " + queryName + "(", VerboseLevel.DEBUG);
-			  for (int i = 1; i < raw_query.size() ; i++)
+			  for (int i = 1; i < raw_query.size()-1 ; i++)
 				  Logger.log(raw_query.get(i) + ",", VerboseLevel.DEBUG, false);
+			  Logger.log(raw_query.get(raw_query.size()-1), VerboseLevel.DEBUG, false);
 			  Logger.log(")\n", VerboseLevel.DEBUG, false);
 			  
 	    	if (queryName.equalsIgnoreCase("close")){

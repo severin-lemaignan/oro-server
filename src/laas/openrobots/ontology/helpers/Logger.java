@@ -134,7 +134,9 @@ public class Logger {
 			
 			case DEBUG:
 			case VERBOSE:
-				printInBlue(prefix + ("[DEBUG] " + msg));
+				if (withPrefix)
+					 prefix += "[DEBUG] ";
+				printInBlue(prefix + msg);
 				break;
 		
 		}
