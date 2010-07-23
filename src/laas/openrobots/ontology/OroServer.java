@@ -47,6 +47,7 @@ import laas.openrobots.ontology.exceptions.PluginNotFoundException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
+import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.EventModule;
@@ -259,6 +260,9 @@ public class OroServer implements IServiceProvider {
 		
 		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
+		
+		IServiceProvider alteriteModule = new AlteriteModule(oro);
+		addNewServiceProviders(alteriteModule);
 		
 		// External plugins
 		
