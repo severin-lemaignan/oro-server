@@ -2036,13 +2036,28 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
 		
+		
 		try {
+			alterite.getInfosForAgent("baboon", "banana");
+			fail("A NotFoundException should be thrown since 'banana' doesn't exist in baboon model.");
+		} catch (NotFoundException e1) {
+		} catch (AgentNotFoundException e1) {
+			fail("Agent 'baboon' should be found!");
+		}
+
+		Set<String> stmts = new HashSet<String>();
+		stmts.add("baboon likes banana");
+		
+		try {
+			alterite.addForAgent("baboon", stmts);
 			
 			Set<String> res = alterite.getInfosForAgent("baboon", "banana");
 
+			assertEquals(2, res.size());
+			
 			for (String s : res)
 				System.out.println(s);
-			
+						
 		} catch (AgentNotFoundException e) {
 			fail("Agent 'baboon' should be found!");
 		}
