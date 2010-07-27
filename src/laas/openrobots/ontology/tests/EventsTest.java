@@ -203,6 +203,42 @@ public class EventsTest extends TestCase {
 	}
 	
 	/**
+	 * This tests event "NEW_INSTANCE" with owl:sameAs predicate
+	 */	
+	public void testEventsNewInstanceWithSameAs() throws IllegalStatementException {
+		System.out.println("[UNITTEST] ***** TEST: NEW_INSTANCE events test with owl:sameAs *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+
+		NewInstanceEventConsumer consumer = new NewInstanceEventConsumer();
+		
+		List<String> list = new ArrayList<String>();
+		list.add("b");
+		list.add("?a rdf:type Monkey");
+		list.add("?a eats ?b");
+		
+		try {
+			oro.registerEvent(
+					new GenericWatcher(	EventType.NEW_INSTANCE,
+										IWatcher.TriggeringType.ON_TRUE,
+										list,
+										consumer));
+		} catch (EventRegistrationException e) {
+			fail("Error while registering an event!");
+		}
+		
+		//re-trigger a model update
+		oro.add(oro.createStatement("coco rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+		oro.add(oro.createStatement("coco eats banana"), MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Coco eats babana", consumer.hasBeenTriggered);
+
+		consumer.hasBeenTriggered = false;
+		
+		oro.add(oro.createStatement("coco eats banana"), MemoryProfile.DEFAULT, false);
+		
+	}
+	
+	/**
 	 * This tests event framework on "NEW_CLASS_INSTANCE" type of events
 	 */	
 	public void testEventsNewClassInstance() throws IllegalStatementException {

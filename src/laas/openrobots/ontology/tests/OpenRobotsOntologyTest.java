@@ -943,8 +943,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		//	System.out.println(k);
 		//}
           
-		assertEquals("Three subclasses should be returned (Monkey, MyAnimals, Insect and Ladybird).", 4, oro.getSubclassesOf("Animal").size());
-		assertEquals("Two direct subclasses should be returned (Monkey, MyAnimals and Insect).", 3, oro.getDirectSubclassesOf("Animal").size());
+		assertEquals("Four subclasses should be returned (MyAnimals, Monkey, Insect and Ladybird).", 4, oro.getSubclassesOf("Animal").size());
+		assertEquals("Three direct subclasses should be returned (MyAnimals, Monkey and Insect).", 3, oro.getDirectSubclassesOf("Animal").size());
 		
 		assertTrue("These superclasses should be returned (Insect, Animal, owl:Thing (and possibly rdfs:Resource, depending on the reasonner).", (3 <= oro.getSuperclassesOf("Ladybird").size()) && (4 >= oro.getSuperclassesOf("Ladybird").size()));
 		assertEquals("One direct superclass should be returned (Insect).", 1, oro.getDirectSuperclassesOf("Ladybird").size());
@@ -1485,6 +1485,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		try {
 			oro.add(oro.createStatement("sheepy eats grass"), MemoryProfile.DEFAULT, false); //we can infer that sheepy is an animal
 			oro.add(oro.createStatement("baboon2 rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("baboon2 rdf:type MyAnimals"), MemoryProfile.DEFAULT, false);
 			oro.add(oro.createStatement("baboon2 age 75"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
