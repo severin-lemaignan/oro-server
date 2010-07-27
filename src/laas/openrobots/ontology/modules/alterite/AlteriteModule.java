@@ -500,6 +500,17 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 
 	@RPCMethod(
 			category = "agents",
+			desc="lookup a concept in a specific agent model."
+	)
+	public Set<List<String>> lookupForAgent(String agent_id, String id) throws IllegalStatementException, AgentNotFoundException
+	{
+		IOntologyBackend oro = getModelForAgent(agent_id);
+		
+		return oro.lookup(id);
+	}
+	
+	@RPCMethod(
+			category = "agents",
 			desc="exports the cognitive model of a given agent to an OWL file. The provided path must be writable by the server."
 	)
 	public void save(String id, String path) throws AgentNotFoundException, OntologyServerException {
