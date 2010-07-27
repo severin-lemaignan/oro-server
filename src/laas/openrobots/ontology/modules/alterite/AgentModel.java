@@ -128,7 +128,7 @@ public class AgentModel {
 		
 		if (onto == null) return null;
 		
-		IOntologyBackend agentModel = new OpenRobotsOntology(onto);
+		IOntologyBackend agentModel = new OpenRobotsOntology(onto, parameters);
 		
 		//Add a first assertion: in this model, 'myself' is the agent.
 		try {

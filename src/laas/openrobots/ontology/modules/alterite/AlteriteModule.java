@@ -107,7 +107,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			Set<RDFNode> existing_agents = oro.find("ag", ps, null);
 			
 			for (RDFNode ag : existing_agents) {
-				String id = ag.asResource().getLocalName();
+				String id = ((Resource) ag.as(Resource.class)).getLocalName();
 				Logger.log("Alterite module: adding agent " + id + ".\n", VerboseLevel.INFO);
 				agents.put(id, new AgentModel(id, serverParameters));
 			}

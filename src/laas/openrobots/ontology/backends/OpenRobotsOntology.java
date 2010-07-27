@@ -193,7 +193,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (onto == null) throw new IllegalArgumentException();
 		this.onto = onto;
 		
-		if (parameters == null) throw new IllegalArgumentException();
+		if (parameters == null) throw new IllegalArgumentException("No " +
+				"parameters provided in OroServer to instanciate agent models");
 		this.parameters = parameters;
 		
 		initialize();
