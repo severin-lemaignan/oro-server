@@ -782,11 +782,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (Statement stmt : stmts) {
 			
 			if(functionalProperties.contains(stmt.getPredicate())) {
-			
-				clear(createPartialStatement(
-						Namespaces.toLightString(stmt.getSubject()) + " " +
-						Namespaces.toLightString(stmt.getPredicate()) + 
-					    " ?x"));
+				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
+				
+				onto.enterCriticalSection(Lock.READ);
+				
+				onto.remove(onto.listStatements(selector));
+				
+				onto.leaveCriticalSection();
+	
 			}
 			
 		}
