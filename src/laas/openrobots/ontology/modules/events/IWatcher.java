@@ -68,7 +68,7 @@ public interface IWatcher {
 	 * set of {@linkplain laas.openrobots.ontology.PartialStatement partial statement}. 
 	 * The event is triggered when a new statement matches this set.
 	 * 
-	 * The server return the list of instance bound to the variable.
+	 * The server return the list of instances bound to the variable.
 	 *  
 	 * <h3>Example</h3>
 	 * 
@@ -144,8 +144,9 @@ public interface IWatcher {
 	
 	public IWatcher.TriggeringType getTriggeringType();
 	
-	public void notifySubscriber(OroEvent e);
+	public void notifySubscribers(OroEvent e);
 
+	public void addSubscriber(IEventConsumer e);
 	/**
 	 * Returns a unique (at least for this instance of the server) identifier
 	 * for the current event watcher.
@@ -153,5 +154,7 @@ public interface IWatcher {
 	 * @return A unique ID associated to this event watcher.
 	 */
 	public UUID getId();
+	
+	public boolean equals(IWatcher gw);
 
 }

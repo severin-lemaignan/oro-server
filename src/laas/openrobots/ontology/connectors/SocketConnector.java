@@ -361,7 +361,7 @@ public class SocketConnector implements IConnector, Runnable {
 						
 						eventsQueue.remove(evt);
 						
-						Logger.log("Event " + evt.getLeft() + " notified.\n", VerboseLevel.VERBOSE);
+						Logger.log("Event " + evt.getLeft() + " notified.\n", VerboseLevel.INFO);
 					}
 					
 				}

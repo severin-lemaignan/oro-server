@@ -319,13 +319,13 @@ public class EventProcessor {
 			switch(holder.watcher.getTriggeringType()){
 				case ON_TRUE:
 				case ON_TOGGLE:
-					//if the last statut for this query is NOT true, then, trigger the event.
+					//if the last status for this query is NOT true, then, trigger the event.
 					if (!holder.lastStatus) {
-						holder.watcher.notifySubscriber(e);
+						holder.watcher.notifySubscribers(e);
 					}
 					break;
 				case ON_TRUE_ONE_SHOT:
-					holder.watcher.notifySubscriber(e);
+					holder.watcher.notifySubscribers(e);
 					watchersToBeRemoved.add(holder);
 					break;
 			}
@@ -337,11 +337,11 @@ public class EventProcessor {
 				case ON_TOGGLE:
 					//if the last statut for this query is NOT false, then, trigger the event.
 					if (holder.lastStatus) {
-						holder.watcher.notifySubscriber(e);
+						holder.watcher.notifySubscribers(e);
 					}
 					break;
 				case ON_FALSE_ONE_SHOT:
-					holder.watcher.notifySubscriber(e);
+					holder.watcher.notifySubscribers(e);
 					watchersToBeRemoved.add(holder);
 					break;
 				}				
@@ -375,11 +375,11 @@ public class EventProcessor {
 		
 		switch (holder.watcher.getTriggeringType()) {
 		case ON_TRUE:
-			holder.watcher.notifySubscriber(e);
+			holder.watcher.notifySubscribers(e);
 			break;
 			
 		case ON_TRUE_ONE_SHOT:
-			holder.watcher.notifySubscriber(e);
+			holder.watcher.notifySubscribers(e);
 			watchersToBeRemoved.add(holder);
 			break;		
 		}
@@ -427,11 +427,11 @@ public class EventProcessor {
 		
 		switch (holder.watcher.getTriggeringType()) {
 		case ON_TRUE:
-			holder.watcher.notifySubscriber(e);
+			holder.watcher.notifySubscribers(e);
 			break;
 			
 		case ON_TRUE_ONE_SHOT:
-			holder.watcher.notifySubscriber(e);
+			holder.watcher.notifySubscribers(e);
 			watchersToBeRemoved.add(holder);
 			break;		
 		}

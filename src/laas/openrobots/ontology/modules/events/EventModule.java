@@ -75,6 +75,13 @@ public class EventModule implements IServiceProvider {
 		if (variable != null) eventPattern.add(0, variable);
 		
 		IWatcher e = new GenericWatcher(eventType, triggeringType, eventPattern, client);
+		
+		for (IWatcher w : registredEvents ) {
+			if (w.equals(e)) { //an identical event has been already registered
+				w.addSubscriber(client);
+				return w.getId();
+			}
+		}
 		registredEvents.add(e);
 
 		oro.registerEvent(e);
