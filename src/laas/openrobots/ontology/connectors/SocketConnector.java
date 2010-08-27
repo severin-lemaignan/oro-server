@@ -636,22 +636,9 @@ public class SocketConnector implements IConnector, Runnable {
 		// Fills the serviceIndex map.
 		
 		serviceIndex = new HashMap<String, Set<Pair<IService,Integer>>>();
+		refreshServiceList(registredServices);
 		
-		for (String key : registredServices.keySet()){
-			
-			Method m = registredServices.get(key).getMethod();
-			String name = registredServices.get(key).getName().toLowerCase();
-			
-			if (!serviceIndex.containsKey(name))
-				serviceIndex.put(name, new HashSet<Pair<IService,Integer>>());
-			
-			Pair<IService, Integer> entry = new Pair<IService, Integer>(
-					registredServices.get(key), 
-					OroServer.nbExposedParameters(m));
-			
-			serviceIndex.get(name).add(entry);
-			
-		}
+
 	}
 
 	@Override
@@ -711,7 +698,22 @@ public class SocketConnector implements IConnector, Runnable {
 	@Override
 	public void refreshServiceList(
 			Map<String, IService> registredServices) {
-		// TODO Auto-generated method stub
+		
+		for (String key : registredServices.keySet()){
+			
+			Method m = registredServices.get(key).getMethod();
+			String name = registredServices.get(key).getName().toLowerCase();
+			
+			if (!serviceIndex.containsKey(name))
+				serviceIndex.put(name, new HashSet<Pair<IService,Integer>>());
+			
+			Pair<IService, Integer> entry = new Pair<IService, Integer>(
+					registredServices.get(key), 
+					OroServer.nbExposedParameters(m));
+			
+			serviceIndex.get(name).add(entry);
+			
+		}
 		
 	}
 

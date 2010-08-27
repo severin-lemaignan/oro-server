@@ -40,6 +40,8 @@ import java.util.TreeSet;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
 import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.exceptions.EventRegistrationException;
+import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidPluginException;
 import laas.openrobots.ontology.exceptions.OntologyConnectorException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
@@ -236,7 +238,51 @@ public class OroServer implements IServiceProvider {
     	Logger.log("Using configuration file " + confFile + "\n", 
     						VerboseLevel.IMPORTANT);
     	Logger.cr();
+    	
+    	serverInitialization();
+		
+/*******************************************************************************
+*                    SOCKET CONNECTOR INITIALIZATION                           *
+*******************************************************************************/
+    	
+    	// Currently, only one connector, the socket connector 
+    	// (others bridges like YARP or JSON are now out of the oro-server code base)
+    	SocketConnector sc = new SocketConnector(serverParameters, registredServices);
+		connectors.add(sc);
 
+		for (IConnector c : connectors)	{
+			try {
+				c.initializeConnector();
+			} catch (OntologyConnectorException e) {
+				Logger.log("Couldn't initialize a connector: " + 
+						e.getLocalizedMessage() + 
+						". Ignoring it.\n", 
+						VerboseLevel.SERIOUS_ERROR);
+				connectors.remove(c);
+			}
+		}
+		
+		if (connectors.size() == 0) {
+			Logger.log("None of the connectors could be started! Killing myself" +
+					" now.\n", VerboseLevel.FATAL_ERROR);
+			System.exit(1);
+		}
+
+/*******************************************************************************
+*                                MAIN LOOP                                     *
+*******************************************************************************/
+
+		while(keepOn) {			
+			
+			Thread.sleep(10);
+    	}
+		
+		//Finalization occurs in the shutdown hook, above.
+	}
+	
+	
+
+   	private void serverInitialization() throws OntologyServerException { 
 /*******************************************************************************
  *                   BACKENDS and SERVICES REGISTRATION                        *
  ******************************************************************************/
@@ -261,8 +307,14 @@ public class OroServer implements IServiceProvider {
 		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
 		
-		IServiceProvider alteriteModule = new AlteriteModule(oro);
-		addNewServiceProviders(alteriteModule);
+		IServiceProvider alteriteModule;
+		try {
+			alteriteModule = new AlteriteModule(oro);
+			addNewServiceProviders(alteriteModule);
+		} catch (EventRegistrationException e1) {
+		} catch (InvalidModelException e1) {
+		}
+
 		
 		// External plugins
 		
@@ -321,53 +373,30 @@ public class OroServer implements IServiceProvider {
 		}
 		
 		Logger.cr();
-
-		
-/*******************************************************************************
-*                    SOCKET CONNECTOR INITIALIZATION                           *
-*******************************************************************************/
-    	
-    	// Currently, only one connector, the socket connector 
-    	// (others bridges like YARP or JSON are now out of the oro-server code base)
-    	SocketConnector sc = new SocketConnector(serverParameters, registredServices);
-		connectors.add(sc);
-
-		for (IConnector c : connectors)	{
-			try {
-				c.initializeConnector();
-			} catch (OntologyConnectorException e) {
-				Logger.log("Couldn't initialize a connector: " + 
-						e.getLocalizedMessage() + 
-						". Ignoring it.\n", 
-						VerboseLevel.SERIOUS_ERROR);
-				connectors.remove(c);
-			}
-		}
-		
-		if (connectors.size() == 0) {
-			Logger.log("None of the connectors could be started! Killing myself" +
-					" now.\n", VerboseLevel.FATAL_ERROR);
-			System.exit(1);
-		}
-
-/*******************************************************************************
-*                                MAIN LOOP                                     *
-*******************************************************************************/
-
-		while(keepOn) {			
-			
-			Thread.sleep(10);
-    	}
-		
-		//Finalization occurs in the shutdown hook, above.
-	}
-	
-	
+   	}
+   	
 	public static void main(String[] args) throws 
 									OntologyConnectorException, 
 									InterruptedException, 
 									OntologyServerException {
 		new OroServer().runServer(args);
+	}
+	
+	@RPCMethod(
+			category = "administration",
+			desc = "Reload the base ontologies, discarding all inserted of " +
+					"removed statements, in every models" 
+	)
+	public void reset() throws OntologyServerException {
+		
+		Logger.log("RESETTING ORO-server!",VerboseLevel.IMPORTANT);
+		registredServices.clear();
+		
+		serverInitialization();
+		
+		for (IConnector c : connectors)	{
+			c.refreshServiceList(registredServices);
+		}
 	}
 	
 	/**

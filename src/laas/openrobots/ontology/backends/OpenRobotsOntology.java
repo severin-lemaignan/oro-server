@@ -847,14 +847,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return eventProcessor.getSupportedEvents();
 	}
 	
-	@RPCMethod(
-		category = "administration",
-		desc = "Reload the base ontologies, discarding all inserted of " +
-				"removed statements" 
-	)
-	public void reload() {
-		load();
-	}
 	/***************************************
 	 *          Private methods            *
 	 **************************************/
