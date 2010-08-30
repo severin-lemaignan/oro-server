@@ -456,6 +456,13 @@ public class Helpers {
 			boolean isValidMap = true;
 			boolean isValidSet = true;
 			
+			if (val.isEmpty()) {
+				if (Set.class.isAssignableFrom(type))
+					return (T) new HashSet<String>();
+				if (Map.class.isAssignableFrom(type))
+					return (T) new HashMap<String, String>();				
+			}
+			
 			//First, inspect the string to determine the type.
 			//If it starts and ends with {}, it's a map
 			//If it starts and ends with [], it's a set
