@@ -1211,7 +1211,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
-	
+
 	/**
 	 * This test try to match a given set of statements against the ontology, and to get back the class of an object.
 	 */
@@ -1222,12 +1222,42 @@ public class OpenRobotsOntologyTest extends TestCase {
 		BaseModule oro = new BaseModule(onto);
 		
 		Set<String> matchingResources = null;
+				
 		
 		System.out.println("[UNITTEST] First part: only the resource we are looking for is unknown.");
 		
+		Set<String> empty_set = new HashSet<String>();
 		Set<String> partial_statements = new HashSet<String>();
+		
+		try {
+			oro.find("", partial_statements);
+			fail("find() without specifying a variable should throw an exception");
+		} catch (OntologyServerException e) {
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		try {
+			matchingResources = oro.find("?mysterious", empty_set);
+			assertTrue("Nothing should be returned, but it shouldn't fail", matchingResources.isEmpty());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+				
+
 		partial_statements.add("?mysterious oro:eats oro:banana_tree");
 		partial_statements.add("?mysterious oro:isFemale true^^xsd:boolean");  //Attention: "?mysterious oro:isFemale true" is valid, but "?mysterious oro:isFemale true^^xsd:boolean" is not!
+		
+		try {
+			matchingResources = oro.find("?mysterious", partial_statements, empty_set);
+			assertTrue("Nothing should be returned, but it shouldn't fail", matchingResources.isEmpty());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
 
 		try {
 			matchingResources = oro.find("?mysterious", partial_statements);
@@ -1295,6 +1325,123 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertFalse("find() didn't answered anything!",matchingResources.isEmpty());
 		
 		assertEquals("find() should answer 2 resources (English + French labels)", 2, matchingResources.size());
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * Same as testFind(), but inside the AlteriteModule
+	 */
+	public void testFindForAgent() {
+
+		System.out.println("[UNITTEST] ***** TEST: findForAgent *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		AlteriteModule alterite = null;
+		
+		try {
+			oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			e1.printStackTrace();
+			fail();
+		}
+		
+		try {
+			alterite = new AlteriteModule(oro, conf);
+		} catch (EventRegistrationException e) {
+			fail("We should be able to register the AgentWatcher event!");
+		} catch (InvalidModelException e) {
+			fail();
+		}
+		
+		try {
+			oro.add(oro.createStatement("toto rdf:type Agent"), MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e1) {
+			e1.printStackTrace();
+			fail();
+		}
+		
+		Set<String> matchingResources = null;
+				
+		
+		System.out.println("[UNITTEST] First part: only the resource we are looking for is unknown.");
+		
+		Set<String> partial_statements = new HashSet<String>();
+		
+		try {
+			alterite.findForAgent("toto", "", partial_statements);
+			fail("findForAgent() without specifying a variable should throw an exception");
+		} catch (OntologyServerException e) {
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+		
+		try {
+			matchingResources = alterite.findForAgent("toto", "?mysterious", partial_statements);
+			assertTrue("Nothing should be returned, but it shouldn't fail", matchingResources.isEmpty());
+		} catch (Exception e) {
+			fail();
+		}
+		
+		Set<String> stmts = new HashSet<String>();
+		stmts.add("gorilla eats banana_tree");
+		stmts.add("gorilla isFemale false");
+		stmts.add("elephant weight 1547.32");
+		
+		try {
+			alterite.addForAgent("toto", stmts);
+		} catch (IllegalStatementException e1) {
+			e1.printStackTrace();
+			fail();
+		} catch (AgentNotFoundException e) {
+			fail();
+		}
+
+		partial_statements.add("?mysterious eats banana_tree");
+		partial_statements.add("?mysterious isFemale false");  //Attention: "?mysterious oro:isFemale true" is valid, but "?mysterious oro:isFemale true^^xsd:boolean" is not!
+
+		try {
+			matchingResources = alterite.findForAgent("toto", "?mysterious", partial_statements);
+			
+			matchingResources = alterite.findForAgent("toto", "mysterious", partial_statements);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+		
+		assertNotNull("findForAgent() didn't answered anything!",matchingResources);
+		
+		for ( String resource:matchingResources )
+		{
+			assertTrue("Only gorilla should be returned.", resource.contains("gorilla"));
+		}		
+		
+		System.out.println("[UNITTEST] Second part: more complex resource description.");
+		
+		partial_statements.clear();
+		matchingResources.clear();
+		Set<String> filters = new HashSet<String>();
+
+		partial_statements.add("?mysterious oro:weight ?value");
+
+		filters.add("?value >= 1000");
+		
+		try {
+			matchingResources = alterite.findForAgent("toto", "mysterious", partial_statements, filters);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+		assertFalse("findForAgent() didn't answered anything!",matchingResources.isEmpty());
+		
+		for ( String resource:matchingResources )
+		{
+			assertTrue("Only elephant should be returned.", resource.contains("elephant"));
+		}
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

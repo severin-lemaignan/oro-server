@@ -437,11 +437,23 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 									Set<String> filters) 
 						throws IllegalStatementException, OntologyServerException
 	{
-		IOntologyBackend oro = getModelForAgent(id);
+	
+		Set<String> res = new HashSet<String>();
+		
+		if (varName.isEmpty()) {
+			Logger.log(id +": Calling the findForAgent() method with an empty variable.\n", VerboseLevel.ERROR);
+			throw new OntologyServerException("Calling the find() method with an empty variable.");
+		}
+		
+		if (statements.isEmpty()) {
+			Logger.log(id +": Calling the findForAgent() method without partial statement. Returning an empty set of result.\n", VerboseLevel.WARNING);
+			return res;
+		}
 		
 		Logger.log(id + ": ");
 		
-
+		IOntologyBackend oro = getModelForAgent(id);
+		
 		Logger.log("Searching resources in the ontology...\n");
 		
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
@@ -462,7 +474,6 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		}
 			
 		Set<RDFNode> raw = oro.find(varName, stmts, filters);
-		Set<String> res = new HashSet<String>();
 		
 		for (RDFNode n : raw) {
 			try {

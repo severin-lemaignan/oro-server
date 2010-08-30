@@ -473,6 +473,18 @@ public class BaseModule implements IServiceProvider {
 	)	
 	public Set<String> find(String varName,	Set<String> statements, Set<String> filters) throws IllegalStatementException, OntologyServerException {
 		
+		Set<String> res = new HashSet<String>();
+		
+		if (varName.isEmpty()) {
+			Logger.log("Calling the find() method with an empty variable.\n", VerboseLevel.ERROR);
+			throw new OntologyServerException("Calling the find() method with an empty variable.");
+		}
+		
+		if (statements.isEmpty()) {
+			Logger.log("Calling the find() method without partial statement. Returning an empty set of result.\n", VerboseLevel.WARNING);
+			return res;
+		}
+		
 		Logger.log("Searching resources in the ontology...\n");
 				
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
@@ -493,8 +505,7 @@ public class BaseModule implements IServiceProvider {
 		}
 
 		Set<RDFNode> raw = oro.find(varName, stmts, filters);
-		Set<String> res = new HashSet<String>();
-		
+				
 		for (RDFNode n : raw) {
 			try {
 				Resource node = n.as(Resource.class);
