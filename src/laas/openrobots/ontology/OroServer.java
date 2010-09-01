@@ -139,7 +139,7 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean BLINGBLING;
 	
-	public static final String VERSION = "0.7.10"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
+	public static final String VERSION = "0.7.11"; //version: major.minor.build (minor -> add/removal of feature, build -> bug correction)
 	
 	public static final Date SERVER_START_TIME = new Date();
 
@@ -389,8 +389,10 @@ public class OroServer implements IServiceProvider {
 	)
 	public void reset() throws OntologyServerException {
 		
-		Logger.log("RESETTING ORO-server!",VerboseLevel.IMPORTANT);
+		Logger.log("RESETTING ORO-server!\n",VerboseLevel.IMPORTANT);
+
 		registredServices.clear();
+		oro.close();
 		
 		serverInitialization();
 		
