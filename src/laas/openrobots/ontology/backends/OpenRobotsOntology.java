@@ -874,6 +874,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		eventProcessor = new EventProcessor(this);
 		
 	}
+	
+	public void close() {
+		memoryManager.close();
+		try {
+			memoryManager.join(1000);
+		} catch (InterruptedException e) {
+		}
+		
+		onto.close();		
+	}
 
 	/** This protected method is called every time the ontology model changes 
 	 * (ie upon addition or removal of statements in the ontology).

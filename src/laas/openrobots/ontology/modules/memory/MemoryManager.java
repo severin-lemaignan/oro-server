@@ -132,8 +132,7 @@ public class MemoryManager extends Thread {
 		watchedStmt.add(rsStmt);
 	}
 	
-	@Override
-	public void finalize() {
+	public void close() {
 		serverIsRunning = false;
 	}
 	
