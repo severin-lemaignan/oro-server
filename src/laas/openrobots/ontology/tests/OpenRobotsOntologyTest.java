@@ -952,6 +952,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertEquals("Three instances of animal should be returned (cow, baboon and gorilla).", 3, oro.getInstancesOf("Animal").size());
 		assertEquals("One direct instance of plant should be returned (banana_tree, grass, apple).", 3, oro.getDirectInstancesOf("Plant").size());
 		
+		assertEquals("Two classes (monkey and MyAnimals) should be returned.", 2, oro.getDirectClassesOf("baboon").size());
+		
 		assertEquals("Eight subclasses of A should be returned.", 8, oro.getSubclassesOf("A").size());
 	
 		long totalTime = (System.currentTimeMillis()-startTime);
