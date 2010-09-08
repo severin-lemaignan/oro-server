@@ -43,7 +43,6 @@ import laas.openrobots.ontology.types.ResourceDescription;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -300,10 +299,12 @@ public class BaseModule implements IServiceProvider {
 		
 		for (String s : stmts)
 		{
-			if (PartialStatement.isPartialStatement(s))
+			if (PartialStatement.isPartialStatement(s)) {
 				if (!oro.check(oro.createPartialStatement(s))) return false;
-			else
+			}
+			else {
 				if (!oro.check(oro.createStatement(s))) return false;
+			}
 		}
 		
 		return true;
