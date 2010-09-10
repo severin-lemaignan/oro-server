@@ -207,14 +207,22 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
 	public OntProperty createProperty(String lex_property){
-		return onto.createOntProperty(Namespaces.expand(lex_property));
+		onto.enterCriticalSection(Lock.WRITE);
+		OntProperty p = onto.createOntProperty(Namespaces.expand(lex_property));
+		onto.leaveCriticalSection();
+		
+		return p;
 	}
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.IOntologyServer#createResource(java.lang.String)
 	 */
 	public OntResource createResource(String lex_resource){
-		return onto.createOntResource(Namespaces.expand(lex_resource));
+		onto.enterCriticalSection(Lock.WRITE);
+		OntResource r = onto.createOntResource(Namespaces.expand(lex_resource));
+		onto.leaveCriticalSection();
+		
+		return r;
 	}
 
 	/* (non-Javadoc)
@@ -238,6 +246,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			tokens_statement.set(i, Namespaces.format(tokens_statement.get(i)));
 		}
 		
+		onto.enterCriticalSection(Lock.WRITE);
+		
 		subject = onto.getResource(tokens_statement.get(0));
 		predicate = onto.getProperty(tokens_statement.get(1));
 
@@ -247,8 +257,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		
 		assert(object!=null);
+		
+		Statement s =new StatementImpl(subject, predicate, object);
+		
+		onto.leaveCriticalSection();
+		
 	
-		return new StatementImpl(subject, predicate, object);
+		return s; 
 		
 	}
 	
@@ -256,7 +271,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#createPartialStatement(java.lang.String)
 	 */
 	public PartialStatement createPartialStatement(String statement) throws IllegalStatementException {
-		return new PartialStatement(statement, (ModelCom)getModel());
+		
+		onto.enterCriticalSection(Lock.WRITE);
+		
+		PartialStatement p = new PartialStatement(statement, (ModelCom)getModel());
+		
+		onto.leaveCriticalSection();
+		
+		return p;
 	}
 	
 	/* (non-Javadoc)
@@ -751,7 +773,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]\n");
 		
 		
-		onto.enterCriticalSection(Lock.WRITE);		
+		onto.enterCriticalSection(Lock.WRITE);
 		onto.remove(stmt);	
 		onto.leaveCriticalSection();
 		
@@ -783,13 +805,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
-				
+							
 				onto.enterCriticalSection(Lock.READ);
-				
-				onto.remove(onto.listStatements(selector));
-				
+				StmtIterator stmtsToRemove = onto.listStatements(selector);		
 				onto.leaveCriticalSection();
-	
+				
+				onto.remove(stmtsToRemove);
+					
 			}
 			
 		}
@@ -1051,90 +1073,92 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 *  @see {@link #lookup(String)}
 	 */
 	private void rebuildLookupTable() {
+		if (modelChanged) {
+			
+			modelChanged = false;
+			forceLookupTableUpdate = false;				
+			lookupTable.clear();
+			
+			getModel().enterCriticalSection(Lock.READ);
+			
+			ExtendedIterator<Individual> resources = onto.listIndividuals();
+			
+			while(resources.hasNext()) {
+				Individual res = resources.next();
+				
+				if (res.isAnon()) continue;
+				
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				
+				if (labels.hasNext())
+					while(labels.hasNext()) {
+						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.INSTANCE);
+					}
+				
+				
+				//Add the concept id itself.
+				addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.INSTANCE);
+				
+			}
+		}
+		
 		{
-			if (modelChanged) {
+			ExtendedIterator<OntClass> resources = onto.listClasses();
+			while(resources.hasNext()) {
+				OntClass res = resources.next();
 				
-				modelChanged = false;
-				forceLookupTableUpdate = false;				
-				lookupTable.clear();
+				if (res.isAnon()) continue;
 				
-				ExtendedIterator<Individual> resources = onto.listIndividuals();
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
 				
-				while(resources.hasNext()) {
-					Individual res = resources.next();
-					
-					if (res.isAnon()) continue;
-					
-					ExtendedIterator<RDFNode> labels = res.listLabels(null);
-					
-					if (labels.hasNext())
-						while(labels.hasNext()) {
-							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.INSTANCE);
-						}
-					
-					
-					//Add the concept id itself.
-					addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.INSTANCE);
-					
-				}
+				if (labels.hasNext())
+					while(labels.hasNext()) {
+						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.CLASS);
+					}
+				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.CLASS);
+				
 			}
-			
-			{
-				ExtendedIterator<OntClass> resources = onto.listClasses();
-				while(resources.hasNext()) {
-					OntClass res = resources.next();
-					
-					if (res.isAnon()) continue;
-					
-					ExtendedIterator<RDFNode> labels = res.listLabels(null);
-					
-					if (labels.hasNext())
-						while(labels.hasNext()) {
-							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.CLASS);
-						}
-					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.CLASS);
-					
-				}
+		}
+		
+		{
+			ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
+			while(resources.hasNext()) {
+				ObjectProperty res = resources.next();
+				
+				if (res.isAnon()) continue;
+				
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				
+				if (labels.hasNext())
+					while(labels.hasNext()) {
+						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
+					}
+				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
+				
 			}
-			
-			{
-				ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
-				while(resources.hasNext()) {
-					ObjectProperty res = resources.next();
-					
-					if (res.isAnon()) continue;
-					
-					ExtendedIterator<RDFNode> labels = res.listLabels(null);
-					
-					if (labels.hasNext())
-						while(labels.hasNext()) {
-							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
-						}
-					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
-					
-				}
+		}
+		
+		{
+			ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
+			while(resources.hasNext()) {
+				DatatypeProperty res = resources.next();
+				
+				if (res.isAnon()) continue;
+				
+				ExtendedIterator<RDFNode> labels = res.listLabels(null);
+				
+				if (labels.hasNext())
+					while(labels.hasNext()) {
+						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
+					}
+				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
 			}
-			
-			{
-				ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
-				while(resources.hasNext()) {
-					DatatypeProperty res = resources.next();
-					
-					if (res.isAnon()) continue;
-					
-					ExtendedIterator<RDFNode> labels = res.listLabels(null);
-					
-					if (labels.hasNext())
-						while(labels.hasNext()) {
-							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
-						}
-					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
-				}
-			}
+		
+			getModel().leaveCriticalSection();
 		}
 	}
 	
