@@ -905,7 +905,7 @@ public class CategorizationModule implements IServiceProvider {
 				
 				//...we store these properties
 				for (Property p : values.get(n)) {
-					suspectOntProperties.add(oro.createProperty(p.getURI()));
+					suspectOntProperties.add(oro.getModel().getOntResource(p).asProperty());
 				}
 				
 				//and for each pair of them, we check if there a parent/child relation
@@ -913,7 +913,7 @@ public class CategorizationModule implements IServiceProvider {
 					for (OntProperty op : suspectOntProperties) {
 						
 						if (!p.equals(op)) {
-							OntProperty op2 = oro.createProperty(p.getURI()); 
+							OntProperty op2 = oro.getModel().getOntResource(p).asProperty(); 
 							if(!op.hasEquivalentProperty(op2)) {
 								if (op2.hasSubProperty(op, false)) {
 									Logger.log("-> Removing " + Namespaces.toLightString(p) + " " + Namespaces.toLightString(n)+ " \n", VerboseLevel.DEBUG);
