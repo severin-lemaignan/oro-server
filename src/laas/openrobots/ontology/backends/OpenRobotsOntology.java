@@ -400,14 +400,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	@Override
 	public boolean check(Statement statement) {
-			
+		
+		Logger.demo("Checking", statement);
+		
 		onto.enterCriticalSection(Lock.READ);
 
-			if (onto.contains(statement)) return true;
+			boolean status = onto.contains(statement);
 		
 		onto.leaveCriticalSection();
 		
-		return false;
+		return status;
 
 	}
 	
