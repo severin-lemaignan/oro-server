@@ -330,7 +330,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		
 		for (String rawStmt : rawStmts) {
 			Logger.log(id + ": ");
-			oro.remove(oro.createStatement(rawStmt));
+			oro.clear(oro.createPartialStatement(rawStmt));
 		}
 	}
 		
