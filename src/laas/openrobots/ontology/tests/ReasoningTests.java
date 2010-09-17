@@ -35,7 +35,7 @@ import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
-import laas.openrobots.ontology.modules.base.BaseModule;
+
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 
 

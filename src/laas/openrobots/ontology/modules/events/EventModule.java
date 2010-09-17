@@ -29,6 +29,7 @@ import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
+
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 
@@ -113,7 +114,7 @@ public class EventModule implements IServiceProvider {
 		EventType eType = null;
 		IWatcher.TriggeringType eTriggeringType = null;
 		
-		if (variable == "") variable = null;
+		if (variable.equals("")) variable = null;
 		
 		try {
 			eType = EventType.valueOf(type.toUpperCase());

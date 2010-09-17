@@ -39,9 +39,6 @@ import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.IModule;
-import laas.openrobots.ontology.modules.alterite.AgentModel;
-import laas.openrobots.ontology.modules.alterite.AgentWatcher;
-import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -458,7 +455,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
-		if (varName.startsWith("?")) varName = varName.substring(1);
+		if (varName.length() > 0 && varName.charAt(0) == '?') varName = varName.substring(1);
 		
 		Logger.log(" matching following statements:\n", VerboseLevel.VERBOSE);
 		

@@ -74,21 +74,21 @@ public class PartialStatement implements Statement {
 		
 				
 		//checks that at least one token starts with a "?".
-		if (!(stmtTokens.get(0).startsWith("?") || stmtTokens.get(1).startsWith("?") || stmtTokens.get(2).startsWith("?")) )
+		if (!((stmtTokens.get(0).length() > 0 && stmtTokens.get(0).charAt(0) == '?') || (stmtTokens.get(1).length() > 0 && stmtTokens.get(1).charAt(0) == '?') || (stmtTokens.get(2).length() > 0 && stmtTokens.get(2).charAt(0) == '?')) )
 			throw new IllegalStatementException("At least one token should be marked as unbounded (starting with a \"?\").");
 		
-		if (!stmtTokens.get(0).startsWith("?"))
+		if (stmtTokens.get(0).length() == 0 || stmtTokens.get(0).charAt(0) != '?')
 			subject = model.getResource(Namespaces.format(stmtTokens.get(0)));
 		else
 			subject = model.createResource("nullSubject"); //if the subject is unbounded (a variable), creates an "nullSubject" resource to replace the subject.
 		
-		if (!stmtTokens.get(1).startsWith("?"))
+		if (stmtTokens.get(1).length() == 0 || stmtTokens.get(1).charAt(0) != '?')
 			predicate = model.getProperty(Namespaces.format(stmtTokens.get(1)));
 		else
 			predicate = model.createProperty("nullPredicate"); //if the predicate is unbounded (a variable), creates an "nullPredicate" property to replace the predicate.
 		
 
-		if (!stmtTokens.get(2).startsWith("?"))
+		if (stmtTokens.get(2).length() == 0 || stmtTokens.get(2).charAt(0) != '?')
 		{
 			object = Helpers.parseLiteral(stmtTokens.get(2), model);				
 			assert(object!=null);
@@ -108,15 +108,15 @@ public class PartialStatement implements Statement {
 	 */
 	public String asSparqlRow(){	
 		return (
-				stmtTokens.get(0).startsWith("?") ? 
+				stmtTokens.get(0).length() > 0 && stmtTokens.get(0).charAt(0) == '?' ? 
 						stmtTokens.get(0) : 
 						"<" + getSubject().toString() + ">"
 				) + " " + 
-				(stmtTokens.get(1).startsWith("?") ? 
+				(stmtTokens.get(1).length() > 0 && stmtTokens.get(1).charAt(0) == '?' ? 
 						stmtTokens.get(1) : 
 						"<" + getPredicate().toString() + ">"
 				) + " " + 
-				(stmtTokens.get(2).startsWith("?") ? 
+				(stmtTokens.get(2).length() > 0 && stmtTokens.get(2).charAt(0) == '?' ? 
 						stmtTokens.get(2) : 
 						(getObject().isLiteral()? 
 								Helpers.literalToSparqlSyntax((Literal)getObject()) : 
@@ -138,7 +138,7 @@ public class PartialStatement implements Statement {
 		
 				
 		//checks that at least one token starts with a "?".
-		if (!(stmtTokens.get(0).startsWith("?") || stmtTokens.get(1).startsWith("?") || stmtTokens.get(2).startsWith("?")) )
+		if (!((stmtTokens.get(0).length() > 0 && stmtTokens.get(0).charAt(0) == '?') || (stmtTokens.get(1).length() > 0 && stmtTokens.get(1).charAt(0) == '?') || (stmtTokens.get(2).length() > 0 && stmtTokens.get(2).charAt(0) == '?')) )
 			return false;
 		
 		return true;

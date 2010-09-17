@@ -49,7 +49,7 @@ public enum MemoryProfile {
 	 * For instance, if you set {@code timeBase = 500}, the actual duration a short term statement is divided by 2 (ie 5 seconds instead of the default 10 seconds)
 	 * 
 	 */
-	public static int timeBase = 1000;
+	public static int TimeBase = 1000;
 	
 	private final int duration_seconds; //in seconds
 	
@@ -61,7 +61,7 @@ public enum MemoryProfile {
 	 * Returns the lifespan associated to the memory profile, in milliseconds.
 	 * @return the lifespan associated to the memory profile, in milliseconds
 	 */
-	public int duration(){return duration_seconds * timeBase;}
+	public int duration(){return duration_seconds * TimeBase;}
 	
 	/**
 	 * Returns a MemoryProfile constant from its string representation, or {@link #DEFAULT} if the string is not recognized.

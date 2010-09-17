@@ -32,6 +32,7 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 
+
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
@@ -178,7 +179,7 @@ public class EventProcessor {
 				Set<String> filters = null;
 
 				varName = pattern.remove(0);
-				if (varName.startsWith("?")) varName = varName.substring(1);
+				if (varName.length() > 0 && varName.charAt(0) == '?') varName = varName.substring(1);
 				
 				String query = "SELECT ?" + varName + "\n" +
 				"WHERE {\n";

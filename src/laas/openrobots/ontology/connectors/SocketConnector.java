@@ -192,7 +192,7 @@ public class SocketConnector implements IConnector, Runnable {
 		
 	/**
 	 * serviceIndex holds a map of service name to keys in registredServices.
-	 * It allows a fast retrieval of the list of service that matchs a name.
+	 * It allows a fast retrieval of the list of service that matches a name.
 	 * 
 	 * serviceIndex also store, for each service, the number of exposed arguments.
 	 */
@@ -346,7 +346,7 @@ public class SocketConnector implements IConnector, Runnable {
 						try {
 							String evtMsg = "event\n" +
 											evt.getLeft() + "\n" +
-											(e.getEventContext() != "" ?
+											(!e.getEventContext().equals("") ?
 													e.getEventContext() + "\n":
 													"\n") +
 											MESSAGE_TERMINATOR + "\n";

@@ -36,7 +36,6 @@ import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
@@ -50,7 +49,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.rdf.model.LiteralRequiredException;
+
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;

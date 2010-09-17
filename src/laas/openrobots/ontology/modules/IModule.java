@@ -48,4 +48,5 @@ public interface IModule {
 	 * @return
 	 */
 	public IServiceProvider getServiceProvider();
+	
 }

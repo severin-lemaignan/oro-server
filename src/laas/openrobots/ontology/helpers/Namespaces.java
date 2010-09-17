@@ -57,15 +57,15 @@ public class Namespaces {
 	 */
 	public static String DEFAULT_NS = "";
 		
-	private static Hashtable<String, String> namespaces;
+	private static Hashtable<String, String> Namespaces;
 	
 	static
 	{
-		namespaces = new Hashtable<String, String>();
-		namespaces.put("owl", owl_ns);
-		namespaces.put("rdf", rdf_ns);
-		namespaces.put("rdfs", rdfs_ns);
-		namespaces.put("xsd", xsd_ns);
+		Namespaces = new Hashtable<String, String>();
+		Namespaces.put("owl", owl_ns);
+		Namespaces.put("rdf", rdf_ns);
+		Namespaces.put("rdfs", rdfs_ns);
+		Namespaces.put("xsd", xsd_ns);
 	}
 
 	/**
@@ -77,8 +77,8 @@ public class Namespaces {
 	{
 		String result = "";
 		
-		for(String prefix: namespaces.keySet()){
-	        	result += "PREFIX "+ prefix + ": <" + namespaces.get(prefix) + "> \n";
+		for(String prefix: Namespaces.keySet()){
+	        	result += "PREFIX "+ prefix + ": <" + Namespaces.get(prefix) + "> \n";
 	    }
 	    
 		//Doesn't seem to work...
@@ -99,7 +99,7 @@ public class Namespaces {
 	 * @see #getPrefix(String)
 	 */
 	public static String getNamespace(final String ns){
-		if (namespaces.containsKey(ns)) return namespaces.get(ns);
+		if (Namespaces.containsKey(ns)) return Namespaces.get(ns);
 		else return ns + ":";
 	}
 
@@ -115,10 +115,10 @@ public class Namespaces {
 		
 		if (ns.compareTo(DEFAULT_NS) == 0) return "";
 		
-		if (namespaces.containsValue(ns))
+		if (Namespaces.containsValue(ns))
 		{
-			for(String prefix: namespaces.keySet()){
-		        if(namespaces.get(prefix).equals(ns)) {
+			for(String prefix: Namespaces.keySet()){
+		        if(Namespaces.get(prefix).equals(ns)) {
 		            return prefix + ":";
 		        }
 		    }			
@@ -269,10 +269,10 @@ public class Namespaces {
 	public static void loadNamespaces(Properties parameters) {
 		for (int i = 1 ; i <= 10 ; i++) {
 			String ns = parameters.getProperty("namespace" + i, "");
-			if (ns != "") {
+			if (!ns.equals("")) {
 				String ns2[] = ns.split("::", 2);
 				if (ns2.length == 2) {
-					namespaces.put(ns2[0], ns2[1]);
+					Namespaces.put(ns2[0], ns2[1]);
 					Logger.log("Registered namespace " + ns2[1] + " (" + 
 					ns2[0] + ")\n", VerboseLevel.VERBOSE);
 				} else
@@ -282,7 +282,7 @@ public class Namespaces {
 			}
 		}
 		
-		setDefault(namespaces.get(parameters.getProperty("default_namespace", "")));
+		setDefault(Namespaces.get(parameters.getProperty("default_namespace", "")));
 		
 	}
 	

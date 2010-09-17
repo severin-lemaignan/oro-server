@@ -18,9 +18,9 @@ package laas.openrobots.ontology.helpers;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+
 import java.io.Writer;
-import java.net.URLEncoder;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -58,10 +58,10 @@ import com.hp.hpl.jena.rdf.model.impl.ModelCom;
  */
 public class Helpers {
 	
-	static Random handOfGod;
+	static Random HandOfGod;
 	
 	static {
-		handOfGod = new Random(System.currentTimeMillis());
+		HandOfGod = new Random(System.currentTimeMillis());
 	}
 	
 	/**
@@ -85,7 +85,7 @@ public class Helpers {
 			if (lex.contentEquals("false")) return model.createTypedLiteral(false);
 			
 			//lex is "*" or '*' -> create a string literal
-			if ((lex.startsWith("\"") && lex.endsWith("\"")) || (lex.startsWith("'") && lex.endsWith("'"))) return model.createTypedLiteral(lex.substring(1, lex.length()-1), XSDDatatype.XSDstring);
+			if (((lex.length() > 0 && lex.charAt(0) == '"') && lex.endsWith("\"")) || ((lex.length() > 0 && lex.charAt(0) == '\'') && lex.endsWith("'"))) return model.createTypedLiteral(lex.substring(1, lex.length()-1), XSDDatatype.XSDstring);
 			
 			try {
 				Double.parseDouble(lex);
@@ -101,8 +101,8 @@ public class Helpers {
 		else				
 		{
 			String lexType[] = lex.split("\\^\\^");
-				if ((lexType[0].startsWith("\"") && lexType[0].endsWith("\"")) || (lexType[0].startsWith("'") && lexType[0].endsWith("'"))) lexType[0] = lexType[0].substring(1, lexType[0].length()-1); //a not-so-clean way to remove quotes around the literal.
-				if (lexType[1].startsWith("<") && lexType[1].endsWith(">")) lexType[1] = lexType[1].substring(1, lexType[1].length()-1); //a not-so-clean way to remove < and > around the datatype.
+				if (((lexType[0].length() > 0 && lexType[0].charAt(0) == '"') && lexType[0].endsWith("\"")) || ((lexType[0].length() > 0 && lexType[0].charAt(0) == '\'') && lexType[0].endsWith("'"))) lexType[0] = lexType[0].substring(1, lexType[0].length()-1); //a not-so-clean way to remove quotes around the literal.
+				if ((lexType[1].length() > 0 && lexType[1].charAt(0) == '<') && lexType[1].endsWith(">")) lexType[1] = lexType[1].substring(1, lexType[1].length()-1); //a not-so-clean way to remove < and > around the datatype.
 				Literal object;
 				try {
 					object = model.createTypedLiteral(lexType[0], Namespaces.expand(lexType[1]));
@@ -533,7 +533,7 @@ public class Helpers {
 	 */
 	public static String cleanValue(String value) throws OntologyServerException {
 		String res = value.trim();
-		if ((res.startsWith("\"") && res.endsWith("\"")) || (res.startsWith("'") && res.endsWith("'")))
+		if (((res.length() > 0 && res.charAt(0) == '"') && res.endsWith("\"")) || ((res.length() > 0 && res.charAt(0) == '\'') && res.endsWith("'")))
 			res = res.substring(1, res.length() - 1);
 		
 		res = unescapeJava(res);
@@ -565,7 +565,7 @@ public class Helpers {
 		if (size == 1)
 			return list.get(0);
 
-		return list.get(handOfGod.nextInt(size));		
+		return list.get(HandOfGod.nextInt(size));		
 	}
 	
     /**

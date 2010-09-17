@@ -134,7 +134,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	/**
 	 * This static method acts as a PartialStatement factory. It does some pre-processing to convert a string to a valid statement relative to the given ontology.<br/>
 	 * 
-	 * See {@link #createStatement(String)} for sytax details regarding literals.<br/>
+	 * See {@link createStatement(String)} for syntax details regarding literals.<br/>
 	 * To be valid, a partial statement must have at least one variable, prepended with a "?".
 	 * 
 	 * @param statement a string representing the partial statement. For instance: {@code "?mysterious oro:objProperty2 oro:individual2"}
@@ -158,7 +158,7 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * A memory profile is associated to all the statements: statements 
 	 * associated to {@link MemoryProfile.LONGTERM} or {@link MemoryProfile.DEFAULT} 
 	 * are stored and never removed from the ontology while other memory 
-	 * profiles allow the ontology to "forget" about certains facts after a 
+	 * profiles allow the ontology to "forget" about certain facts after a 
 	 * given amount of time.
 	 *   
 	 * @param statements A set of statements to be inserted in the model.

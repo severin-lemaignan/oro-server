@@ -16,7 +16,7 @@
 
 package laas.openrobots.ontology.modules.events;
 
-import laas.openrobots.ontology.modules.events.IWatcher.EventType;
+
 
 public interface OroEvent {
 	

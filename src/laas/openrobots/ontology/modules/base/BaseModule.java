@@ -490,7 +490,7 @@ public class BaseModule implements IServiceProvider {
 				
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
-		if (varName.startsWith("?")) varName = varName.substring(1);
+		if (varName.length() > 0 && varName.charAt(0) == '?') varName = varName.substring(1);
 		
 		Logger.log(" matching following statements:\n", VerboseLevel.VERBOSE);
 		
