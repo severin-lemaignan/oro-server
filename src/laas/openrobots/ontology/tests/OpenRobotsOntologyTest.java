@@ -218,6 +218,26 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("OK.");
 	}
 	
+	public void testReset() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Server resetting procedure *****");
+		
+		OroServer server = new OroServer();
+		
+		try {
+			server.serverInitialization(conf);
+		} catch (OntologyServerException e1) {
+			e1.printStackTrace();
+			fail();
+		}
+		
+		try {
+			server.reset();
+		} catch (OntologyServerException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
 	
 	public void testSave() {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -253,7 +273,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		long startTime = System.currentTimeMillis();
 		
-		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		
+		BaseModule oro = new BaseModule(onto);
 		
 		System.out.println("[UNITTEST] Ontology loaded in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 		
@@ -262,7 +284,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 		 ****************/
 		
 		try {
-			assertTrue("The fact that gorillas are monkey IS an asserted fact.", oro.check(oro.createStatement("gorilla rdf:type Monkey")));
+			Statement s = onto.createStatement("gorilla rdf:type Monkey");
+			assertTrue("The fact that gorillas are monkey IS an asserted fact.", onto.check(s));
+			s = onto.createStatement("gorilla rdf:type Animal");
+			assertTrue("The fact that gorillas are monkey should be inferred.", onto.check(s));
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail();
@@ -273,7 +298,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		 ****************/
 		
 		try {
-			assertTrue("The fact that apples are plants should be infered!", oro.check(oro.createStatement("apple rdf:type Plant")));
+			assertTrue("The fact that apples are plants should be infered!", onto.check(onto.createStatement("apple rdf:type Plant")));
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail();
@@ -284,14 +309,14 @@ public class OpenRobotsOntologyTest extends TestCase {
 		 ****************/
 		
 		try {
-			assertFalse("The fact that gorillas are plants is false!", oro.check(oro.createStatement("gorilla rdf:type Plant")));
+			assertFalse("The fact that gorillas are plants is false!", onto.check(onto.createStatement("gorilla rdf:type Plant")));
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail();
 		}
 		
 		try {
-			assertFalse("what do you think!! Superman is not a coward!", oro.check(oro.createStatement("superman isA coward")));
+			assertFalse("what do you think!! Superman is not a coward!", onto.check(onto.createStatement("superman isA coward")));
 		} catch (IllegalStatementException e) {
 			e.printStackTrace();
 			fail();
@@ -566,7 +591,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
 		
-		MemoryProfile.timeBase = 100; //we accelerate 10 times the behaviour of the memory container.
+		MemoryProfile.TimeBase = 100; //we accelerate 10 times the behaviour of the memory container.
 	
 		try {
 			onto.add(onto.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT, false);
@@ -1188,7 +1213,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		assertTrue("Initial ontology should be detected as consistent!", oro.checkConsistency());
 				
 		try {
-			onto.add(onto.createStatement("cow rdf:type Plant"), MemoryProfile.DEFAULT, false);
+			Statement s = onto.createStatement("cow rdf:type Plant");
+			onto.add(s, MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
@@ -1349,8 +1375,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			alterite = new AlteriteModule(oro, conf);
-		} catch (EventRegistrationException e) {
-			fail("We should be able to register the AgentWatcher event!");
 		} catch (InvalidModelException e) {
 			fail();
 		}
@@ -2138,8 +2162,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			alterite = new AlteriteModule(oro, conf);
-		} catch (EventRegistrationException e) {
-			fail("We should be able to register the AgentWatcher event!");
 		} catch (InvalidModelException e) {
 		}
 		
@@ -2175,8 +2197,6 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		try {
 			alterite = new AlteriteModule(oro, conf);
-		} catch (EventRegistrationException e) {
-			fail("We should be able to register the AgentWatcher event!");
 		} catch (InvalidModelException e) {
 			fail();
 		}
@@ -2208,6 +2228,232 @@ public class OpenRobotsOntologyTest extends TestCase {
 						
 		} catch (AgentNotFoundException e) {
 			fail("Agent 'baboon' should be found!");
+		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This test checks race condition issues that may arise in a concurrent
+	 * execution.
+	 */
+	public void testRaces(){
+
+		class Runner extends Thread {
+			 BaseModule oro;
+	         int msSleepPeriod;
+	         String name;
+	         CategorizationModule c;
+	         boolean onlyDiscriminate;
+	         
+	         Runner(String name, int msSleepPeriod, BaseModule oro, CategorizationModule c, boolean onlyDiscriminate) {
+	             this.msSleepPeriod = msSleepPeriod;
+	             this.oro = oro;
+	             this.name = name;
+	             this.c = c;
+	             this.onlyDiscriminate = onlyDiscriminate;
+	         }
+	         
+	         void add() { 
+	         
+	        	 Set<String> stmts = new HashSet<String>();
+	        	 stmts.add("Bird rdfs:subClassOf Animal");
+	        	 
+	            try {
+	            	System.out.println(name + " starts to add stmts...");
+	            	for (int i = 0; i < 50 ; i++) {
+	    	    		stmts.add("fish" + i + " rdf:type Animal");
+	    	    		stmts.add("fish" + i + " weight 18");
+	    	    		stmts.add("fish" + i + " eats baboon");
+	    	    		stmts.add("sparrow" + i + " rdf:type Bird");
+	    	    		stmts.add("sparrow" + i + " weight 18");
+	    	    		stmts.add("sparrow" + i + " eats grass");
+	            		oro.add(stmts);
+	            		stmts.clear();
+	            	}
+					System.out.println(name + " done with stmts adding.");
+				} catch (IllegalStatementException e) {
+					fail();
+				}
+	         }
+	        
+	         void find() { 
+	        	 Set<String> stmts = new HashSet<String>();
+	        	 stmts.add("?a rdf:type Animal");
+	        	 
+	            try {
+	            	System.out.println(name + " starts to look for stmts...");
+	            	oro.find("a", stmts);
+					System.out.println(name + " done with looking for stmts.");
+				} catch (IllegalStatementException e) {
+					fail();
+				} catch (OntologyServerException e) {
+					fail();
+				}
+	         }
+	         
+	         void discriminate() {
+	        	 Set<String> concepts = new HashSet<String>();
+	        	 System.out.println(name + " starts to discriminate...");
+	        	 concepts.add("fish1");
+	        	 concepts.add("sparrow1");
+	        	 try {
+					c.discriminate(concepts);
+				} catch (NotFoundException e) {
+					fail();
+				} catch (NotComparableException e) {
+					fail();
+				}
+	        	 System.out.println(name + " starts to discriminate");
+	         }
+
+	         
+			public void run() {
+				if (onlyDiscriminate)
+					discriminate();
+				else {
+					add();
+					find();
+					discriminate();
+				}
+	         }	
+		}
+		
+		System.out.println("[UNITTEST] ***** TEST: Race conditions *****");
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
+		CategorizationModule c = new CategorizationModule(onto);
+		
+		Runner r1 = new Runner("thread1", 0, oro, c, false);
+		Runner r2 = new Runner("thread2", 0, oro, c, true);
+	    
+		r1.start();
+		r2.start();
+
+		try {
+			r1.join(1000);
+			r2.join(1000);
+		} catch (InterruptedException e) {
+			fail();
+		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
+	 * This test checks race condition issues that may arise in a concurrent
+	 * execution, within the Alterite module.
+	 */
+	public void testRacesForAgent(){
+
+		class Runner extends Thread {
+			AlteriteModule oro;
+	         int msSleepPeriod;
+	         String name;
+	         boolean onlyDiscriminate;
+	         
+	         Runner(String name, int msSleepPeriod, AlteriteModule oro, boolean onlyDiscriminate) {
+	             this.msSleepPeriod = msSleepPeriod;
+	             this.oro = oro;
+	             this.name = name;
+	             this.onlyDiscriminate = onlyDiscriminate;
+	         }
+	         
+	         void add() { 
+	         
+	        	 Set<String> stmts = new HashSet<String>();
+	        	 stmts.add("Bird rdfs:subClassOf Animal");
+	        	 
+	            try {
+	            	System.out.println(name + " starts to add stmts...");
+	            	for (int i = 0; i < 50 ; i++) {
+	    	    		stmts.add("fish" + i + " rdf:type Animal");
+	    	    		stmts.add("sparrow" + i + " rdf:type Bird");
+	            		oro.addForAgent("baboon", stmts);
+	            		stmts.clear();
+	            	}
+					System.out.println(name + " done with stmts adding.");
+				} catch (IllegalStatementException e) {
+					fail();
+				} catch (AgentNotFoundException e) {
+					fail();
+				}
+	         }
+	        
+	         void find() { 
+	        	 Set<String> stmts = new HashSet<String>();
+	        	 stmts.add("?a rdf:type Animal");
+	        	 
+	            try {
+	            	System.out.println(name + " starts to look for stmts...");
+	            	oro.findForAgent("baboon", "a", stmts);
+					System.out.println(name + " done with looking for stmts.");
+				} catch (IllegalStatementException e) {
+					fail();
+				} catch (OntologyServerException e) {
+					fail();
+				}
+	         }
+	         
+	         void discriminate() {
+	        	 Set<String> concepts = new HashSet<String>();
+	        	 System.out.println(name + " starts to discriminate...");
+	        	 concepts.add("fish1");
+	        	 concepts.add("sparrow1");
+	        	 try {
+					oro.discriminateForAgent("baboon", concepts);
+				} catch (NotFoundException e) {
+					fail();
+				} catch (NotComparableException e) {
+					fail();
+				} catch (AgentNotFoundException e) {
+					fail();
+				} catch (OntologyServerException e) {
+					fail();
+				}
+	        	 System.out.println(name + " starts to discriminate");
+	         }
+
+	         
+			public void run() {
+				if (onlyDiscriminate)
+					discriminate();
+				else {
+					add();
+					find();
+					discriminate();
+				}
+	         }	
+		}
+		
+		System.out.println("[UNITTEST] ***** TEST: Race conditions *****");
+	
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+		
+		AlteriteModule alterite = null;
+		
+	
+		try {
+			oro.add(oro.createStatement("Agent rdfs:subClassOf owl:Thing"), MemoryProfile.DEFAULT, false);
+			alterite = new AlteriteModule(oro, conf);
+			oro.add(oro.createStatement("Animal rdfs:subClassOf Agent"), MemoryProfile.DEFAULT, false);
+		} catch (InvalidModelException e) {
+			fail();
+		} catch (IllegalStatementException e) {
+			fail();
+		}
+						
+		Runner r1 = new Runner("thread1", 0, alterite, false);
+		Runner r2 = new Runner("thread2", 0, alterite, true);
+	    
+		r1.start();
+		r2.start();
+
+		try {
+			r1.join(1000);
+			r2.join(1000);
+		} catch (InterruptedException e) {
+			fail();
 		}
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
