@@ -1218,9 +1218,10 @@ public class OpenRobotsOntologyTest extends TestCase {
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
-		
+				
 		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
 		assertFalse("Ontology should be detected as inconsistent! Cows are not plants!", oro.checkConsistency());
+
 		
 		try {
 			oro.remove("cow rdf:type Plant");

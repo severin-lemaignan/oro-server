@@ -135,7 +135,7 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean HAS_A_TTY;
 	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
-	public static Properties serverParameters;
+	public static Properties ServerParameters;
 	
 	public static boolean BLINGBLING;
 	
@@ -170,6 +170,8 @@ public class OroServer implements IServiceProvider {
 	
 	private static OpenRobotsOntology oro = null;
 	
+	private static AlteriteModule AlteriteModule = null;
+	
 	public class OnShuttingDown extends Thread { 
 		public void run() { 
 			Logger.log("Application interrupted. Shutting down...\n", VerboseLevel.WARNING); 
@@ -198,7 +200,7 @@ public class OroServer implements IServiceProvider {
 		}
 	}
 	
-	public void runServer(String[] args) throws InterruptedException, OntologyConnectorException, OntologyServerException { 
+	public void runServer(String[] args) throws InterruptedException, OntologyServerException { 
    	
     	
     	String confFile;
@@ -216,7 +218,7 @@ public class OroServer implements IServiceProvider {
     		confFile = args[0];
     	
     	//Load the configuration file. If it can not be found, exits.
-    	serverParameters = getConfiguration(confFile);
+    	ServerParameters = getConfiguration(confFile);
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[6m"); 
@@ -247,7 +249,7 @@ public class OroServer implements IServiceProvider {
     	
     	// Currently, only one connector, the socket connector 
     	// (others bridges like YARP or JSON are now out of the oro-server code base)
-    	SocketConnector sc = new SocketConnector(serverParameters, registredServices);
+    	SocketConnector sc = new SocketConnector(ServerParameters, registredServices);
 		connectors.add(sc);
 
 		for (IConnector c : connectors)	{
@@ -307,10 +309,9 @@ public class OroServer implements IServiceProvider {
 		IServiceProvider diffModule = new CategorizationModule(oro);
 		addNewServiceProviders(diffModule);
 		
-		IServiceProvider alteriteModule;
 		try {
-			alteriteModule = new AlteriteModule(oro);
-			addNewServiceProviders(alteriteModule);
+			AlteriteModule = new AlteriteModule(oro);
+			addNewServiceProviders(AlteriteModule);
 		} catch (EventRegistrationException e1) {
 		} catch (InvalidModelException e1) {
 		}

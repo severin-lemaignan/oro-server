@@ -147,13 +147,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 **************************************/
 	
 	public OpenRobotsOntology(){
-		this(OroServer.serverParameters);
+		this(OroServer.ServerParameters);
 	}
 	
 	/**
 	 * Constructor which takes a config file as parameter.<br/>
 	 * The constructor first opens the ontology, then loads it into memory and 
-	 * eventually bounds it to Jena internal reasonner. Thus, the instanciation 
+	 * eventually bounds it to Jena internal reasoner. Thus, the instanciation 
 	 * of OpenRobotsOntology may take some time (several seconds, depending on 
 	 * the size on the ontology).<br/>
 	 * <br/>
@@ -185,7 +185,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * wrap it.
 	 */
 	public OpenRobotsOntology(OntModel onto){
-		this(onto, OroServer.serverParameters);
+		this(onto, OroServer.ServerParameters);
 	}
 
 	public OpenRobotsOntology(OntModel onto, Properties parameters){
@@ -446,7 +446,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
-		onto.leaveCriticalSection();
+		onto.leaveCriticalSection();		
 		
 		String cause = "";
 		
@@ -523,7 +523,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}		
 		query += "}";
 		
-		return query(varName, query);
+		Set<RDFNode> res = query(varName, query);	
+		return res;
 	}
 
 
@@ -960,7 +961,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		OntModelSpec onto_model_reasonner;
 		String onto_model_reasonner_name = parameters.getProperty("reasonner", "jena_internal_owl_rule");
 		
-		//select the inference model and reasonner from the "reasonner" parameter specified in the configuration file.
+		//select the inference model and reasoner from the "reasonner" parameter specified in the configuration file.
 		if ( onto_model_reasonner_name.equalsIgnoreCase("pellet")){
 			onto_model_reasonner = PelletReasonerFactory.THE_SPEC;
 			onto_model_reasonner_name = "Pellet " + VersionInfo.getInstance().getVersionString() + " reasonner";
@@ -1083,7 +1084,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			getModel().enterCriticalSection(Lock.READ);
 			
-			ExtendedIterator<Individual> resources = onto.listIndividuals();
+			ExtendedIterator<Individual> resources;
+			try {
+				resources = onto.listIndividuals();
+			} catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+				getModel().leaveCriticalSection();
+				throw ioe;
+			}
 			
 			while(resources.hasNext()) {
 				Individual res = resources.next();

@@ -69,10 +69,10 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	private IOntologyBackend oro;
 		
 	public AlteriteModule(IOntologyBackend oro) throws EventRegistrationException, InvalidModelException {
-		this(oro, OroServer.serverParameters);
+		this(oro, OroServer.ServerParameters);
 	}
 	
-	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws EventRegistrationException, InvalidModelException {
+	public AlteriteModule(IOntologyBackend oro, Properties serverParameters) throws InvalidModelException {
 		agents = new HashMap<String, AgentModel>();
 
 		this.oro = oro;

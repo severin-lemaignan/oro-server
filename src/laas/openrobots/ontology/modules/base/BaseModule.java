@@ -204,7 +204,8 @@ public class BaseModule implements IServiceProvider {
 		for (String rawStmt : rawStmts) {
 			if (rawStmt == null)
 				throw new IllegalStatementException("Got a null statement to add!");
-			stmtsToAdd.add(oro.createStatement(rawStmt));			
+			Statement s = oro.createStatement(rawStmt);
+			stmtsToAdd.add(s);		
 		}
 		
 		oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), false);
@@ -233,7 +234,8 @@ public class BaseModule implements IServiceProvider {
 		for (String rawStmt : rawStmts) {
 			if (rawStmt == null)
 				throw new IllegalStatementException("Got a null statement to add!");
-			stmtsToAdd.add(oro.createStatement(rawStmt));			
+			Statement s = oro.createStatement(rawStmt);
+			stmtsToAdd.add(s);			
 		}
 
 		return oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), true);
@@ -249,7 +251,8 @@ public class BaseModule implements IServiceProvider {
 	 * @see IOntologyBackend#createStatement(String) Syntax details regarding the string describing the statement.
 	 */
 	public void remove(String stmt) throws IllegalStatementException {
-		oro.remove(oro.createStatement(stmt));
+		Statement s = oro.createStatement(stmt);
+		oro.remove(s);
 	}
 	
 	/**
@@ -303,7 +306,8 @@ public class BaseModule implements IServiceProvider {
 				if (!oro.check(oro.createPartialStatement(s))) return false;
 			}
 			else {
-				if (!oro.check(oro.createStatement(s))) return false;
+				Statement stmt = oro.createStatement(s);
+				if (!oro.check(stmt)) return false;
 			}
 		}
 		
