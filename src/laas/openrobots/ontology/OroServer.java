@@ -135,6 +135,7 @@ public class OroServer implements IServiceProvider {
 	
 	public static boolean HAS_A_TTY;
 	public static VerboseLevel VERBOSITY = VerboseLevel.INFO;
+	public static boolean DEMO_MODE = false;
 	public static Properties ServerParameters;
 	
 	public static boolean BLINGBLING;
@@ -187,6 +188,17 @@ public class OroServer implements IServiceProvider {
 		} 
 	} 
 	
+	public OroServer() {
+		
+    	connectors = new HashSet<IConnector>();
+    	registredServices = new HashMap<String, IService>();
+    	
+    	//Check if the application is connected to a console. We don't want to
+    	//color outputs in a logfile for instance.
+    	HAS_A_TTY = System.console() == null ? false : true;
+    	
+	}
+	
 	public void addNewServiceProviders(IServiceProvider provider)
 	{
 		if (provider != null) {
@@ -205,12 +217,6 @@ public class OroServer implements IServiceProvider {
     	
     	String confFile;
     	
-    	connectors = new HashSet<IConnector>();
-    	registredServices = new HashMap<String, IService>();
-    	
-    	//Check if the application is connected to a console. We don't want to
-    	//color outputs in a logfile for instance.
-    	HAS_A_TTY = System.console() == null ? false : true;
 
     	if (args.length < 1 || args.length > 1)
     		confFile = DEFAULT_CONF;
@@ -673,7 +679,12 @@ public class OroServer implements IServiceProvider {
 			
 			// Retrieve, if available, the level of verbosity.
 			try {
-				VERBOSITY = VerboseLevel.valueOf(parameters.getProperty("verbosity", "info").toUpperCase());
+				String level = parameters.getProperty("verbosity", "info").toUpperCase();
+				if (level.equals("DEMO")) {
+					DEMO_MODE = true;
+					level = "SERIOUS_ERROR"; //in demo mode, only display serious errors
+				}
+				VERBOSITY = VerboseLevel.valueOf(level);
 			} catch (IllegalArgumentException iae) {
 				VERBOSITY = VerboseLevel.INFO;
 				Logger.log("Invalid value for the verbosity level. Switch back " +

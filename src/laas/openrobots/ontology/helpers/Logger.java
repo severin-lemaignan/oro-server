@@ -18,8 +18,12 @@ package laas.openrobots.ontology.helpers;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Set;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
 
 import laas.openrobots.ontology.OroServer;
+import laas.openrobots.ontology.PartialStatement;
 
 public class Logger {
 
@@ -158,7 +162,7 @@ public class Logger {
 
 	public static void cr(){
 		if (OroServer.VERBOSITY != VerboseLevel.SILENT)
-			System.out.print("\n");
+			System.out.print('\n');
 	}
 	
 	public static void printInBlue(String msg){
@@ -238,5 +242,99 @@ public class Logger {
 		System.out.print((char)27 + "[3D" + (char)27 + "[2B");		
 		System.out.print(" | ");		
 		System.out.print((char)27 + "[3D");		
+	}
+
+	public static void info(String msg) {
+		log(msg, VerboseLevel.INFO);
+	}
+	
+	public static void debug(String msg) {
+		log(msg, VerboseLevel.DEBUG);
+	}
+	
+	private static void makeUpStatement(Statement stmt) {
+		
+		printInGreen(Namespaces.toLightString(stmt.getSubject()) + " ");
+		printInBlue(Namespaces.toLightString(stmt.getPredicate()) + " ");
+		printInPurple(Namespaces.toLightString(stmt.getObject()));
+	}
+	
+	private static void makeUpPartialStatement(Statement stmt) {
+		if (stmt.getSubject() == null)
+			printInRed("* ");
+		else {
+			printInGreen(Namespaces.toLightString(stmt.getSubject()) + " ");
+		}
+		
+		if (stmt.getPredicate() == null)
+			printInRed("* ");
+		else {
+			printInBlue(Namespaces.toLightString(stmt.getPredicate()) + " ");
+		}
+		
+		if (stmt.getObject() == null)
+			printInRed("*");
+		else {
+			printInPurple(Namespaces.toLightString(stmt.getObject()));
+		}
+	}
+	
+	public static <E extends Statement> void demo(String string, Set<E> stmts) {
+		
+		if (!OroServer.DEMO_MODE) return;
+		
+		System.out.println(string);
+		for (E stmt : stmts) {
+			System.out.print("\t[");
+			
+			if (stmt.getSubject() == null ||
+					stmt.getPredicate() == null ||
+					stmt.getObject() == null)
+					makeUpPartialStatement(stmt);
+			else
+					makeUpStatement(stmt);
+			System.out.print("]\n");
+		}
+		
+	}
+
+	public static void demo(String string, Statement stmt) {
+		
+		if (!OroServer.DEMO_MODE) return;
+		
+		System.out.print(string + " ");
+		makeUpStatement(stmt);		
+	}
+	
+	public static void demo(String string, PartialStatement stmt) {
+		
+		if (!OroServer.DEMO_MODE) return;
+		
+		System.out.print(string + " ");
+		makeUpStatement(stmt);		
+	}
+
+	public static void demo(String label, String value, boolean ok) {
+		
+		if (!OroServer.DEMO_MODE) return;
+		
+		System.out.print(label + " ");
+			if (ok)
+				printInGreen(value);
+			else
+				printInRed(value);
+		
+	}
+
+	public static <E extends RDFNode> void demo_nodes(String string, Set<E> nodes) {
+		
+		if (!OroServer.DEMO_MODE) return;
+		
+		System.out.print(string + ": [");
+		for (E node : nodes)
+			Namespaces.toLightString(node);
+		
+		System.out.print("]\n");
+		
 	}
 }

@@ -314,6 +314,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		boolean allHaveBeenInserted = true;
 		
+		Logger.demo("Adding", statements);
+		
 		for (Statement statement : statements) {
 			try {
 	
@@ -418,7 +420,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	@Override
 	public boolean check(PartialStatement statement) {
-						
+		
+		Logger.demo("Checking", statement);
+		
 		String resultQuery = "ASK { " + statement.asSparqlRow() + " }";
 		
 		try	{
@@ -452,7 +456,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (!report.isValid())
 		{
+			Logger.demo("Checking consistency:", "ontology is inconsistent!", false);
+			
 			isInInconsistentState = true;
+			
 			for (Iterator<Report> i = report.getReports(); i.hasNext(); ) {
 	            cause += " - " + i.next();
 			}
@@ -461,6 +468,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		isInInconsistentState = false;
+		
+		Logger.demo("Checking consistency:", "ontology is consistent", true);
 		
 	}
 	
@@ -507,6 +516,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public Set<RDFNode> find(	String varName,	Set<PartialStatement> statements, 
 							Set<String> filters) throws InvalidQueryException {
 		
+		Logger.demo("Looking for '" + varName + "' such as:", statements);
+		
 		String query = "SELECT ?" + varName + "\n" +
 		"WHERE {\n";
 		for (PartialStatement ps : statements)
@@ -523,7 +534,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}		
 		query += "}";
 		
-		Set<RDFNode> res = query(varName, query);	
+		Set<RDFNode> res = query(varName, query);
+		
+		Logger.demo_nodes("Result", res);
+		
 		return res;
 	}
 
@@ -607,7 +621,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		onto.leaveCriticalSection();
-				
+		
+		if (onlyDirect)
+			Logger.demo_nodes("Retrieving direct superclasses of " + Namespaces.toLightString(type), result);
+		else
+			Logger.demo_nodes("Retrieving all superclasses of " + Namespaces.toLightString(type), result);
+		
 		return result;
 	}
 	
@@ -631,7 +650,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		onto.leaveCriticalSection();
-				
+
+		if (onlyDirect)
+			Logger.demo_nodes("Retrieving direct subclasses of " + Namespaces.toLightString(type), result);
+		else
+			Logger.demo_nodes("Retrieving all subclasses of " + Namespaces.toLightString(type), result);
+		
+		
 		return result;
 	}
 
@@ -655,6 +680,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		onto.leaveCriticalSection();
+		
+		if (onlyDirect)
+			Logger.demo_nodes("Retrieving direct instances of " + Namespaces.toLightString(type), result);
+		else
+			Logger.demo_nodes("Retrieving all instances of " + Namespaces.toLightString(type), result);
+		
 		
 		return result;
 	}
@@ -682,6 +713,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		onto.leaveCriticalSection();
+
+		if (onlyDirect)
+			Logger.demo_nodes("Retrieving direct classes of " + Namespaces.toLightString(resource), result);
+		else
+			Logger.demo_nodes("Retrieving all classes of " + Namespaces.toLightString(resource), result);
 		
 		return result;
 	}
