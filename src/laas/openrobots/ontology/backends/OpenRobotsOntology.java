@@ -52,6 +52,7 @@ import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.RPCMethod;
 
+import org.mindswap.pellet.jena.PelletInfGraph;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
@@ -483,6 +484,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		
 		Set<RDFNode> res = new HashSet<RDFNode>();
+		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/
+		getModel().enterCriticalSection(Lock.WRITE);
+		((PelletInfGraph) getModel().getGraph()).classify();
+		getModel().leaveCriticalSection();
 		
 		//Add the common prefixes.
 		query = Namespaces.prefixes() + query;
