@@ -247,7 +247,7 @@ public class OroServer implements IServiceProvider {
     						VerboseLevel.IMPORTANT);
     	Logger.cr();
     	
-    	serverInitialization();
+    	serverInitialization(ServerParameters);
 		
 /*******************************************************************************
 *                    SOCKET CONNECTOR INITIALIZATION                           *
@@ -289,8 +289,8 @@ public class OroServer implements IServiceProvider {
 	}
 	
 	
-
-   	private void serverInitialization() throws OntologyServerException { 
+	//this method is public only because of unittesting. If someone has a proposal...
+   	public void serverInitialization(Properties serverParameters) throws OntologyServerException { 
 /*******************************************************************************
  *                   BACKENDS and SERVICES REGISTRATION                        *
  ******************************************************************************/
@@ -401,11 +401,11 @@ public class OroServer implements IServiceProvider {
 		registredServices.clear();
 		oro.close();
 		
-		serverInitialization();
 		
 		for (IConnector c : connectors)	{
 			c.refreshServiceList(registredServices);
 		}
+		serverInitialization(ServerParameters);
 	}
 	
 	/**
