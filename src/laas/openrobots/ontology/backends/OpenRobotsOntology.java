@@ -474,6 +474,32 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 	
+
+	@Override
+	public boolean checkConsistency(Set<Statement> statements) {
+		
+		boolean consistent = true;
+		
+		Logger.log("Checking consistency of statements");
+		
+		onto.enterCriticalSection(Lock.WRITE);
+		for (Statement statement : statements)
+				onto.add(statement);
+				
+		try {
+			checkConsistency();
+		} catch (InconsistentOntologyException ioe)
+		{
+			consistent = false;
+		}
+		
+		for (Statement statement : statements)
+			onto.remove(statement);
+	
+		onto.leaveCriticalSection();
+		return consistent;
+	}
+	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(java.lang.String)
 	 */
@@ -1245,6 +1271,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		getModel().leaveCriticalSection();
 		
 	}
+
 
 
 }

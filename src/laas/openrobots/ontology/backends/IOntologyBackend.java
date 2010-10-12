@@ -236,6 +236,23 @@ public interface IOntologyBackend extends IServiceProvider {
 			throws InconsistentOntologyException;
 
 	/**
+	 * Checks a set of statements (or partial statements) are not inconsistent
+	 * with the current model.
+	 * 
+	 * The method temporarily adds the given statements to the model, checks the 
+	 * whole model consistency, remove the statements and return the result of the
+	 * consistency check (true or false).
+	 * 
+	 * @see #add(Set, MemoryProfile, boolean) "add" can be used to add statements
+	 * only if they do not lead to inconsistencies.
+	 * @see #checkConsistency() checkConsistency just check the current model is 
+	 * consistent
+	 * @see #check(Statement) "check" only checks if the given statements already 
+	 * exist in the ontology.
+	 */
+	public abstract boolean checkConsistency(Set<Statement> statements);
+	
+	/**
 	 * Performs a SPARQL query on the OpenRobots ontology.<br/>
 	 * 
 	 * For instance:

@@ -340,6 +340,33 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	/**
+	 * Checks that a set of statements are consistent with the current model.
+	 * 
+	 * Statements are not added to the model.
+	 * 
+	 * @return true if the set of given statement is consistent with the ontology, false otherwise.
+	 * @throws IllegalStatementException 
+	 */
+	@RPCMethod(
+			desc="checks that a set of statements are consistent with the current model"
+	)
+	public Boolean checkConsistency(Set<String> rawStmts) throws IllegalStatementException {
+		Logger.log("Checking stmts consistency against current model...", VerboseLevel.IMPORTANT);
+		
+		Set<Statement> stmtsToCheck = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to add!");
+			Statement s = oro.createStatement(rawStmt);
+			stmtsToCheck.add(s);		
+		}
+		
+		return oro.checkConsistency(stmtsToCheck);
+		
+	}
+	
+	/**
 	 * Maps {@link IOntologyBackend#query(String, String)} into a RPC call
 	 * 
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#query(String, String)

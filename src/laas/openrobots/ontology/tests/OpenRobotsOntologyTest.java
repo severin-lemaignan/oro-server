@@ -1240,6 +1240,36 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 
+public void testStmtConsistency() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Checking consistency of a external set of statements *****");
+		
+
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		
+		Statement s1 = null, s2 = null;
+		Set<Statement> consistentOnes = new HashSet<Statement>();
+		Set<Statement> inconsistentOnes = new HashSet<Statement>();
+		
+		try {
+			s1 = onto.createStatement("cow drinks water");
+			consistentOnes.add(s1);
+			
+			s2 = onto.createStatement("cow rdf:type Plant");
+			inconsistentOnes.add(s2);
+		} catch (IllegalStatementException e) {
+			fail("Error while creating a set of statements in testConsistency!");
+		}
+		
+		assertTrue(onto.checkConsistency(consistentOnes));
+		assertFalse(onto.checkConsistency(inconsistentOnes));
+
+		assertFalse("Statements should not be added to the model!!", onto.check(s1));
+		assertFalse("Statements should not be added to the model!!", onto.check(s2));
+						
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+
 	/**
 	 * This test try to match a given set of statements against the ontology, and to get back the class of an object.
 	 */
