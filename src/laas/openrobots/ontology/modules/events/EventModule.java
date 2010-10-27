@@ -114,7 +114,7 @@ public class EventModule implements IServiceProvider {
 		EventType eType = null;
 		IWatcher.TriggeringType eTriggeringType = null;
 		
-		if (variable.equals("")) variable = null;
+		if (variable == null || variable.equals("")) variable = null;
 		
 		try {
 			eType = EventType.valueOf(type.toUpperCase());
