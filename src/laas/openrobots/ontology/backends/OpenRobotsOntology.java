@@ -16,7 +16,6 @@
 
 package laas.openrobots.ontology.backends;
 
-
 //Imports
 ///////////////
 import java.io.FileNotFoundException;
@@ -485,14 +484,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<RDFNode> res = new HashSet<RDFNode>();
 		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/
-		getModel().enterCriticalSection(Lock.WRITE);
-		((PelletInfGraph) getModel().getGraph()).classify();
-		getModel().leaveCriticalSection();
-		
 		//Add the common prefixes.
 		query = Namespaces.prefixes() + query;
 		
@@ -741,8 +732,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//table else a former concept that doesn't exist anymore could be returned.
 		//In any case, if we can not find the id, we try to rebuild the lookup 
 		//table, in case some changes occurred since the last lookup.
-		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase()))
-		//	rebuildLookupTable();			
+		if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase())) {
+			forceLookupTableUpdate = true;
+			rebuildLookupTable();			
+		}
 				
 		Set<List<String>> result = new HashSet<List<String>>();		
 		
@@ -770,8 +763,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//table else a former concept that doesn't exist anymore could be returned.
 		//In any case, if we can not find the id, we try to rebuild the lookup 
 		//table, in case some changes occurred since the last lookup.
-		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase()))
-		//	rebuildLookupTable();			
+		if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase())) {
+			forceLookupTableUpdate = true;
+			rebuildLookupTable();			
+		}		
 				
 		Set<String> result = new HashSet<String>();		
 		
@@ -973,6 +968,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.log("Model changed!\n", VerboseLevel.DEBUG);
 		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/
+		getModel().enterCriticalSection(Lock.WRITE);
+		((PelletInfGraph) getModel().getGraph()).classify();
+		getModel().leaveCriticalSection();
+		
 		modelChanged = true;
 		
 		eventProcessor.process();
@@ -1129,99 +1132,107 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 *  @see {@link #lookup(String)}
 	 */
 	private void rebuildLookupTable() {
-		if (modelChanged) {
+		if (modelChanged && forceLookupTableUpdate) {
 			
 			modelChanged = false;
 			forceLookupTableUpdate = false;				
 			lookupTable.clear();
 			
 			getModel().enterCriticalSection(Lock.READ);
-			
-			ExtendedIterator<Individual> resources;
-			try {
-				resources = onto.listIndividuals();
-			} catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+
+			// if the ontology is inconsistent, do not update the lookup table.
+			if (!getModel().validate().isValid()){
 				getModel().leaveCriticalSection();
-				throw ioe;
+				return;
 			}
+
 			
-			while(resources.hasNext()) {
-				Individual res = resources.next();
+			{
+				ExtendedIterator<Individual> resources;
 				
-				if (res.isAnon()) continue;
-				
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				
-				if (labels.hasNext())
-					while(labels.hasNext()) {
-						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.INSTANCE);
-					}
-				
-				
-				//Add the concept id itself.
-				addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.INSTANCE);
-				
-			}
-		}
-		
-		{
-			ExtendedIterator<OntClass> resources = onto.listClasses();
-			while(resources.hasNext()) {
-				OntClass res = resources.next();
-				
-				if (res.isAnon()) continue;
-				
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				
-				if (labels.hasNext())
-					while(labels.hasNext()) {
-						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.CLASS);
-					}
-				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.CLASS);
-				
-			}
-		}
-		
-		{
-			ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
-			while(resources.hasNext()) {
-				ObjectProperty res = resources.next();
-				
-				if (res.isAnon()) continue;
-				
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				
-				if (labels.hasNext())
-					while(labels.hasNext()) {
-						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
-					}
-				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
-				
-			}
-		}
-		
-		{
-			ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
-			while(resources.hasNext()) {
-				DatatypeProperty res = resources.next();
-				
-				if (res.isAnon()) continue;
-				
-				ExtendedIterator<RDFNode> labels = res.listLabels(null);
-				
-				if (labels.hasNext())
-					while(labels.hasNext()) {
-						String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
-						addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
-					}
-				else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
+				resources = onto.listIndividuals();
+	
+			
+				while(resources.hasNext()) {
+					Individual res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.INSTANCE);
+						}
+					
+					
+					//Add the concept id itself.
+					addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.INSTANCE);
+					
+				}
 			}
 		
-			getModel().leaveCriticalSection();
+			{
+				ExtendedIterator<OntClass> resources = onto.listClasses();
+				while(resources.hasNext()) {
+					OntClass res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.CLASS);
+						}
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.CLASS);
+					
+				}
+			}
+		
+			{
+				ExtendedIterator<ObjectProperty> resources = onto.listObjectProperties();
+				while(resources.hasNext()) {
+					ObjectProperty res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
+						}
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.OBJECT_PROPERTY);
+					
+				}
+			}
+		
+			{
+				ExtendedIterator<DatatypeProperty> resources = onto.listDatatypeProperties();
+				while(resources.hasNext()) {
+					DatatypeProperty res = resources.next();
+					
+					if (res.isAnon()) continue;
+					
+					ExtendedIterator<RDFNode> labels = res.listLabels(null);
+					
+					if (labels.hasNext())
+						while(labels.hasNext()) {
+							String keyword = labels.next().as(Literal.class).getLexicalForm().toLowerCase();
+							addToLookupTable(keyword, Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
+						}
+					else addToLookupTable(res.getLocalName().toLowerCase(), Namespaces.toLightString(res), ResourceType.DATATYPE_PROPERTY);
+				}
+			
+			}
+		
+		getModel().leaveCriticalSection();
 		}
+
 	}
 	
 
