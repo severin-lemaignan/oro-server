@@ -207,9 +207,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
 	public OntProperty createProperty(String lex_property){
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
 		OntProperty p = onto.createOntProperty(Namespaces.expand(lex_property));
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		return p;
 	}
@@ -218,9 +221,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#createResource(java.lang.String)
 	 */
 	public OntResource createResource(String lex_resource){
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
 		OntResource r = onto.createOntResource(Namespaces.expand(lex_resource));
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		return r;
 	}
@@ -246,6 +251,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			tokens_statement.set(i, Namespaces.format(tokens_statement.get(i)));
 		}
 		
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
 		
 		subject = onto.getResource(tokens_statement.get(0));
@@ -261,6 +267,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Statement s =new StatementImpl(subject, predicate, object);
 		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 	
 		return s; 
@@ -272,11 +279,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public PartialStatement createPartialStatement(String statement) throws IllegalStatementException {
 		
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
 		
 		PartialStatement p = new PartialStatement(statement, (ModelCom)getModel());
 		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		return p;
 	}
@@ -321,6 +330,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]");
 				
+				Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				onto.enterCriticalSection(Lock.WRITE);
 				
 				onto.add(statement);
@@ -333,6 +343,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					{
 						onto.remove(statement);	
 						onto.leaveCriticalSection();
+						Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 						Logger.log("...I won't add " + statement + " because it " +
 								"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
 						allHaveBeenInserted = false;
@@ -358,6 +369,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				}
 				
 				onto.leaveCriticalSection();
+				Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				
 			}
 			catch (ConversionException e) {
@@ -405,11 +417,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.demo("Checking", statement);
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 
 			boolean status = onto.contains(statement);
 		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		return status;
 
@@ -448,9 +462,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void checkConsistency() throws InconsistentOntologyException {
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		ValidityReport report = onto.validate();
-		onto.leaveCriticalSection();		
+		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);		
 		
 		String cause = "";
 		
@@ -471,6 +487,34 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.demo("Checking consistency:", "ontology is consistent", true);
 		
+	}
+	
+
+	@Override
+	public boolean checkConsistency(Set<Statement> statements) {
+		
+		boolean consistent = true;
+		
+		Logger.log("Checking consistency of statements");
+		
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		onto.enterCriticalSection(Lock.WRITE);
+		for (Statement statement : statements)
+				onto.add(statement);
+				
+		try {
+			checkConsistency();
+		} catch (InconsistentOntologyException ioe)
+		{
+			consistent = false;
+		}
+		
+		for (Statement statement : statements)
+			onto.remove(statement);
+	
+		onto.leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		return consistent;
 	}
 	
 	/* (non-Javadoc)
@@ -553,9 +597,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
 		// This check is only useful to throw an exception...
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		OntResource node = onto.getOntResource(lex_resource);
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (node == null){
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
@@ -580,6 +626,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + node.getURI() +">";
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		try	{
 			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
@@ -597,6 +644,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		finally {
 			onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		}
 			
 		return resultModel;
@@ -611,6 +659,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Set<OntClass> result = new HashSet<OntClass>();
 		
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		ExtendedIterator<OntClass> it = type.listSuperClasses(onlyDirect);
 		while (it.hasNext())
@@ -621,6 +670,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct superclasses of " + Namespaces.toLightString(type), result);
@@ -638,6 +688,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 			
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		
 		ExtendedIterator<OntClass> it = type.listSubClasses(onlyDirect);
@@ -650,6 +701,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct subclasses of " + Namespaces.toLightString(type), result);
@@ -668,6 +720,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntResource> result = new HashSet<OntResource>();
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		
 		ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
@@ -680,6 +733,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct instances of " + Namespaces.toLightString(type), result);
@@ -700,6 +754,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		
 		Individual individual = resource.asIndividual();
@@ -713,6 +768,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct classes of " + Namespaces.toLightString(resource), result);
@@ -800,9 +856,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		StmtIterator stmtsToRemove = onto.listStatements(selector);		
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		for (Statement s : stmtsToRemove.toList())
 			remove(s);		
@@ -816,9 +874,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]\n");
 		
 		
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
 		onto.remove(stmt);	
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		//force the rebuilt of the lookup table at the next lookup.
 		forceLookupTableUpdate = true;
@@ -849,9 +909,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
 							
+				Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				onto.enterCriticalSection(Lock.READ);
 				StmtIterator stmtsToRemove = onto.listStatements(selector);		
 				onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				
 				onto.remove(stmtsToRemove);
 					
@@ -879,9 +941,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		} catch (FileNotFoundException e) {
 			throw new OntologyServerException("Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 		}
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		onto.write(file);
 		onto.leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 	}
 	
@@ -972,10 +1036,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		model and classify it before each query.
 		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
 		*/
+		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		getModel().enterCriticalSection(Lock.WRITE);
-		((PelletInfGraph) getModel().getGraph()).classify();
-		getModel().leaveCriticalSection();
+		try {
+			((PelletInfGraph) getModel().getGraph()).classify();
+		}
+		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {}
 		
+		getModel().leaveCriticalSection();
+		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+
 		modelChanged = true;
 		
 		eventProcessor.process();
@@ -1065,6 +1135,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			onto.setStrictMode(true);
 			
+			Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
 			if (scenarioModel != null) onto.add(scenarioModel);
@@ -1077,6 +1148,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
 				}
 			onto.leaveCriticalSection();
+			Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			
 			Logger.cr();
 			Logger.log("Ontology successfully loaded (using Jena " + com.hp.hpl.jena.Jena.VERSION + ").\n", VerboseLevel.IMPORTANT);
@@ -1138,11 +1210,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			forceLookupTableUpdate = false;				
 			lookupTable.clear();
 			
+			Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			getModel().enterCriticalSection(Lock.READ);
 
 			// if the ontology is inconsistent, do not update the lookup table.
 			if (!getModel().validate().isValid()){
 				getModel().leaveCriticalSection();
+				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				return;
 			}
 
@@ -1231,6 +1305,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		
 		getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		}
 
 	}
@@ -1256,12 +1331,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return;
 		}
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		getModel().enterCriticalSection(Lock.READ);
 		
 		for (RDFNode s : functionalProps)
 			functionalProperties.add(s.as(OntProperty.class));
 		
 		getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 	}
 
