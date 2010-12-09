@@ -141,10 +141,12 @@ public class EventProcessor {
 				//must use a "for" loop because getWatchPattern is a set, but it
 				//contains actually only one element.
 				for (String s : watcher.getWatchPattern()) {
+					Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 					onto.getModel().enterCriticalSection(Lock.READ);
 					referenceClass = onto.getModel().getOntClass(Namespaces.format(s));
 					onto.getModel().leaveCriticalSection();
-				
+					Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+					
 					if (referenceClass == null) {
 						Logger.log("The class " + s + " does not exists in the " +
 								"ontology. Cannot register the NEW_INSTANCE " +
@@ -273,7 +275,8 @@ public class EventProcessor {
 		//iterate over the various registered watchers and notify the subscribers 
 		//when needed.
 		for (WatcherHolder holder : watchers) {
-				
+			
+			Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.getModel().enterCriticalSection(Lock.READ);
 			try	{
 				switch (holder.getWatcher().getPatternType()) {
@@ -300,6 +303,7 @@ public class EventProcessor {
 			}
 			finally {
 				onto.getModel().leaveCriticalSection();
+				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			}
 			
 		}
