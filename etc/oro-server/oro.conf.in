@@ -22,6 +22,11 @@ plugins_path = @PLUGINS_PATH@
 
 ################################# Ontology #####################################
 
+# the default id for the robot hosting the ontology.
+# this will be asserted to be 'sameAs myself' at startup.
+# Alternate ids can be added by asserting something like 'my_id owl:sameAs myself"
+robot_id = ROBOT
+
 # oro_common_sense: should point to the OWL ontology where "common sense" 
 # knowledge is stored. This sum of facts, rules, relationships form the ground 
 # of knowledge used by the cognitive kernel (including the reasonner).

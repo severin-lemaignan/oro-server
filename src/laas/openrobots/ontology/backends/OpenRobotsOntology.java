@@ -1139,6 +1139,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto.enterCriticalSection(Lock.WRITE);
 			if (robotInstancesModel != null) onto.add(robotInstancesModel);
 			if (scenarioModel != null) onto.add(scenarioModel);
+			
+			String defaultRobotId = parameters.getProperty("robot_id");
+			if (defaultRobotId != null)
+				try {
+					onto.add(this.createStatement("myself owl:sameAs " + defaultRobotId));
+				} catch (IllegalStatementException e1) {
+					Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
+				}
 			onto.leaveCriticalSection();
 			Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			
