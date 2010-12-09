@@ -141,6 +141,16 @@ public class AgentModel {
 					"model.\n", VerboseLevel.SERIOUS_ERROR);
 		}
 		
+		
+		String defaultRobotId = parameters.getProperty("robot_id");
+		if (defaultRobotId != null) {
+			try {
+				onto.add(agentModel.createStatement(defaultRobotId + " rdf:type Robot"));
+			} catch (IllegalStatementException e1) {
+				Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
+			}
+		}
+		
 		return agentModel;
 		
 	}
