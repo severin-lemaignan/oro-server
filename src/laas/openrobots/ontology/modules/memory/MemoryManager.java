@@ -73,7 +73,7 @@ public class MemoryManager extends Thread {
 			}
 			
 			//for (String rsName : watchedStmt) {
-				
+			Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.READ);
 				
 			try {
@@ -109,8 +109,10 @@ public class MemoryManager extends Thread {
 		        
 			} finally {
 				onto.leaveCriticalSection();
+				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			}
 			
+			Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.WRITE);
 			try {
 				for (ReifiedStatement s : stmtToRemove) {
@@ -122,6 +124,7 @@ public class MemoryManager extends Thread {
 			}
 			finally {
 				onto.leaveCriticalSection();
+				Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			}
 			stmtToRemove.clear();
 		}

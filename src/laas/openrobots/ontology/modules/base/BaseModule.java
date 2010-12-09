@@ -699,9 +699,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -728,9 +730,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -757,9 +761,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -786,10 +792,12 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSubclassesOf(myClass, true) )
@@ -815,9 +823,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for instances of " + type + "...");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -846,9 +856,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct instances of " + type + "...");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -871,9 +883,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for classes of " + individual + "...");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Individual myClass = oro.getModel().getIndividual(Namespaces.format(individual));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + individual + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -895,9 +909,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct classes of " + individual + "...");
 		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Individual myClass = oro.getModel().getIndividual(Namespaces.format(individual));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myClass == null) throw new NotFoundException("The class " + individual + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -934,11 +950,13 @@ public class BaseModule implements IServiceProvider {
 					"(following RFC4646)."
 	)
 	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
-				
+		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		//TODO: check if the resource exists!!!
 		OntResource myResource = oro.getModel().getOntResource(Namespaces.format(id));
 		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
 		if (myResource == null) throw new NotFoundException("The resource " + 
 				id + " does not exists in the ontology (tip: if this resource " +
