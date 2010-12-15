@@ -532,7 +532,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		query = Namespaces.prefixes() + query;
 		
 		this.lastQuery = query;
-				
+		
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		onto.enterCriticalSection(Lock.READ);
+		
 		try	{
 			Query myQuery = QueryFactory.create(query, Syntax.syntaxSPARQL );
 		
@@ -546,6 +549,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		catch (QueryExecException e) {
 			Logger.log("Error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
 			throw new InvalidQueryException("Error during query execution ! ("+ e.getLocalizedMessage() +")");
+		}
+		finally {
+			onto.leaveCriticalSection();
+			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);				
 		}
 				
 		while (this.lastQueryResult.hasNext()) {
@@ -908,12 +915,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
-							
+				
 				Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				onto.enterCriticalSection(Lock.READ);
-				StmtIterator stmtsToRemove = onto.listStatements(selector);		
-				onto.leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+				
+				StmtIterator stmtsToRemove = null;
+				try {
+					stmtsToRemove = onto.listStatements(selector);
+				} catch (Exception e) {
+						e.printStackTrace();
+					
+				} finally {
+					onto.leaveCriticalSection();
+					Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);				
+				}
 				
 				onto.remove(stmtsToRemove);
 					
