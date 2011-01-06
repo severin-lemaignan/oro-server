@@ -412,11 +412,18 @@ public class SocketConnector implements IConnector, Runnable {
 			  String result = "error\n\n";
 			  String queryName = raw_query.get(0);
 			  
+			  // Log the incoming request
 			  Logger.log("[thread " + this.hashCode() + "] >> Got incoming request: " + queryName + "(", VerboseLevel.VERBOSE);
-			  for (int i = 1; i < raw_query.size()-1 ; i++)
-				  Logger.log(raw_query.get(i) + ",", VerboseLevel.VERBOSE, false);
-			  Logger.log(raw_query.get(raw_query.size()-1), VerboseLevel.VERBOSE, false);
+			  if (raw_query.size() > 1) {
+				  for (int i = 1; i < raw_query.size()-1 ; i++)
+				  	  if (raw_query.get(i) instanceof String)
+				  		  Logger.log("\"" + raw_query.get(i) + "\",", VerboseLevel.VERBOSE, false);
+				  	  else
+				  		  Logger.log(raw_query.get(i) + ",", VerboseLevel.VERBOSE, false);
+				  Logger.log(raw_query.get(raw_query.size()-1), VerboseLevel.VERBOSE, false);
+			  }
 			  Logger.log(")\n", VerboseLevel.VERBOSE, false);
+			  // --end logging
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
 	    		Logger.log("Closing communication with client " + getName() + ".\n");
