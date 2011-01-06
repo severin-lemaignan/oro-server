@@ -79,7 +79,7 @@ public class Logger {
 	 * to be added.
 	 * @see VerboseLevel The list of verbosity levels.
 	 */
-	public static void log(String msg, VerboseLevel level, boolean withPrefix) {
+	public static synchronized void log(String msg, VerboseLevel level, boolean withPrefix) {
 		
 		//Displays only message with a superior level of verbosity.
 		if (!verbosityMin(level))
