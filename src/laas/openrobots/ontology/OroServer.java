@@ -188,7 +188,7 @@ public class OroServer implements IServiceProvider {
 		} 
 	} 
 	
-	public OroServer() {
+	public OroServer(String confFile) {
 		
     	connectors = new HashSet<IConnector>();
     	registredServices = new HashMap<String, IService>();
@@ -196,6 +196,16 @@ public class OroServer implements IServiceProvider {
     	//Check if the application is connected to a console. We don't want to
     	//color outputs in a logfile for instance.
     	HAS_A_TTY = System.console() == null ? false : true;
+   	
+    	Logger.log("Loading configuration file " + confFile + "...", 
+				VerboseLevel.IMPORTANT);
+
+    	//Load the configuration file. If it can not be found, exits.
+    	ServerParameters = getConfiguration(confFile);
+    	
+    	Logger.log("done.\n", false);    	
+    	Logger.cr();
+   	
     	
 	}
 	
@@ -212,19 +222,7 @@ public class OroServer implements IServiceProvider {
 		}
 	}
 	
-	public void runServer(String[] args) throws InterruptedException, OntologyServerException { 
-   	
-    	
-    	String confFile;
-    	
-
-    	if (args.length < 1 || args.length > 1)
-    		confFile = DEFAULT_CONF;
-    	else
-    		confFile = args[0];
-    	
-    	//Load the configuration file. If it can not be found, exits.
-    	ServerParameters = getConfiguration(confFile);
+	public void runServer() throws InterruptedException, OntologyServerException { 
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[6m"); 
@@ -243,9 +241,6 @@ public class OroServer implements IServiceProvider {
     	
     	Runtime.getRuntime().addShutdownHook(new OnShuttingDown());
     	
-    	Logger.log("Using configuration file " + confFile + "\n", 
-    						VerboseLevel.IMPORTANT);
-    	Logger.cr();
     	
     	serverInitialization(ServerParameters);
 		
@@ -386,7 +381,15 @@ public class OroServer implements IServiceProvider {
 									OntologyConnectorException, 
 									InterruptedException, 
 									OntologyServerException {
-		new OroServer().runServer(args);
+		
+		String confFile;
+		
+    	if (args.length < 1 || args.length > 1)
+    		confFile = DEFAULT_CONF;
+    	else
+    		confFile = args[0];
+    	
+		new OroServer(confFile).runServer();
 	}
 	
 	@RPCMethod(
@@ -397,14 +400,21 @@ public class OroServer implements IServiceProvider {
 	public void reset() throws OntologyServerException {
 		
 		Logger.log("RESETTING ORO-server!\n",VerboseLevel.IMPORTANT);
-
+		
+		for (IConnector c : connectors)
+			c.clearServiceList();
+		
 		registredServices.clear();
+		
+		AlteriteModule.close();
+		AlteriteModule = null;
+		
 		oro.close();
+		oro = null;
 		
+		//Hint the system to garbage collect.
+		System.gc();
 		
-		for (IConnector c : connectors)	{
-			c.refreshServiceList(registredServices);
-		}
 		serverInitialization(ServerParameters);
 	}
 	

@@ -222,7 +222,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		System.out.println("[UNITTEST] ***** TEST: Server resetting procedure *****");
 		
-		OroServer server = new OroServer();
+		OroServer server = new OroServer(ORO_TEST_CONF);
 		
 		try {
 			server.serverInitialization(conf);
