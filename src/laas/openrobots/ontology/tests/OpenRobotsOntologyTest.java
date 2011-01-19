@@ -872,10 +872,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		
 		stmts.clear();
-		//TODO: this trigger insteresting behaviours! it *should* pass the test, but it doesn't... Pellet bug?
-		//Bug reported: https://softs.laas.fr/bugzilla/show_bug.cgi?id=115
-		//stmts.add("KingKong rdfs:subClassOf Monkey");
-		stmts.add("KingKong rdf:type Monkey");
+		stmts.add("KingKong rdfs:subClassOf Monkey");
 		stmts.add("KingKong rdfs:label \"king kong\"");
 		
 		try {
@@ -885,19 +882,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		assertEquals("The \"king kong\" label should now match to concepts.", 2, oro.lookup("king kong").size());
+		assertEquals("The \"king kong\" label should now match two concepts (instance of gorilla, and name for the class & instance KingKong).", 3, oro.lookup("king kong").size());
 		
-		/* This part may be re-enabled when the TODO above is solved!
-		Iterator<List<String>> it = oro.lookup("king kong").iterator();
-		
-		String s = it.next().get(1);
-		if(s == ResourceType.INSTANCE.toString())
-			assertEquals("The second concept type should be CLASS.", ResourceType.CLASS.toString(), it.next().get(1));
-		else if(s == ResourceType.CLASS.toString())
-			assertEquals("The second concept type should be INSTANCE.", ResourceType.INSTANCE.toString(), it.next().get(1));
-		else
-			fail("The concepts type should be either INSTANCE or CLASS.");
-		*/
 		
 		Set<String> clearPattern = new HashSet<String>();
 		clearPattern.add("gorilla ?a ?b");

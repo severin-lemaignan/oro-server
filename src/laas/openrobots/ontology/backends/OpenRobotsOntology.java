@@ -795,7 +795,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//table else a former concept that doesn't exist anymore could be returned.
 		//In any case, if we can not find the id, we try to rebuild the lookup 
 		//table, in case some changes occurred since the last lookup.
-		if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase())) {
+		//if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase())) {
+		if (modelChanged) {
 			forceLookupTableUpdate = true;
 			rebuildLookupTable();			
 		}
@@ -923,14 +924,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				try {
 					stmtsToRemove = onto.listStatements(selector);
 				} catch (Exception e) {
-						e.printStackTrace();
-					
+						e.printStackTrace();	
 				} finally {
 					onto.leaveCriticalSection();
 					Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);				
 				}
 				
+				Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+				onto.enterCriticalSection(Lock.WRITE);
 				onto.remove(stmtsToRemove);
+				onto.leaveCriticalSection();
+				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 					
 			}
 			
