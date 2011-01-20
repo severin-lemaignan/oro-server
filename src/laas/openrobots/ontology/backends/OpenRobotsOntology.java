@@ -1015,9 +1015,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		this.functionalProperties = new HashSet<OntProperty>();
 		this.rebuildFunctionalPropertiesList();
 		
-		
-		memoryManager = new MemoryManager(onto);
-		memoryManager.start();
+		if (parameters.getProperty("memory_manager", "true").equalsIgnoreCase("true")) {
+			memoryManager = new MemoryManager(onto);
+			memoryManager.start();
+		}
 		
 		eventProcessor = new EventProcessor(this);
 		

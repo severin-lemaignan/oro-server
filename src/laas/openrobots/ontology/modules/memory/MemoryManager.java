@@ -35,7 +35,7 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
 
 public class MemoryManager extends Thread {
 
-	private final static int KNOWLEDGE_GARBAGE_COLLECTION_FREQ = 500; //in milliseconds
+	private final static int KNOWLEDGE_GARBAGE_COLLECTION_FREQ = 1000; //in milliseconds
 	
 	private OntModel onto;
 	private Set<String> watchedStmt;
@@ -46,7 +46,7 @@ public class MemoryManager extends Thread {
 	
 	public MemoryManager(OntModel model) {
 		
-		setName("Memory Manager"); //name the thread
+		setName("Agent memory manager"); //name the thread
 		
 		onto = model;
 		watchedStmt = new HashSet<String>();
@@ -58,9 +58,6 @@ public class MemoryManager extends Thread {
 	
 	@Override
 	public void run() {
-		
-		//TODO
-		if (true) return;
 		
 		Set<ReifiedStatement> stmtToRemove = new HashSet<ReifiedStatement>();
 		
@@ -75,7 +72,6 @@ public class MemoryManager extends Thread {
 				break;
 			}
 			
-			//for (String rsName : watchedStmt) {
 			Logger.log(">>enterCS: MemoryManager1\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.READ);
 				
@@ -112,24 +108,26 @@ public class MemoryManager extends Thread {
 		        
 			} finally {
 				onto.leaveCriticalSection();
-				Logger.log(">>enterCS: MemoryManager1\n", VerboseLevel.DEBUG, false);
+				Logger.log(">>leaveCS: MemoryManager1\n", VerboseLevel.DEBUG, false);
 			}
 			
-			Logger.log(">>enterCS: MemoryManager2\n", VerboseLevel.DEBUG, false);
-			onto.enterCriticalSection(Lock.WRITE);
-			try {
-				for (ReifiedStatement s : stmtToRemove) {
-					Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
-					s.getStatement().removeReification();
-					s.getStatement().remove();
-					s.removeProperties();					
+			if (!stmtToRemove.isEmpty()) {
+				Logger.log(">>enterCS: MemoryManager2\n", VerboseLevel.DEBUG, false);
+				onto.enterCriticalSection(Lock.WRITE);
+				try {
+					for (ReifiedStatement s : stmtToRemove) {
+						Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
+						s.getStatement().removeReification();
+						s.getStatement().remove();
+						s.removeProperties();					
+					}
 				}
+				finally {
+					onto.leaveCriticalSection();
+					Logger.log(">>leaveCS: MemoryManager2\n", VerboseLevel.DEBUG, false);
+				}
+				stmtToRemove.clear();
 			}
-			finally {
-				onto.leaveCriticalSection();
-				Logger.log(">>enterCS: MemoryManage2r\n", VerboseLevel.DEBUG, false);
-			}
-			stmtToRemove.clear();
 		}
 			
 	}

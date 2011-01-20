@@ -14,6 +14,13 @@
 
 verbosity = info
 
+################################ Internal modules ##############################
+
+# memory_manager: if enabled, allows to add statement that are automatically
+# removed after a while, depending on a MEMORY_PROFILE (cf server documentation)
+
+memory_manager = false
+
 ################################ External modules ##############################
 
 # plugins_path: path where ORO must look for plugins (JAR files).

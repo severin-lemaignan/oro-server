@@ -54,7 +54,6 @@ import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.EventModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
-import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.service.IService;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
