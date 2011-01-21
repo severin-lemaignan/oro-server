@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.omg.CosNaming.IstringHelper;
+
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
@@ -276,36 +278,21 @@ public class EventProcessor {
 		//when needed.
 		for (WatcherHolder holder : watchers) {
 			
-			Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-			onto.getModel().enterCriticalSection(Lock.READ);
-			try	{
-				switch (holder.getWatcher().getPatternType()) {
-					case FACT_CHECKING:
-						processFactChecking(holder, watchersToBeRemoved);
-						break;
-						
-					case NEW_CLASS_INSTANCE:
-						processNewClassInstance(holder, watchersToBeRemoved);
-						break;
-						
-					case NEW_INSTANCE:
-						processNewInstance(holder, watchersToBeRemoved);
-						break;
-				
-				}	
-			}
-			catch (QueryExecException e) {
-				Logger.log("Internal error during query execution while " +
-						"verifiying conditions for event handlers! " +
-						"("+ e.getLocalizedMessage() +").\nPlease contact the " +
-						"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
-				throw e;
-			}
-			finally {
-				onto.getModel().leaveCriticalSection();
-				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-			}
+			switch (holder.getWatcher().getPatternType()) {
+				case FACT_CHECKING:
+					processFactChecking(holder, watchersToBeRemoved);
+					break;
+					
+				case NEW_CLASS_INSTANCE:
+					processNewClassInstance(holder, watchersToBeRemoved);
+					break;
+					
+				case NEW_INSTANCE:
+					processNewInstance(holder, watchersToBeRemoved);
+					break;
 			
+			}	
+	
 		}
 		
 		watchers.removeAll(watchersToBeRemoved);
@@ -315,8 +302,28 @@ public class EventProcessor {
 
 	private void processFactChecking(WatcherHolder holder, Set<WatcherHolder> watchersToBeRemoved) throws QueryExecException {
 		
-		if (QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execAsk()){
-			
+		boolean isAsserted = false;
+
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		onto.getModel().enterCriticalSection(Lock.READ);
+		
+		try {
+			isAsserted = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execAsk();
+		}
+		catch (QueryExecException e) {
+			Logger.log("Internal error during query execution while " +
+					"verifiying conditions for event handlers! " +
+					"("+ e.getLocalizedMessage() +").\nPlease contact the " +
+					"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
+			throw e;
+		}
+		finally {
+			onto.getModel().leaveCriticalSection();
+			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		}
+		
+		
+		if (isAsserted) {
 			Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 			
 			OroEvent e = new OroEventImpl();
@@ -400,7 +407,25 @@ public class EventProcessor {
 		
 		Set<Resource> instances = new HashSet<Resource>();
 		
-		ResultSet rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
+		ResultSet rawResult = null;
+
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		onto.getModel().enterCriticalSection(Lock.READ);
+		
+		try {
+			rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
+		}
+		catch (QueryExecException e) {
+			Logger.log("Internal error during query execution while " +
+					"verifiying conditions for event handlers! " +
+					"("+ e.getLocalizedMessage() +").\nPlease contact the " +
+					"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
+			throw e;
+		}
+		finally {
+			onto.getModel().leaveCriticalSection();
+			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		}
 		
 		if (rawResult != null) {				
 			while (rawResult.hasNext())
