@@ -389,19 +389,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		
 		//TODO: optimization possible for reified statement with onModelChange(rsName)
-		try  {
-			//notify the events subscribers.
-			onModelChange();
-			if (isInInconsistentState) {
-				Logger.log("The ontology is back in a consistent state\n ", 
-						VerboseLevel.WARNING);
-				isInInconsistentState = false;
-			}
-		} catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
-			isInInconsistentState = true;
-			Logger.log("The ontology is in an inconsistent state! I couldn't " +
-					"update the events subscribers\n ", VerboseLevel.WARNING);
-		}
+		
+		//notify the events subscribers.
+		onModelChange();
+
 		
 		return allHaveBeenInserted;
 	}
@@ -1049,6 +1040,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see #onModelChange()
 	 */
 	protected void onModelChange(String rsName){
+
+		modelChanged = true;
 		
 		Logger.log("Model changed!\n", VerboseLevel.DEBUG);
 		
@@ -1060,15 +1053,27 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		getModel().enterCriticalSection(Lock.WRITE);
 		try {
 			((PelletInfGraph) getModel().getGraph()).classify();
+			
+			//We successfully classified the ontology: it is not inconsistent
+			if (isInInconsistentState) {
+				Logger.log("The ontology is back in a consistent state\n ", 
+						VerboseLevel.WARNING);
+				isInInconsistentState = false;
+			}
 		}
-		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {}
+		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+			isInInconsistentState = true;
+			
+			Logger.log("The ontology is in an inconsistent state! I won't " +
+					"update the events subscribers\n ", VerboseLevel.WARNING);
+		}
 		
 		getModel().leaveCriticalSection();
 		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 
-		modelChanged = true;
-		
-		eventProcessor.process();
+
+		//Update the event notifiers
+		if (!isInInconsistentState) eventProcessor.process();
 		
 		//TODO: do we need to update it every time?
 		rebuildLookupTable();
