@@ -721,7 +721,12 @@ public class SocketConnector implements IConnector, Runnable {
 			serviceIndex.get(name).add(entry);
 			
 		}
-		
 	}
+	
+	@Override
+	public void clearServiceList() {
+		serviceIndex.clear();
+	}
+	
 
 }

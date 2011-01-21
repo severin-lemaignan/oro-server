@@ -55,8 +55,6 @@ import com.hp.hpl.jena.shared.NotFoundException;
  */
 public interface IOntologyBackend extends IServiceProvider {
 
-
-
 	/**
 	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.OntProperty property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
 	 * This is a shortcut for {@code OpenRobotOntology.getModel().createProperty(Namespaces.format(lex_property))}
@@ -414,5 +412,10 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @return The list of event type supported by the backend
 	 */
 	public Set<EventType> getSupportedEvents();
+
+	/**
+	 * Closes the model
+	 */
+	public abstract void close();
 
 }

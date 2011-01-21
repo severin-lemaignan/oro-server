@@ -141,6 +141,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	private MemoryManager memoryManager;
 
 	private EventProcessor eventProcessor;
+
+	//True if this model has already been closed
+	private boolean isClosed;
 	
 	/***************************************
 	 *          Constructors               *
@@ -193,9 +196,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (onto == null) throw new IllegalArgumentException();
 		this.onto = onto;
 		
-		if (parameters == null) throw new IllegalArgumentException("No " +
+		if (parameters == null) throw new IllegalArgumentException("No " + 
 				"parameters provided in OroServer to instanciate agent models");
 		this.parameters = parameters;
+		
+		isClosed = false;
 		
 		initialize();
 	}
@@ -203,6 +208,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	/***************************************
 	 *       Accessors and helpers         *
 	 **************************************/
+	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
@@ -328,7 +334,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (Statement statement : statements) {
 			try {
 	
-				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]");
+				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]\n");
 				
 				Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				onto.enterCriticalSection(Lock.WRITE);
@@ -350,8 +356,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 						continue;
 					}
 				}
-				
-				Logger.cr();
+
 					
 				if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
 				{
@@ -1006,7 +1011,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		this.functionalProperties = new HashSet<OntProperty>();
 		this.rebuildFunctionalPropertiesList();
 		
-		if (parameters.getProperty("memory_manager", "true").equalsIgnoreCase("true")) {
+		// By default, don't enable the memory manager.
+		if (parameters.getProperty("memory_manager", "false").equalsIgnoreCase("true")) {
 			memoryManager = new MemoryManager(onto);
 			memoryManager.start();
 		}
@@ -1016,13 +1022,21 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	public void close() {
-		memoryManager.close();
-		try {
-			memoryManager.join(1000);
-		} catch (InterruptedException e) {
-		}
 		
-		onto.close();		
+		if (isClosed)
+			return;
+		
+		if (memoryManager != null) {
+			memoryManager.close();
+			try {
+				memoryManager.join(1000);
+			} catch (InterruptedException e) {
+			}
+		}
+
+		onto.close();
+		
+		isClosed = true;
 	}
 
 	/** This protected method is called every time the ontology model changes 

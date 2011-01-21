@@ -351,7 +351,7 @@ public class BaseModule implements IServiceProvider {
 			desc="checks that a set of statements are consistent with the current model"
 	)
 	public Boolean checkConsistency(Set<String> rawStmts) throws IllegalStatementException {
-		Logger.log("Checking stmts consistency against current model...", VerboseLevel.IMPORTANT);
+		Logger.log("Checking stmts consistency against current model...\n", VerboseLevel.IMPORTANT);
 		
 		Set<Statement> stmtsToCheck = new HashSet<Statement>();
 		

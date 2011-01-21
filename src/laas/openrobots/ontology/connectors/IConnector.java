@@ -39,4 +39,6 @@ public interface IConnector extends Runnable {
 
 	public abstract void refreshServiceList(Map<String, IService> registredServices);
 
+	public abstract void clearServiceList();
+
 }

@@ -556,4 +556,16 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		return oro;
 	}
 
+	public void close() {
+		
+		for (String agent : agents.keySet())
+			agents.get(agent).model.close();
+		
+		agents.clear();
+	}
+	
+	@Override
+	protected void finalize() {
+		close();
+	}
 }
