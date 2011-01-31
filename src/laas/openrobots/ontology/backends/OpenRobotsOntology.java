@@ -866,21 +866,31 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.leaveCriticalSection();
 		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
-		for (Statement s : stmtsToRemove.toList())
-			remove(s);		
+		remove(stmtsToRemove.toSet());
 	}
 	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#remove(com.hp.hpl.jena.rdf.model.Statement)
 	 */
 	@Override
+	@Deprecated
 	public void remove(Statement stmt) {
-		Logger.log("Removing statement ["+ Namespaces.toLightString(stmt) + "]\n");
+		Set<Statement> toRemove = new HashSet<Statement>();
+		toRemove.add(stmt);
+		
+		remove(toRemove);
+	}
+	
+	@Override
+	public void remove(Set<Statement> stmts) {
+		Logger.log("Removing statements ");
+		for (Statement s : stmts) Logger.log("["+ Namespaces.toLightString(s) + "], ");
+		Logger.cr();
 		
 		
 		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.WRITE);
-		onto.remove(stmt);	
+		onto.remove(new ArrayList<Statement>(stmts));	
 		onto.leaveCriticalSection();
 		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		

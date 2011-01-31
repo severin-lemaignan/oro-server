@@ -242,35 +242,36 @@ public class BaseModule implements IServiceProvider {
 	}
 	
 	/**
-	 * Remove a given statement (represented as a string) from the ontology. Does nothing if the statement doesn't exist.
-	 * 
-	 * @param stmt A string representing the statement to remove from the ontology.
-	 * @deprecated {@link #remove(Set)} should be used instead.
-	 * @see #add(Set)
-	 * @see IOntologyBackend#remove(Statement)
-	 * @see IOntologyBackend#createStatement(String) Syntax details regarding the string describing the statement.
-	 */
-	public void remove(String stmt) throws IllegalStatementException {
-		Statement s = oro.createStatement(stmt);
-		oro.remove(s);
-	}
-	
-	/**
 	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
 	 * 
 	 * @param stmts A vector of strings representing the statements to remove from the ontology.
+	 * @deprecated Use {@link #clear(Set)} instead.
 	 * @see #add(Set)
 	 * @see #remove(String)
 	 */
 	@RPCMethod(
 			desc="removes one or several statements (triplets S-P-O) from the ontology."
 	)
-	public void remove(Set<String> stmts) throws IllegalStatementException {
-		for (String stmt : stmts) remove(stmt);		
+	public void remove(Set<String> rawStmts) throws IllegalStatementException {
+		Set<Statement> stmtsToRemove = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to remove!");
+			Statement s = oro.createStatement(rawStmt);
+			stmtsToRemove.add(s);		
+		}
+				
+		oro.remove(stmtsToRemove);		
 	}
 		
 	/**
-	 * Removes all statements matching any partial statements in a set.
+	 * Removes all statements matching any statements or partial statements in 
+	 * the provided set.
+	 * 
+	 * Complete statements (like 'bottle1 hasColor blue') and partial statements
+	 * (like 'bottle1 hasColor ?val') can be freely mixed. Partial statements
+	 * can be seen as 'statements with wildcards'.
 	 * 
 	 * Attention, the implicit relation between each of the partial statements
 	 * in the set is a OR: the ontology is matched against each of the provided
@@ -279,18 +280,33 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * If need, the "AND" behaviour can be added. Please drop a mail to openrobots@laas.fr
 	 * 
-	 * @param partialStmts A set of partial statements (in their lexical form) representing a "mask" of statements to delete.
-	 * @throws IllegalStatementException thrown if the string does not represent a valid partial statement.
+	 * @param stmts A set of statements, partial or not, to remove.
+	 * @throws IllegalStatementException thrown if the string does not represent
+	 * a valid statement or partial statement.
 	 * @see PartialStatement
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
-			desc="removes statements matching any pattern in the given set"
+			desc="removes statements in the given set"
 	)
-	public void clear(Set<String> partialStmts) throws IllegalStatementException {
+	public void clear(Set<String> rawStmts) throws IllegalStatementException {
 		
-		for (String s : partialStmts) 
-			oro.clear(oro.createPartialStatement(s));
+		Set<Statement> stmtsToRemove = new HashSet<Statement>();
+		
+		for (String rawStmt : rawStmts) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to remove!");
+			
+			if (PartialStatement.isPartialStatement(rawStmt)) {
+				oro.clear(oro.createPartialStatement(rawStmt));
+			}
+			else {
+				Statement s = oro.createStatement(rawStmt);
+				stmtsToRemove.add(s);
+			}
+		}
+		
+		oro.remove(stmtsToRemove);
 	}
 	
 	@RPCMethod(

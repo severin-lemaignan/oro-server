@@ -362,12 +362,22 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract void clear(PartialStatement partialStmt);
 
 	/**
-	 * Remove a given statement from the ontology. Does nothing if the statement doesn't exist.
+	 * Removes a given statement from the ontology. Does nothing if the statement doesn't exist.
 	 * 
 	 * @param stmt The statement to remove from the ontology.
-	 * @see #add(String)
+	 * @see #add(Statement)
 	 */
+	@Deprecated
 	public abstract void remove(Statement stmt);
+	
+	/**
+	 * Removes a set of statements from the ontology.
+	 * It ignores statements that do not exist.
+	 * 
+	 * @param stmts The statements to remove from the ontology.
+	 * @see #add(Set<Statement>)
+	 */
+	public abstract void remove(Set<Statement> stmts);
 	
 	/**
 	 * Update the value of a property.

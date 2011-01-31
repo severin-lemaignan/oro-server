@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.mindswap.pellet.exceptions.InconsistentOntologyException;
+
 import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -711,7 +713,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * 
 	 * @throws InterruptedException
 	 */
-	public void testRemove() throws InterruptedException {
+	public void testClear() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove 2 *****");
 		
@@ -735,7 +737,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				fail();
 			}
 			
-			oro.remove(stmts);
+			oro.clear(stmts);
 			
 			try {
 				onto.save("./after_remove.owl");
@@ -791,7 +793,12 @@ public class OpenRobotsOntologyTest extends TestCase {
 				partial_statements.add("gorilla age ?a");
 				partial_statements.add("gorilla weight ?w");
 				
-				Set<String> res = oro.find("a", partial_statements);
+				Set<String> res = null;
+				try {
+					 res = oro.find("a", partial_statements);
+				} catch (InconsistentOntologyException e) {
+					fail("The update was not successful: a functional property has now 2 values.");
+				}
 				assertTrue(res.size() == 1);
 				assertTrue(Helpers.pickRandom(res).equalsIgnoreCase("21"));
 				
@@ -889,7 +896,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 		clearPattern.add("gorilla ?a ?b");
 		
 		try {
-			oro.remove(stmts);
+			oro.clear(stmts);
 			oro.clear(clearPattern);
 		} catch (IllegalStatementException e1) {
 			e1.printStackTrace();
@@ -1099,7 +1106,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 		
 		//Let's remove a statement: Birds are no more animals, and thus, the sparrow shouldn't be counted as an animal.
 		try {
-			oro.remove("Bird rdfs:subClassOf Animal");
+			Set<String> stmtsToRemove = new HashSet<String>();
+			stmtsToRemove.add("Bird rdfs:subClassOf Animal");
+			oro.clear(stmtsToRemove);
 		} catch (IllegalStatementException e) {
 			fail("Error while removing a set of statements!");
 			e.printStackTrace();
@@ -1210,7 +1219,9 @@ public class OpenRobotsOntologyTest extends TestCase {
 
 		
 		try {
-			oro.remove("cow rdf:type Plant");
+			Set<String> stmtsToRemove = new HashSet<String>();
+			stmtsToRemove.add("cow rdf:type Plant");
+			oro.clear(stmtsToRemove);
 			assertTrue(oro.checkConsistency());
 		} catch (IllegalStatementException e) {
 			fail();
@@ -1225,7 +1236,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
-
+	
 public void testStmtConsistency() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Checking consistency of a external set of statements *****");
@@ -2047,7 +2058,9 @@ public void testStmtConsistency() {
 		discriminents.clear();
 		
 		try {
-			oro.remove(oro.createStatement("macaque isOn palmtree"));
+			Set<Statement> s = new HashSet<Statement>();
+			s.add(oro.createStatement("macaque isOn palmtree"));
+			oro.remove(s);
 			oro.add(oro.createStatement("macaque climbsOn coconut"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
@@ -2280,10 +2293,10 @@ public void testStmtConsistency() {
 	            	System.out.println(name + " starts to add stmts...");
 	            	for (int i = 0; i < 50 ; i++) {
 	    	    		stmts.add("fish" + i + " rdf:type Animal");
-	    	    		stmts.add("fish" + i + " weight 18");
-	    	    		stmts.add("fish" + i + " eats baboon");
+	    	    		stmts.add("fish" + i + " weight 18.0");
+	    	    		stmts.add("fish" + i + " eats seaweed");
 	    	    		stmts.add("sparrow" + i + " rdf:type Bird");
-	    	    		stmts.add("sparrow" + i + " weight 18");
+	    	    		stmts.add("sparrow" + i + " weight 18.0");
 	    	    		stmts.add("sparrow" + i + " eats grass");
 	            		oro.add(stmts);
 	            		stmts.clear();
