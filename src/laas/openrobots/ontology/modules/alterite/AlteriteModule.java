@@ -308,30 +308,40 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	
 	@RPCMethod(
 			category = "agents",
-			desc="removes one or several statements (triplets S-P-O) from a specific agent model, in long term memory."
+			desc="removes one or several statements. Deprecated. Use clearForAgent instead."
 	)
+	@Deprecated
 	public void removeForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
 	{
-		IOntologyBackend oro = getModelForAgent(id);
-		
-		for (String rawStmt : rawStmts) {
-			Logger.log(id + ": ");
-			oro.remove(oro.createStatement(rawStmt));
-		}
+		clearForAgent(id, rawStmts);
 	}
 	
 	@RPCMethod(
 			category = "agents",
-			desc="removes statements from a specific matching any pattern in the given set."
+			desc="removes statements from a specific agent model."
 	)
 	public void clearForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
 	{
 		IOntologyBackend oro = getModelForAgent(id);
 		
+		Set<Statement> stmtsToRemove = new HashSet<Statement>();
+		
 		for (String rawStmt : rawStmts) {
 			Logger.log(id + ": ");
-			oro.clear(oro.createPartialStatement(rawStmt));
+			
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to remove!");
+			
+			if (PartialStatement.isPartialStatement(rawStmt)) {
+				oro.clear(oro.createPartialStatement(rawStmt));
+			}
+			else {
+				Statement s = oro.createStatement(rawStmt);
+				stmtsToRemove.add(s);
+			}
 		}
+		
+		oro.remove(stmtsToRemove);
 	}
 		
 	@RPCMethod(
