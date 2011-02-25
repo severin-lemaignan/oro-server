@@ -69,7 +69,7 @@ language = en
 #list the shortcuts for namespaces. Up to 10 namespaces can be specified.
 #the shortname must be separated from namespace by '::'.
 
-namespace1 = oro::http://www.laas.fr/~slemaign/onto/openrobots#
+namespace1 = oro::http://kb.openrobots.org#
 
 #default namespace: set the default namespace.
 

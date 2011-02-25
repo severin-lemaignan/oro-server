@@ -282,7 +282,7 @@ public class Namespaces {
 			}
 		}
 		
-		setDefault(Namespaces.get(parameters.getProperty("default_namespace", "")));
+		setDefault(Namespaces.get(parameters.getProperty("default_namespace", "").trim()));
 		
 	}
 	

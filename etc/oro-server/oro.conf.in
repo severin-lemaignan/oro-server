@@ -95,12 +95,10 @@ language = en
 #list the shortcuts for namespaces. Up to 10 namespaces can be specified.
 #the shortname must be separated from namespace by '::'.
 
-namespace1 = oro::http://www.laas.fr/~slemaign/onto/openrobots#
-#namespace1 = cyc::http://sw.opencyc.org/concept/
-#namespace2 = oro::http://ias.cs.tum.edu/kb/commonsense.owl#
+namespace1 = oro::http://kb.openrobots.org#
+namespace2 = cyc::http://sw.opencyc.org/concept/
 
 #default namespace: set the default namespace.
-
 default_namespace = oro
 
 ################################################################################
