@@ -888,7 +888,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void remove(Set<Statement> stmts) {
 		Logger.log("Removing statements ");
-		for (Statement s : stmts) Logger.log("["+ Namespaces.toLightString(s) + "], ");
+		for (Statement s : stmts) Logger.log("["+ Namespaces.toLightString(s) + "], ", false);
 		Logger.cr();
 		
 		

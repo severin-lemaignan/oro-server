@@ -340,17 +340,18 @@ public class BaseModule implements IServiceProvider {
 			desc="checks that the ontology is semantically consistent"
 	)
 	public Boolean checkConsistency() {
-		Logger.log("Checking ontology consistency...", VerboseLevel.IMPORTANT);
+		Logger.log("Checking ontology consistency...\n", VerboseLevel.IMPORTANT);
 		
 		try {
 			oro.checkConsistency();
 		}
 		catch (InconsistentOntologyException e){
-			Logger.log("ontology inconsistent!\n", VerboseLevel.WARNING, false);
+			Logger.log("...ontology is inconsistent!\n", VerboseLevel.WARNING, false);
+			Logger.log("Inconsistency causes:\n" + e.getMessage(), VerboseLevel.WARNING, false);
 			return false;
 		}
 		
-		Logger.log("no problems.\n", false);
+		Logger.log("...no consistency problems.\n", false);
 		return true;
 		
 	}
