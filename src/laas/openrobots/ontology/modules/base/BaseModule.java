@@ -1023,7 +1023,8 @@ public class BaseModule implements IServiceProvider {
 
 	/**
 	 * Returns the label associated to a concept whose name is 'id'.
-	 * If the concept has several labels, a random one is picked.
+	 * The label language can be specified in the configuration file (option 
+	 * 'language') and default to English ('en').
 	 * If the concept has no label, the concept id is returned.
 	 * 
 	 * @param the id to look for.
@@ -1036,28 +1037,15 @@ public class BaseModule implements IServiceProvider {
 	)
 	public String getLabel(String id) throws OntologyServerException {
 		
-		Set<String> q = new HashSet<String>();
-		q.add(id + " rdfs:label ?label");
+		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		oro.getModel().enterCriticalSection(Lock.READ);
+		//TODO: check if the resource exists!!!
+		OntResource r = oro.getModel().getOntResource(Namespaces.format(id));
+		oro.getModel().leaveCriticalSection();
+		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		
-		Set<String> labels;
 		
-		try {
-			labels = find("?label", q);
-		} catch (InvalidQueryException e) {
-			Logger.log("Unable to query the ontology for the label of id: " + id +
-					". Will return the id and continue.",
-					VerboseLevel.SERIOUS_ERROR);			
-			return id;
-		} catch (IllegalStatementException e) {
-			Logger.log("Unable to query the ontology for the label of id: " + id +
-					". Will return the id and continue.",
-					VerboseLevel.SERIOUS_ERROR);			
-			return id;
-		}
-		
-		if (labels.isEmpty()) return id;
-		
-		return Helpers.pickRandom(labels);
+		return Helpers.getLabel(r);
 	}
 
 	
