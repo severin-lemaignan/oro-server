@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.mindswap.pellet.exceptions.InconsistentOntologyException;
 
-import junit.framework.TestCase;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
@@ -61,6 +60,13 @@ import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.shared.PropertyNotFoundException;
 
+import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 /**
  * This class holds unit tests that cover most of the {@code oro-server} features.<br/>
  * For the tests to be executed, the {@code oro_test.owl} ontology is required, and must be referenced by the {@code oro_test.conf} configuration file.<br/>
@@ -68,7 +74,7 @@ import com.hp.hpl.jena.shared.PropertyNotFoundException;
  * @author Severin Lemaignan severin.lemaignan@laas.fr
  *
  */
-public class OpenRobotsOntologyTest extends TestCase {
+public class OpenRobotsOntologyTest {
 
 	final String ORO_TEST_CONF = "etc/oro-server/oro_test.conf";
 	Properties conf;
@@ -85,7 +91,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 *                          BASIC TESTS                                *
 	 ***********************************************************************/
 	
-	public void testHelpersFunction() {
+	@Test
+	public void helpersFunction() {
 	
 		System.out.println("[UNITTEST] ***** TEST: Testing helper functions *****");
 		
@@ -220,7 +227,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("OK.");
 	}
 	
-	public void testReset() {
+	@Test
+	public void reset() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Server resetting procedure *****");
 		
@@ -241,7 +249,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		}
 	}
 	
-	public void testSave() {
+	@Test
+	public void save() {
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 		
 		String filename = "./test.owl";
@@ -269,7 +278,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * Check that some facts are correctly asserted/infered in the ontology. 
 	 */
-	public void testCheck() {
+	@Test
+	public void check() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Check facts in the ontology *****");
 		
@@ -332,7 +342,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * Performs a simple query on the ontology to check OWL loading and SPARQL query engine both work.
 	 * The query should return the list of instances present in the ontology. 
 	 */
-	public void testQuery() {
+	@Test
+	public void query() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Query of the test ontology *****");
 	
@@ -396,7 +407,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 
 	 * @throws IllegalStatementException 
 	 */
-	public void testGetInfos() throws IllegalStatementException {
+	@Test
+	public void getInfos() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -429,7 +441,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 
 	 * @throws IllegalStatementException 
 	 */
-	public void testGetInfosDefaultNs() throws IllegalStatementException {
+	@Test
+	public void getInfosDefaultNs() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Informations retrieval on a resource using default namespace *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -462,7 +475,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test add a new statement to the ontology (a new instance of the class Class1 and then query the ontology to check the individual was successfully added, with the right namespace.
 	 */
-	public void testAddStmnt() {
+	@Test
+	public void addStmnt() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of a new statement in the ontology *****");
 		
@@ -519,7 +533,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test add a new statement with a literal as object to the ontology (a new instance of the class Class1 and then query the ontology to check the individual was successfully added, with the right namespace.
 	 */
-	public void testAddStmntWithLiteral() {
+	@Test
+	public void addStmntWithLiteral() {
 
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with literals *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -561,7 +576,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * This test tests the "safe" add that avoid leading the ontology in a 
 	 * inconsistent state.
 	 */
-	public void testSafeAddStmnt() {
+	@Test
+	public void safeAddStmnt() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Safe insertion of statements *****");
 		
@@ -586,7 +602,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * This test add statements to the ontology with different memory models and checks that everything behave as expected (for instance, short term statements must be removed after a while). 
 	 * @throws InterruptedException 
 	 */
-	public void testAddStmntInMemory() throws InterruptedException {
+	@Test
+	public void addStmntInMemory() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Insertion of statements with different memory profile *****");
 		
@@ -713,7 +730,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * 
 	 * @throws InterruptedException
 	 */
-	public void testClear() throws InterruptedException {
+	@Test
+	public void clear() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove 2 *****");
 		
@@ -758,7 +776,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test checks the statement update mechanism.
 	 */
-	public void testUpdate() {
+	@Test
+	public void update() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Update statement *****");
 		
@@ -789,6 +808,7 @@ public class OpenRobotsOntologyTest extends TestCase {
 				updatedStmts.add("gorilla weight 99.5");
 				
 				oro.update(updatedStmts);
+				
 				
 				partial_statements.add("gorilla age ?a");
 				partial_statements.add("gorilla weight ?w");
@@ -849,7 +869,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * This test checks that concept can be retrieved by their labels. 
 	 * @throws InterruptedException 
 	 */
-	public void testLookup() throws InterruptedException {
+	@Test
+	public void lookup() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Label lookup *****");
 		
@@ -889,7 +910,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 			e.printStackTrace();
 		}
 		
-		assertEquals("The \"king kong\" label should now match two concepts (instance of gorilla, and name for the class & instance KingKong).", 3, oro.lookup("king kong").size());
+		Set<List<String>> res = oro.lookup("king kong");
+		assertEquals("The \"king kong\" label should now match two concepts (instance of gorilla, and class KingKong).", 2, res.size());
 		
 		
 		Set<String> clearPattern = new HashSet<String>();
@@ -937,7 +959,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	 * This test checks that sub- and superclasses are correctly inferred. 
 	 * @throws InterruptedException 
 	 */
-	public void testSubSuperClasses() throws InterruptedException {
+	@Test
+	public void subSuperClasses() throws InterruptedException {
 		
 		System.out.println("[UNITTEST] ***** TEST: Sub- and superclasses *****");
 		
@@ -981,7 +1004,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test try to create statements with various types of literals.
 	 */
-	public void testLiterals() {
+	@Test
+	public void literals() {
 
 		System.out.println("[UNITTEST] ***** TEST: Statements with literals *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1070,7 +1094,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * This test checks that the Remove and Clear methods work as expected.
 	 */
-	public void testAdvancedRemoveAndClear() {
+	@Test
+	public void advancedRemoveAndClear() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Remove & Clear *****");
 		
@@ -1197,7 +1222,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 	/**
 	 * Tests ontology consistency checking.
 	 */
-	public void testConsistency() {
+	@Test
+	public void consistency() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
 		
@@ -1237,7 +1263,8 @@ public class OpenRobotsOntologyTest extends TestCase {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
-public void testStmtConsistency() {
+	@Test
+	public void stmtConsistency() {
 		
 		System.out.println("[UNITTEST] ***** TEST: Checking consistency of a external set of statements *****");
 		
@@ -1270,7 +1297,8 @@ public void testStmtConsistency() {
 	/**
 	 * This test try to match a given set of statements against the ontology, and to get back the class of an object.
 	 */
-	public void testFind() {
+	@Test
+	public void find() {
 
 		System.out.println("[UNITTEST] ***** TEST: Exact statements matching *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -1387,7 +1415,8 @@ public void testStmtConsistency() {
 	/**
 	 * Same as testFind(), but inside the AlteriteModule
 	 */
-	public void testFindForAgent() {
+	@Test
+	public void findForAgent() {
 
 		System.out.println("[UNITTEST] ***** TEST: findForAgent *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1502,7 +1531,8 @@ public void testStmtConsistency() {
 	/**
 	 * This tests the find() method when it returns several variables.
 	 */
-	public void testFindMultipleVariables() {
+	@Test
+	public void findMultipleVariables() {
 
 		System.out.println("[UNITTEST] ***** TEST: Find several variables *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -1541,7 +1571,8 @@ public void testStmtConsistency() {
 	/**
 	 * This test add several new statements and test basic inference mechanisms.
 	 */
-	public void testInference() {
+	@Test
+	public void inference() {
 
 		System.out.println("[UNITTEST] ***** TEST: Inference testing *****");
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
@@ -1584,7 +1615,8 @@ public void testStmtConsistency() {
 	/**
 	 * This tests the similarities function that extracts common features between concepts.
 	 */
-	public void testSimilarities() {
+	@Test
+	public void similarities() {
 
 		System.out.println("[UNITTEST] ***** TEST: Similarities test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1674,7 +1706,8 @@ public void testStmtConsistency() {
 	/**
 	 * This tests the differences function that extracts different properties between concepts.
 	 */
-	public void testDifferences() {
+	@Test
+	public void differences() {
 
 		System.out.println("[UNITTEST] ***** TEST: Differences test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1763,7 +1796,8 @@ public void testStmtConsistency() {
 	 * This tests the diff and similar function in complex hierarchies of 
 	 * classes.
 	 */
-	public void testAdvancedDiff() {
+	@Test
+	public void advancedDiff() {
 
 		System.out.println("[UNITTEST] ***** TEST: Complex hierarchies Diff test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1828,7 +1862,8 @@ public void testStmtConsistency() {
 	 * This tests ability for the cognitive kernel to find discriniment features
 	 * in a set of concepts.
 	 */
-	public void testDiscriminent() {
+	@Test
+	public void discriminent() {
 
 		System.out.println("[UNITTEST] ***** TEST: Categorization test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1842,6 +1877,7 @@ public void testStmtConsistency() {
 		
 		try {
 			oro.add(oro.createStatement("capucin rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("capucin rdf:type MyAnimals"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
@@ -1936,7 +1972,8 @@ public void testStmtConsistency() {
 	/**
 	 * This tests corner cases for the discrinimate method.
 	 */
-	public void testAdvancedDiscriminent() {
+	@Test
+	public void advancedDiscriminent() {
 
 		System.out.println("[UNITTEST] ***** TEST: Advanced getDiscriminent test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -1949,6 +1986,7 @@ public void testStmtConsistency() {
 				
 		try {
 			oro.add(oro.createStatement("capucin rdf:type Monkey"), MemoryProfile.DEFAULT, false);
+			oro.add(oro.createStatement("capucin rdf:type MyAnimals"), MemoryProfile.DEFAULT, false);
 			oro.add(oro.createStatement("capucin climbsOn sunflower"), MemoryProfile.DEFAULT, false);
 			
 		} catch (IllegalStatementException e1) {
@@ -2088,7 +2126,8 @@ public void testStmtConsistency() {
 	 * This tests ability for the cognitive kernel to extract categories from a
 	 * set of concept.
 	 */
-	public void testCategorization() {
+	@Test
+	public void categorization() {
 
 		System.out.println("[UNITTEST] ***** TEST: Categorization test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -2181,7 +2220,8 @@ public void testStmtConsistency() {
 	 * addition of agents.
 	 * @throws IllegalStatementException 
 	 */
-	public void testAlteriteModule1() throws IllegalStatementException {
+	@Test
+	public void alteriteModule1() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Alterite Module *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -2216,7 +2256,8 @@ public void testStmtConsistency() {
 	 * This test checks Alterite module general methods.
 	 * @throws IllegalStatementException 
 	 */
-	public void testAlteriteModule2() throws IllegalStatementException {
+	@Test
+	public void alteriteModule2() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: Alterite Module 2 *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -2267,7 +2308,8 @@ public void testStmtConsistency() {
 	 * This test checks race condition issues that may arise in a concurrent
 	 * execution.
 	 */
-	public void testRaces(){
+	@Test
+	public void races(){
 
 		class Runner extends Thread {
 			 BaseModule oro;
@@ -2374,7 +2416,8 @@ public void testStmtConsistency() {
 	 * This test checks race condition issues that may arise in a concurrent
 	 * execution, within the Alterite module.
 	 */
-	public void testRacesForAgent(){
+	@Test
+	public void racesForAgent(){
 
 		class Runner extends Thread {
 			AlteriteModule oro;
@@ -2497,7 +2540,8 @@ public void testStmtConsistency() {
 	 * TODO: Really difficult to implement because of the SocketConnector structure...
 	 */
 	/*
-	public void testSocketConnector() {
+	@Test
+	public void socketConnector() {
 
 		System.out.println("[UNITTEST] ***** TEST: Socket Connector *****");
 		

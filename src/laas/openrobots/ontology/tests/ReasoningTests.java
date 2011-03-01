@@ -27,7 +27,9 @@ import java.util.Set;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.fail;
+
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -44,7 +46,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  * @author slemaign
  *
  */
-public class ReasoningTests extends TestCase {
+public class ReasoningTests {
 	
 	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_bench.conf";
 	Properties conf;
@@ -58,8 +60,8 @@ public class ReasoningTests extends TestCase {
 		conf = OroServer.getConfiguration(confFile);
 	}
 	
-	
-	public void testBench1Insert() {
+	@Test
+	public void bench1Insert() {
 
 		System.out.println("[UNITTEST] ***** TEST: Benchmark 1 - 1000 inserts *****");
 		
@@ -94,7 +96,8 @@ public class ReasoningTests extends TestCase {
 
 	}
 	
-	public void testBench2InsertQuery() {
+	@Test
+	public void bench2InsertQuery() {
 
 		long max = 10000;
 		

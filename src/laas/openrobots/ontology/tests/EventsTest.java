@@ -21,7 +21,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
@@ -41,7 +45,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
  * @author Severin Lemaignan severin.lemaignan@laas.fr
  *
  */
-public class EventsTest extends TestCase {
+public class EventsTest {
 
 	final String ORO_TEST_CONF = "/home/slemaign/openrobots/etc/oro-server/oro_test.conf";
 	Properties conf;
@@ -69,7 +73,8 @@ public class EventsTest extends TestCase {
 		
 	}
 	
-	public void testEventsFactChecking() throws IllegalStatementException {
+	@Test
+	public void eventsFactChecking() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: FACT_CHECKING events test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -159,7 +164,8 @@ public class EventsTest extends TestCase {
 	 * This tests event framework on "NEW_INSTANCE" type of events
 	 */	
 	//TODO Unit-test not very complete!
-	public void testEventsNewInstance() throws IllegalStatementException {
+	@Test
+	public void eventsNewInstance() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: NEW_INSTANCE events test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
@@ -205,7 +211,8 @@ public class EventsTest extends TestCase {
 	/**
 	 * This tests event "NEW_INSTANCE" with owl:sameAs predicate
 	 */	
-	public void testEventsNewInstanceWithSameAs() throws IllegalStatementException {
+	@Test
+	public void eventsNewInstanceWithSameAs() throws IllegalStatementException {
 		System.out.println("[UNITTEST] ***** TEST: NEW_INSTANCE events test with owl:sameAs *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
 
@@ -241,7 +248,8 @@ public class EventsTest extends TestCase {
 	/**
 	 * This tests event framework on "NEW_CLASS_INSTANCE" type of events
 	 */	
-	public void testEventsNewClassInstance() throws IllegalStatementException {
+	@Test
+	public void eventsNewClassInstance() throws IllegalStatementException {
 
 		System.out.println("[UNITTEST] ***** TEST: NEW_CLASS_INSTANCE events test *****");
 		IOntologyBackend oro = new OpenRobotsOntology(conf);
