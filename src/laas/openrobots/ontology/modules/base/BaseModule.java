@@ -899,15 +899,9 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for classes of " + individual + "...");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Individual myClass = oro.getModel().getIndividual(Namespaces.format(individual));
-		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		OntResource myResource = oro.getResource(individual);
 		
-		if (myClass == null) throw new NotFoundException("The class " + individual + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
-		
-		for (OntResource c : oro.getClassesOf(myClass, false) )
+		for (OntResource c : oro.getClassesOf(myResource, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
 		Logger.log("done.\n");
@@ -925,15 +919,9 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct classes of " + individual + "...");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Individual myClass = oro.getModel().getIndividual(Namespaces.format(individual));
-		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		OntResource myResource = oro.getResource(individual);
 		
-		if (myClass == null) throw new NotFoundException("The class " + individual + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
-		
-		for (OntResource c : oro.getClassesOf(myClass, true) )
+		for (OntResource c : oro.getClassesOf(myResource, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
 
 		Logger.log("done.\n");
@@ -967,17 +955,7 @@ public class BaseModule implements IServiceProvider {
 	)
 	public ResourceDescription getResourceDetails(String id, String language_code) throws NotFoundException {
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		oro.getModel().enterCriticalSection(Lock.READ);
-		//TODO: check if the resource exists!!!
-		OntResource myResource = oro.getModel().getOntResource(Namespaces.format(id));
-		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		
-		if (myResource == null) throw new NotFoundException("The resource " + 
-				id + " does not exists in the ontology (tip: if this resource " +
-						"is not in the default namespace, be sure to add the " +
-						"namespace prefix!)");
+		OntResource myResource = oro.getResource(id);
 		
 		return new ResourceDescription(myResource, language_code);
 	}
@@ -1035,15 +1013,9 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc = "return the label of a concept, if available."
 	)
-	public String getLabel(String id) throws OntologyServerException {
+	public String getLabel(String id) throws NotFoundException {
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		oro.getModel().enterCriticalSection(Lock.READ);
-		//TODO: check if the resource exists!!!
-		OntResource r = oro.getModel().getOntResource(Namespaces.format(id));
-		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		
+		OntResource r = oro.getResource(id);
 		
 		return Helpers.getLabel(r);
 	}
