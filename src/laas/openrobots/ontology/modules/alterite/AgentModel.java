@@ -88,10 +88,7 @@ public class AgentModel {
 					
 			try {
 				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
-				
-				if (oroAgentInstanceUri != null) 
-					agentInstancesModel = FileManager.get().loadModel(oroAgentInstanceUri);
-				
+
 				if (oroScenarioUri != null) 
 					scenarioModel = FileManager.get().loadModel(oroScenarioUri);
 				

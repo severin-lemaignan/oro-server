@@ -1160,14 +1160,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				mainModel = FileManager.get().loadModel(oroCommonSenseUri);
 				Logger.log("Common sense ontology initialized with "+ 
 						oroCommonSenseUri +".\n", VerboseLevel.IMPORTANT);
-				
-				if (oroRobotInstanceUri != null) 
-				{
-				robotInstancesModel = FileManager.get().loadModel(oroRobotInstanceUri);
-				Logger.log("Robot-specific ontology loaded from " + 
-						oroRobotInstanceUri + ".\n", VerboseLevel.IMPORTANT);
-				}
-				
+								
 				if (oroScenarioUri != null) 
 				{
 				scenarioModel = FileManager.get().loadModel(oroScenarioUri);
