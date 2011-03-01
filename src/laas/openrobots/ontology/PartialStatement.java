@@ -16,6 +16,7 @@
 
 package laas.openrobots.ontology;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
@@ -49,6 +50,43 @@ public class PartialStatement implements Statement {
 	private List<String> stmtTokens;
 	
 	private StatementImpl baseStmt;
+	
+	/** Creates a partial statement from a partial triplet (subject, predicate, object).
+	 * 
+	 * At least one of the parameter is assumed to be null.
+	 * 
+	 * @param subject The subject of the statement
+	 * @param predicate The predicate of the statement
+	 * @param object The object of the statement
+	 * @param model The ontology this partial statement refers to.
+	 */
+	public PartialStatement(Resource subject, Property predicate, RDFNode object, ModelCom model) {
+		
+		stmtTokens = new ArrayList<String>();
+		
+		if (subject == null) {
+			stmtTokens.add("?subject");
+			subject = model.createResource("nullSubject");
+		}
+		else
+			stmtTokens.add(Namespaces.toLightString(subject));
+		
+		if (predicate == null) {
+			stmtTokens.add("?predicate");
+			predicate = model.createProperty("nullPredicate");
+		}
+		else
+			stmtTokens.add(Namespaces.toLightString(predicate));
+		
+		if (object == null) {
+			stmtTokens.add("?object");
+			object = model.createResource("nullObject");
+		}
+		else
+			stmtTokens.add(Namespaces.toLightString(object));
+		
+		baseStmt = new StatementImpl(subject, predicate, object, model);
+	}
 	
 	/**
 	 * Create a new partial statement from its string representation.<br/>
