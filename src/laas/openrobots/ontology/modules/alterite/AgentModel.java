@@ -77,9 +77,10 @@ public class AgentModel {
 		
 		else if(onto_model_reasonner_name.equalsIgnoreCase("jena_internal_rdfs"))
 			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RDFS_INF;
-		
-		else onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RULE_INF;
-		
+		else if(onto_model_reasonner_name.equalsIgnoreCase("jena_internal_owl_rule"))
+			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RULE_INF;
+		else onto_model_reasonner = OntModelSpec.OWL_DL_MEM;
+
 		// loading of the OWL ontologies thanks Jena	
 		try {
 			Model mainModel = null;
