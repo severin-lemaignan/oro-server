@@ -69,6 +69,7 @@ oro_agent_instance = @ONTOLOGIES_PATH@/agent.oro.owl
 #  * jena_internal_rdfs (the OWL_DL_MEM_RDFS_INF OntModelSpec), 
 #  * jena_internal_owl_rule (OWL_DL_MEM_RULE_INF), 
 #  * pellet (PelletReasonerFactory.THE_SPEC)
+#  * none
 
 reasonner = pellet
 

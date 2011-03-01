@@ -466,6 +466,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		String cause = "";
 		
+		isInInconsistentState = false;
+		
+		if (report == null) {
+			return;
+		}
+		
 		if (!report.isValid())
 		{
 			Logger.demo("Checking consistency:", "ontology is inconsistent!", false);
@@ -478,9 +484,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 			throw new InconsistentOntologyException(cause);
 		}
-		
-		isInInconsistentState = false;
-		
+				
 		Logger.demo("Checking consistency:", "ontology is consistent", true);
 		
 	}
@@ -1137,9 +1141,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RDFS_INF;
 			onto_model_reasonner_name = "Jena internal reasonner - RDFS inference engine -";
 		}
-		else {
+		else if(onto_model_reasonner_name.equalsIgnoreCase("jena_internal_owl_rule")){
 			onto_model_reasonner = OntModelSpec.OWL_DL_MEM_RULE_INF;
 			onto_model_reasonner_name = "Jena internal reasonner - OWL rule inference engine -";
+		}
+		else {
+			onto_model_reasonner = OntModelSpec.OWL_DL_MEM;
+			onto_model_reasonner_name = "No reasonner -";
 		}
 		
 		// loading of the OWL ontologies thanks Jena	
@@ -1263,7 +1271,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			getModel().enterCriticalSection(Lock.READ);
 
 			// if the ontology is inconsistent, do not update the lookup table.
-			if (!getModel().validate().isValid()){
+			ValidityReport report = getModel().validate();
+			
+			if (report == null || !report.isValid()){
 				getModel().leaveCriticalSection();
 				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				return;
