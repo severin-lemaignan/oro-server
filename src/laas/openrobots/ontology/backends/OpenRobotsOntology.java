@@ -764,18 +764,27 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		onto.enterCriticalSection(Lock.READ);
 		
-		Individual individual = resource.asIndividual();
+		Individual individual = null;
 		
-		ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
-		while (it.hasNext())
-		{
-			OntClass tmp = it.next();
-			if (tmp != null && !tmp.isAnon()){
-				result.add(tmp);
+		try {
+			individual = resource.asIndividual();
+		
+			ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
+			while (it.hasNext())
+			{
+				OntClass tmp = it.next();
+				if (tmp != null && !tmp.isAnon()){
+					result.add(tmp);
+				}
 			}
+		} 
+		catch (ConversionException ce) {
+			throw new NotFoundException(Namespaces.toLightString(resource) + " is not an individual!");
+		} 
+		finally {
+			onto.leaveCriticalSection();
+			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 		}
-		onto.leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct classes of " + Namespaces.toLightString(resource), result);
