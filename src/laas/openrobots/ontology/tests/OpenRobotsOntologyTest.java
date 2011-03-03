@@ -414,7 +414,7 @@ public class OpenRobotsOntologyTest {
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
 				
-		Set<String> infos;
+		Set<String> infos = null;
 
 		//Check the behaviour of the method in case of inexistant resource
 		try {
@@ -425,7 +425,12 @@ public class OpenRobotsOntologyTest {
 		
 		long startTime = System.currentTimeMillis();
 		
-		infos = oro.getInfos("oro:baboon");
+		try {
+			infos = oro.getInfos("oro:baboon");
+		}
+		catch (NotFoundException nfe) {
+			fail();
+		}
 		
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
@@ -448,7 +453,7 @@ public class OpenRobotsOntologyTest {
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
 				
-		Set<String> infos;
+		Set<String> infos = null;
 
 		//Check the behaviour of the method in case of inexistant resource
 		try {
@@ -459,7 +464,12 @@ public class OpenRobotsOntologyTest {
 		
 		long startTime = System.currentTimeMillis();
 		
-		infos = oro.getInfos("baboon");
+		try {
+			infos = oro.getInfos("baboon");
+		} catch (NotFoundException nfe)
+		{
+			fail();
+		}
 		
 		System.out.println("[UNITTEST] Information retrieval executed in roughly "+ (System.currentTimeMillis() - startTime) + "ms.");
 
@@ -774,6 +784,50 @@ public class OpenRobotsOntologyTest {
 	}
 	
 	/**
+	 * Tests ontology consistency checking.
+	 */
+	@Test
+	public void consistency() {
+		
+		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
+		
+
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
+
+		assertTrue("Initial ontology should be detected as consistent!", oro.checkConsistency());
+				
+		try {
+			Statement s = onto.createStatement("cow rdf:type Plant");
+			onto.add(s, MemoryProfile.DEFAULT, false);
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements in testConsistency!");
+		}
+				
+		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
+		assertFalse("Ontology should be detected as inconsistent! Cows are not plants!", oro.checkConsistency());
+
+		
+		try {
+			Set<String> stmtsToRemove = new HashSet<String>();
+			stmtsToRemove.add("cow rdf:type Plant");
+			oro.clear(stmtsToRemove);
+			assertTrue(oro.checkConsistency());
+		} catch (IllegalStatementException e) {
+			fail();
+		}
+		
+		try {
+			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT, false);
+			assertFalse("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!", oro.checkConsistency());
+		} catch (IllegalStatementException e) {
+			fail("Error while adding a set of statements in testConsistency!");
+		}
+				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	/**
 	 * This test checks the statement update mechanism.
 	 */
 	@Test
@@ -786,7 +840,7 @@ public class OpenRobotsOntologyTest {
 	
 		Set<String> stmts = new HashSet<String>();
 		
-		stmts.add("gorilla rdfs:label 'KingKong'"); //rdfs:label is not a functional property. The value shouldn't be replace.
+		stmts.add("gorilla rdfs:label 'KingKong'"); //rdfs:label is not a functional property. The value shouldn't be replaced.
 		
 		//Other asserted statement in testsuite.oro.owl
 		//gorilla isFemale false
@@ -808,7 +862,7 @@ public class OpenRobotsOntologyTest {
 				updatedStmts.add("gorilla weight 99.5");
 				
 				oro.update(updatedStmts);
-				
+				assertTrue("The update was not successful: a functional property has now 2 values.", oro.checkConsistency());
 				
 				partial_statements.add("gorilla age ?a");
 				partial_statements.add("gorilla weight ?w");
@@ -977,8 +1031,6 @@ public class OpenRobotsOntologyTest {
 			e.printStackTrace();
 		}
 
-		long startTime = System.currentTimeMillis();
-		
 		//for (String k : oro.getInstancesOf("Monkey").keySet()){
 		//	System.out.println(k);
 		//}
@@ -996,9 +1048,52 @@ public class OpenRobotsOntologyTest {
 		
 		assertEquals("Eight subclasses of A should be returned.", 8, oro.getSubclassesOf("A").size());
 	
-		long totalTime = (System.currentTimeMillis()-startTime);
-		System.out.println("[UNITTEST] ***** Total time elapsed: "+ totalTime +"ms. Average by query:" + totalTime / 8 + "ms");
-		System.out.println("[UNITTEST] ***** Test successful *****");
+		try {
+			oro.getDirectSuperclassesOf("baboon");
+			fail("Baboon is not a class!");
+		}
+		catch (NotFoundException nfe)
+		{}
+		
+		try {
+			oro.getDirectSubclassesOf("baboon");
+			fail("Baboon is not a class!");
+		}
+		catch (NotFoundException nfe)
+		{}
+	}
+	
+	/**
+	 * This test checks the behaviour of the server when the class of a 
+	 * resource is requested. 
+	 * @throws InterruptedException 
+	 */
+	@Test
+	public void classOf() throws InterruptedException {
+		
+		System.out.println("[UNITTEST] ***** TEST: instance of/class of... *****");
+		
+		IOntologyBackend onto = new OpenRobotsOntology(conf);
+		BaseModule oro = new BaseModule(onto);
+         
+		try {
+			oro.getClassesOf("Monkey");
+			fail("I shouldn't be able to return the class of a class.");
+		}
+		catch (NotFoundException nfe) {}
+		
+		//We call that to be sure that no nasty lock are being held.
+		oro.checkConsistency();
+		
+		//is that the correct behaviour?? returning an empty set?
+		assertTrue(oro.getClassesOf("owl:Class").isEmpty());
+		
+		try {
+			oro.getInstancesOf("baboon");
+			fail("I shouldn't be able to return the instances of an instance.");
+		}
+		catch (NotFoundException nfe) {}
+	
 	}
 	
 	/**
@@ -1219,49 +1314,7 @@ public class OpenRobotsOntologyTest {
 	}
 
 	
-	/**
-	 * Tests ontology consistency checking.
-	 */
-	@Test
-	public void consistency() {
-		
-		System.out.println("[UNITTEST] ***** TEST: Ontology consistency checking *****");
-		
 
-		IOntologyBackend onto = new OpenRobotsOntology(conf);
-		BaseModule oro = new BaseModule(onto);
-
-		assertTrue("Initial ontology should be detected as consistent!", oro.checkConsistency());
-				
-		try {
-			Statement s = onto.createStatement("cow rdf:type Plant");
-			onto.add(s, MemoryProfile.DEFAULT, false);
-		} catch (IllegalStatementException e) {
-			fail("Error while adding a set of statements in testConsistency!");
-		}
-				
-		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
-		assertFalse("Ontology should be detected as inconsistent! Cows are not plants!", oro.checkConsistency());
-
-		
-		try {
-			Set<String> stmtsToRemove = new HashSet<String>();
-			stmtsToRemove.add("cow rdf:type Plant");
-			oro.clear(stmtsToRemove);
-			assertTrue(oro.checkConsistency());
-		} catch (IllegalStatementException e) {
-			fail();
-		}
-		
-		try {
-			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT, false);
-			assertFalse("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!", oro.checkConsistency());
-		} catch (IllegalStatementException e) {
-			fail("Error while adding a set of statements in testConsistency!");
-		}
-				
-		System.out.println("[UNITTEST] ***** Test successful *****");
-	}
 	
 	@Test
 	public void stmtConsistency() {
