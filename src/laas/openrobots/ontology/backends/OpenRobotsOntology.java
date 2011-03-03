@@ -922,17 +922,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 
 	@Override
 	public void update(Set<Statement> stmts) throws IllegalStatementException {
+		
+		Set<Statement> stmtsToRemove = new HashSet<Statement>();
+		
 		for (Statement stmt : stmts) {
-			
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
 				
 				Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 				onto.enterCriticalSection(Lock.READ);
 				
-				StmtIterator stmtsToRemove = null;
+				StmtIterator stmtsToRemoveIt = null;
 				try {
-					stmtsToRemove = onto.listStatements(selector);
+					stmtsToRemoveIt = onto.listStatements(selector);
 				} catch (Exception e) {
 						e.printStackTrace();	
 				} finally {
@@ -940,16 +942,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);				
 				}
 				
-				Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-				onto.enterCriticalSection(Lock.WRITE);
-				onto.remove(stmtsToRemove);
-				onto.leaveCriticalSection();
-				Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-					
+				stmtsToRemove.addAll(stmtsToRemoveIt.toSet());
+				
 			}
-			
 		}
-		
+
+		remove(stmtsToRemove);
 		add(stmts, MemoryProfile.DEFAULT, false);
 		
 	}
@@ -1077,28 +1075,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		model and classify it before each query.
 		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
 		*/
-		Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-		getModel().enterCriticalSection(Lock.WRITE);
 		try {
-			((PelletInfGraph) getModel().getGraph()).classify();
-			
-			//We successfully classified the ontology: it is not inconsistent
-			if (isInInconsistentState) {
-				Logger.log("The ontology is back in a consistent state\n ", 
-						VerboseLevel.WARNING);
-				isInInconsistentState = false;
-			}
-		}
-		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
-			isInInconsistentState = true;
-			
+			checkConsistency();
+		} catch (InconsistentOntologyException e) {
 			Logger.log("The ontology is in an inconsistent state! I won't " +
 					"update the events subscribers\n ", VerboseLevel.WARNING);
-		}
-		
-		getModel().leaveCriticalSection();
-		Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
-
+		}		
 
 		//Update the event notifiers
 		if (!isInInconsistentState) eventProcessor.process();
