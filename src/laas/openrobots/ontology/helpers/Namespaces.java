@@ -272,6 +272,11 @@ public class Namespaces {
 			if (!ns.equals("")) {
 				String ns2[] = ns.split("::", 2);
 				if (ns2.length == 2) {
+					
+					// Add a trailing '#' if necessary.
+					if (! (ns2[1].endsWith("#") || ns2[1].endsWith("/")))
+						ns2[1] += "#";
+					
 					Namespaces.put(ns2[0], ns2[1]);
 					Logger.log("Registered namespace " + ns2[1] + " (" + 
 					ns2[0] + ")\n", VerboseLevel.VERBOSE);
