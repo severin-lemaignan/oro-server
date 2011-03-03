@@ -1144,7 +1144,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// loading of the OWL ontologies thanks Jena	
 		try {
 			Model mainModel = null;
-			Model robotInstancesModel = null;
 			Model scenarioModel = null;
 					
 			try {
@@ -1178,13 +1177,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.WRITE);
-			if (robotInstancesModel != null) onto.add(robotInstancesModel);
 			if (scenarioModel != null) onto.add(scenarioModel);
 			
 			String defaultRobotId = parameters.getProperty("robot_id");
 			if (defaultRobotId != null)
 				try {
 					onto.add(this.createStatement("myself owl:sameAs " + defaultRobotId));
+					onto.add(this.createStatement("myself rdf:type Robot"));
 				} catch (IllegalStatementException e1) {
 					Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
 				}
@@ -1193,9 +1192,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			Logger.cr();
 			Logger.log("Ontology successfully loaded (using Jena " + com.hp.hpl.jena.Jena.VERSION + ").\n", VerboseLevel.IMPORTANT);
-			
-			if (robotInstancesModel != null) 
-				Logger.log("\t- Robot-specific knowledge loaded and merged.\n");
 			
 			if (scenarioModel != null)
 				Logger.log("\t- Scenario-specific knowledge loaded and merged.\n");

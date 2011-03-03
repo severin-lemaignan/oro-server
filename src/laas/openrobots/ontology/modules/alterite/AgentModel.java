@@ -65,7 +65,6 @@ public class AgentModel {
 				"a model: no parameters given");
 		
 		String oroCommonSenseUri = parameters.getProperty("oro_common_sense");
-		String oroAgentInstanceUri = parameters.getProperty("oro_agent_instance");
 		String oroScenarioUri = parameters.getProperty("oro_scenario");
 		
 		OntModelSpec onto_model_reasonner;
@@ -84,7 +83,6 @@ public class AgentModel {
 		// loading of the OWL ontologies thanks Jena	
 		try {
 			Model mainModel = null;
-			Model agentInstancesModel = null;
 			Model scenarioModel = null;
 					
 			try {
@@ -97,8 +95,7 @@ public class AgentModel {
 				Logger.log("Unexpected error while initializing a new cognitive " +
 						"model for agent " + id + ": could not find one of these" +
 						" files:\n\t- " + oroCommonSenseUri + ",\n\t- " + 
-						oroAgentInstanceUri + " or\n\t- " + oroScenarioUri + 
-						".\nExiting.", VerboseLevel.SERIOUS_ERROR);
+						oroScenarioUri + ".\nExiting.", VerboseLevel.SERIOUS_ERROR);
 			}
 
 				
@@ -106,7 +103,6 @@ public class AgentModel {
 			
 			Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
 			onto.enterCriticalSection(Lock.WRITE);
-			if (agentInstancesModel != null) onto.add(agentInstancesModel);
 			if (scenarioModel != null) onto.add(scenarioModel);
 
 			onto.leaveCriticalSection();
