@@ -481,7 +481,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 
-	@Override
 	public boolean checkConsistency(Set<Statement> statements) {
 		
 		boolean consistent = true;
