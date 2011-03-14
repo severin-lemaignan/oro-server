@@ -39,6 +39,7 @@ import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
+import laas.openrobots.ontology.exceptions.InvalidRuleException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
@@ -227,6 +228,99 @@ public class OpenRobotsOntologyTest {
 		System.out.println("OK.");
 	}
 	
+	@Test
+	public void rulesTokenizer() {
+	
+		System.out.println("[UNITTEST] ***** TEST: Testing rules tokenizer *****");
+
+		String rule = "Male(?y), hasParent(?x, ?y) -> hasFather(?x, ?y)";
+		
+		try {
+			assertEquals("Male(?y)", Helpers.tokenizeRule(rule).getLeft().get(0));
+			assertEquals("hasParent(?x, ?y)", Helpers.tokenizeRule(rule).getLeft().get(1));
+			assertEquals("hasFather(?x, ?y)", Helpers.tokenizeRule(rule).getRight().get(0));
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}	
+			rule = "atom1   (  ?x, ?y),,atom2(abc), -> atom2(?x), atom3(?x, ?y, ?z)";
+
+		try {
+			assertEquals("atom1   (  ?x, ?y)", Helpers.tokenizeRule(rule).getLeft().get(0));
+			assertEquals("atom2(abc)", Helpers.tokenizeRule(rule).getLeft().get(1));
+			assertEquals("atom2(?x)", Helpers.tokenizeRule(rule).getRight().get(0));
+			assertEquals("atom3(?x, ?y, ?z)", Helpers.tokenizeRule(rule).getRight().get(1));
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}
+		
+		try {
+			rule = "atom1";
+			Helpers.tokenizeRule(rule);
+			fail();
+		} catch (InvalidRuleException ire) {}
+		
+		try {
+			rule = "atom1 ->";
+			Helpers.tokenizeRule(rule);
+			fail();
+		} catch (InvalidRuleException ire) {}
+		
+		try {
+			rule = "atom1(?x ->";
+			Helpers.tokenizeRule(rule);
+			fail();
+		} catch (InvalidRuleException ire) {}
+		
+		rule = "atom1(?x) ->";
+
+		try {
+			assertEquals("atom1(?x)", Helpers.tokenizeRule(rule).getLeft().get(0));
+			assertEquals(Helpers.tokenizeRule(rule).getRight().size(), 0);
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}
+		
+		rule = "atom1(?x) ->,,";
+
+		try {
+			assertEquals("atom1(?x)", Helpers.tokenizeRule(rule).getLeft().get(0));
+			assertEquals(Helpers.tokenizeRule(rule).getRight().size(), 0);
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}
+
+		try {
+			rule = "-> atom1";
+			Helpers.tokenizeRule(rule);
+			fail();
+		} catch (InvalidRuleException ire) {}
+		
+		rule = "-> atom1(?x)";
+
+		try {
+			assertEquals(Helpers.tokenizeRule(rule).getLeft().size(), 0);
+			assertEquals("atom1(?x)", Helpers.tokenizeRule(rule).getRight().get(0));
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}
+
+		rule = ",,->atom1(?x)";
+
+		try {
+			assertEquals(Helpers.tokenizeRule(rule).getLeft().size(), 0);
+			assertEquals("atom1(?x)", Helpers.tokenizeRule(rule).getRight().get(0));
+		} catch (InvalidRuleException e) {
+			fail(e.getMessage());
+		}
+
+		try {
+			rule = "atom1(?x) -> atom1(?y, ?z) -> atom1(?y, ?z)";
+			Helpers.tokenizeRule(rule);
+			fail();
+		} catch (InvalidRuleException ire) {}
+
+		
+	}
 	@Test
 	public void reset() {
 		

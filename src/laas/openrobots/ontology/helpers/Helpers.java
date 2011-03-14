@@ -40,6 +40,7 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidRuleException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 
 import com.hp.hpl.jena.datatypes.DatatypeFormatException;
@@ -228,7 +229,8 @@ public class Helpers {
 		return type;
 	}
 	
-	/** Split a string into tokens separated by commas. It properly handle quoted strings and arrays delimited by [] or {}.
+	/** Split a string into tokens separated by the given delimiter. It protects 
+	 * quoted strings and arrays delimited by [] or {}.
 	 * 
 	 * @param str A string to tokenize.
 	 * @return A list of tokens
@@ -278,6 +280,126 @@ public class Helpers {
 		
 	}
 	
+	/** Tokenizes rules in the SWRL syntax.
+	 * For instance:
+	 * Male(?y), hasParent(?x, ?y) -> hasFather(?x, ?y)
+	 * would be converted into 2 lists:
+	 * ['Male(?y)', 'hasParent(?x, ?y)'] and ['hasFather(?x, ?y)'] 
+	 * 
+	 * @param rule the literal form of the rule, using the SWRL syntax
+	 * @return a pair of list of string: the first list is the body of the rule,
+	 * the second list is the head. Each atom is left in its literal form
+	 */
+	public static Pair<List<String>, List<String>> tokenizeRule (String rule) throws InvalidRuleException {
+			
+		List<String> body = new ArrayList<String>();
+		List<String> head = new ArrayList<String>();
+		
+		boolean onlyBody = false;
+		boolean onlyHead = false;
+		
+		if (!rule.contains("->")) 
+			throw new InvalidRuleException("A rule must contain exactly one '->' pattern");
+		
+        String[] body_head = rule.split("->");
+        
+        if (body_head.length == 0 || body_head.length > 2)
+        	throw new InvalidRuleException("A rule must contain exactly one '->' pattern, and at least a body or a head.");
+        
+        //Case only head or only body
+        if (body_head.length == 1) {
+        	//Add an atom at the front, and check if it changes the amount of atom after splitting
+        	//Probably not the most efficient way to do it, but easy to code :-)
+        	if (("test" + rule).split("->").length == 1)
+        		onlyBody = true;
+        	else
+        		onlyHead = true;
+        }
+        	
+		int countParentheses = 0;
+		boolean seenParentheses = false;
+		int start_pos = 0;
+		
+		//********* Body *********
+		if (!onlyHead)
+		{
+			for (int i = 0; i < body_head[0].length() ; i++) {
+				if (body_head[0].charAt(i) == '(' && ((i > 0) ? body_head[0].charAt(i - 1) != '\\' : true)) {
+					countParentheses++;
+					seenParentheses = true;
+				}
+				if (body_head[0].charAt(i) == ')' && ((i > 0) ? body_head[0].charAt(i - 1) != '\\' : true))
+					countParentheses--;
+							
+				if (body_head[0].charAt(i) == ',' && countParentheses == 0) 
+				{
+					String atom = body_head[0].substring(start_pos, i).trim();
+					start_pos = i + 1;
+					
+					//Case of comas with only spaces inbetween. We skip it.
+					if (atom.length() == 0) continue;
+					
+					if (!seenParentheses) 
+						throw new InvalidRuleException("Atom without parameters in rule body");
+					
+					seenParentheses = false;
+					body.add(atom);
+				}
+			}
+			String atom = body_head[0].substring(start_pos, body_head[0].length()).trim();
+			if (atom.length() != 0) {
+				if (!seenParentheses) 
+					throw new InvalidRuleException("Atom without parameters in rule body");
+				if (countParentheses != 0) 
+					throw new InvalidRuleException("Unmatched parenthesis in rule body");
+				
+				body.add(atom);
+			}
+		}
+		
+		//********** Head ***********
+		seenParentheses = false;
+		start_pos = 0;
+		if (!onlyBody)
+		{
+			for (int i = 0; i < body_head[1].length() ; i++) {
+				if (body_head[1].charAt(i) == '(' && ((i > 0) ? body_head[1].charAt(i - 1) != '\\' : true)){
+					countParentheses++;
+					seenParentheses = true;
+				}
+				if (body_head[1].charAt(i) == ')' && ((i > 0) ? body_head[1].charAt(i - 1) != '\\' : true))
+					countParentheses--;
+							
+				if (body_head[1].charAt(i) == ',' && countParentheses == 0) 
+				{
+					String atom = body_head[1].substring(start_pos, i).trim();
+					start_pos = i + 1;
+					
+					//Case of comas with only spaces inbetween. We skip it.
+					if (atom.length() == 0) continue;
+					
+					if (!seenParentheses) 
+						throw new InvalidRuleException("Atom without parameters in rule head");
+					
+					seenParentheses = false;
+					head.add(atom);
+				}
+			}
+			String atom = body_head[1].substring(start_pos, body_head[1].length()).trim();
+			if (atom.length() != 0) {
+				if (!seenParentheses) 
+					throw new InvalidRuleException("Atom without parameters in rule head");
+				if (countParentheses != 0) 
+					throw new InvalidRuleException("Unmatched parenthesis in rule head");
+				
+				head.add(atom);	
+			}
+			
+		}
+		
+		return new Pair(body, head);
+        
+	}
 	/**
 	 * This static method takes a map and return the list of the key sorted by
 	 * their values in ascending order.
