@@ -347,7 +347,7 @@ public class BaseModule implements IServiceProvider {
 		}
 		catch (InconsistentOntologyException e){
 			Logger.log("...ontology is inconsistent!\n", VerboseLevel.WARNING, false);
-			Logger.log("Inconsistency causes:\n" + e.getMessage(), VerboseLevel.WARNING, false);
+			Logger.log("Inconsistency causes:\n" + e.getMessage() + "\n", VerboseLevel.WARNING, false);
 			return false;
 		}
 		

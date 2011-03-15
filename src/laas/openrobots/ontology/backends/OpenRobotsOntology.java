@@ -1089,6 +1089,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		} catch (InconsistentOntologyException e) {
 			Logger.log("The ontology is in an inconsistent state! I won't " +
 					"update the events subscribers\n ", VerboseLevel.WARNING);
+			Logger.log("Inconsistency causes:\n" + e.getMessage() + "\n", VerboseLevel.WARNING, false);
 		}		
 
 		//Update the event notifiers
