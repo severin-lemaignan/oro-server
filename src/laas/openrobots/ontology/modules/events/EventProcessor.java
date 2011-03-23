@@ -22,8 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.omg.CosNaming.IstringHelper;
-
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
@@ -436,38 +434,45 @@ public class EventProcessor {
 		}
 
 		
-		Set<Resource> futureResources = new HashSet<Resource>(instances);
+		Set<Resource> addedResources = new HashSet<Resource>(instances);
+		addedResources.removeAll(holder.lastMatchedResources);
 		
-		instances.removeAll(holder.lastMatchedResources);
-		
-		//Nothing changed
-		if (instances.isEmpty() && futureResources.size() == holder.lastMatchedResources.size())
-			return;
-		
+		Set<Resource> removedResources = new HashSet<Resource>(holder.lastMatchedResources);
+		removedResources.removeAll(instances);
+
 		//Instances have been removed
-		if (instances.isEmpty() && futureResources.size() < holder.lastMatchedResources.size()) {
-			holder.lastMatchedResources = futureResources;
-			return;
+		if (!removedResources.isEmpty()) {
+			OroEvent e = new OroEventNewInstances(removedResources);
+			switch (holder.watcher.getTriggeringType()) {
+			case ON_FALSE:
+			case ON_TOGGLE:
+				holder.watcher.notifySubscribers(e);
+				break;
+				
+			case ON_FALSE_ONE_SHOT:
+				holder.watcher.notifySubscribers(e);
+				watchersToBeRemoved.add(holder);
+				break;		
+			}
 		}
-		
-		assert (!(instances.isEmpty() && futureResources.size() > holder.lastMatchedResources.size()));
 		
 		//New instances have been added
-		OroEvent e = new OroEventNewInstances(instances);
-		
-		switch (holder.watcher.getTriggeringType()) {
-		case ON_TRUE:
-			holder.watcher.notifySubscribers(e);
-			break;
-			
-		case ON_TRUE_ONE_SHOT:
-			holder.watcher.notifySubscribers(e);
-			watchersToBeRemoved.add(holder);
-			break;		
+		if (!addedResources.isEmpty()) {
+			OroEvent e = new OroEventNewInstances(addedResources);		
+			switch (holder.watcher.getTriggeringType()) {
+			case ON_TRUE:
+			case ON_TOGGLE:
+				holder.watcher.notifySubscribers(e);
+				break;
+				
+			case ON_TRUE_ONE_SHOT:
+				holder.watcher.notifySubscribers(e);
+				watchersToBeRemoved.add(holder);
+				break;		
+			}
 		}
-		
-		
-		holder.lastMatchedResources = futureResources;
+				
+		holder.lastMatchedResources = instances;
 		
 		
 	}
