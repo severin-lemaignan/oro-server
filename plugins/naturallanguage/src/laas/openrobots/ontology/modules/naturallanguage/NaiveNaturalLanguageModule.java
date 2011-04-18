@@ -357,5 +357,9 @@ public class NaiveNaturalLanguageModule implements IModule, IServiceProvider {
 		return this;
 	}
 
+	@Override
+	public void step() {
+	}
+
 }
 
