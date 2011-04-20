@@ -341,6 +341,11 @@ public class OpenRobotsOntologyTest {
 			e.printStackTrace();
 			fail();
 		}
+		
+		//TODO: wrong: some statement should be there (-> commonsense knowledge)
+		assertEquals("After a reset, no statements are expected in the model.", 0, server.size());
+		
+		//TODO: test with several models
 	}
 	
 	@Test

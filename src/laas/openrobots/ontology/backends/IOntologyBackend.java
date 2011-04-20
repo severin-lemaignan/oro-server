@@ -144,6 +144,12 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract PartialStatement createPartialStatement(String statement)
 			throws IllegalStatementException;
 
+	/** Returns the number of statements in the model.
+	 * 
+	 * @return the number of statements in the model.
+	 */
+	public abstract long size();
+	
 	/**
 	 * Returns the underlying Jena ontology model.
 	 * @return the current underlying Jena ontology model.

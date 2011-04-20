@@ -1380,6 +1380,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 
+	@Override
+	public long size() {
+		return onto.size();
+	}
+
 
 
 }

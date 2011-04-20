@@ -466,6 +466,10 @@ public class OroServer implements IServiceProvider {
 		
 		return stats;
 	}
+	
+	public long size() {
+		return oro.size();
+	}
 
 	@RPCMethod(
 			desc = "returns a human-friendly list of available methods with " +
