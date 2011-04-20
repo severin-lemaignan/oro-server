@@ -716,11 +716,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -747,11 +747,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -778,11 +778,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -809,11 +809,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -840,11 +840,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for instances of " + type + "...");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -873,11 +873,11 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct instances of " + type + "...");
 		
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
-		Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		

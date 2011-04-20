@@ -27,6 +27,8 @@ import laas.openrobots.ontology.PartialStatement;
 
 public class Logger {
 
+	public enum LockType {ACQUIRE_READ, ACQUIRE_WRITE, RELEASE_READ, RELEASE_WRITE};
+	
     static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
     
 	/**
@@ -136,8 +138,9 @@ public class Logger {
 				System.out.print(prefix + msg);
 				break;
 			
-			case DEBUG:
 			case VERBOSE:
+			case DEBUG:
+			case DEBUG_CONCURRENCY:
 				if (withPrefix)
 					 prefix += "[DEBUG] ";
 				printInBlue(prefix + msg);
@@ -158,6 +161,34 @@ public class Logger {
 		if (level.ordinal() > OroServer.VERBOSITY.ordinal())
 			return false;
 		return true;
+	}
+	
+	public static void logConcurrency(LockType type) {
+		logConcurrency(type, "");
+	}
+		
+	public static void logConcurrency(LockType type, String info) {
+		if (Logger.verbosityMin(VerboseLevel.DEBUG_CONCURRENCY)) {
+			
+			String msg = "";
+			switch (type) {
+				case ACQUIRE_READ:
+					msg = "enterCS";
+				case ACQUIRE_WRITE:
+					msg = "enterCSw";
+				case RELEASE_READ:
+					msg = "leaveCS";
+				case RELEASE_WRITE:
+					msg = "leaveCSw";
+			}
+			
+			if(!info.isEmpty()) info = " (" + info + ")";
+			
+			Logger.log(">>" + msg + info + ": " + 
+					Thread.currentThread().getStackTrace()[3].getMethodName() + 
+					" -> " + Thread.currentThread().getStackTrace()[2].getMethodName() + "\n", 
+					VerboseLevel.DEBUG_CONCURRENCY, false);
+		}
 	}
 
 	public static void cr(){

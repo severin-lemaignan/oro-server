@@ -141,11 +141,11 @@ public class EventProcessor {
 				//must use a "for" loop because getWatchPattern is a set, but it
 				//contains actually only one element.
 				for (String s : watcher.getWatchPattern()) {
-					Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+					Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 					onto.getModel().enterCriticalSection(Lock.READ);
 					referenceClass = onto.getModel().getOntClass(Namespaces.format(s));
 					onto.getModel().leaveCriticalSection();
-					Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+					Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 					
 					if (referenceClass == null) {
 						Logger.log("The class " + s + " does not exists in the " +
@@ -302,7 +302,7 @@ public class EventProcessor {
 		
 		boolean isAsserted = false;
 
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.getModel().enterCriticalSection(Lock.READ);
 		
 		try {
@@ -317,7 +317,7 @@ public class EventProcessor {
 		}
 		finally {
 			onto.getModel().leaveCriticalSection();
-			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		}
 		
 		
@@ -407,7 +407,7 @@ public class EventProcessor {
 		
 		ResultSet rawResult = null;
 
-		Logger.log(">>enterCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.getModel().enterCriticalSection(Lock.READ);
 		
 		try {
@@ -422,7 +422,7 @@ public class EventProcessor {
 		}
 		finally {
 			onto.getModel().leaveCriticalSection();
-			Logger.log(">>leaveCS: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		}
 		
 		if (rawResult != null) {				

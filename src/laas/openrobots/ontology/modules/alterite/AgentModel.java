@@ -101,12 +101,13 @@ public class AgentModel {
 				
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
-			Logger.log(">>enterCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 			onto.enterCriticalSection(Lock.WRITE);
+			
 			if (scenarioModel != null) onto.add(scenarioModel);
 
 			onto.leaveCriticalSection();
-			Logger.log(">>leaveCSw: " + Thread.currentThread().getStackTrace()[2].getMethodName() + " -> " + Thread.currentThread().getStackTrace()[1].getMethodName() + "\n", VerboseLevel.DEBUG, false);
+			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 			
 			Logger.log("New cognitive model for agent " + id + " created.\n", VerboseLevel.IMPORTANT);
 			

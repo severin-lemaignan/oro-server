@@ -72,7 +72,7 @@ public class MemoryManager extends Thread {
 				break;
 			}
 			
-			Logger.log(">>enterCS: MemoryManager1\n", VerboseLevel.DEBUG, false);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_READ, "MemoryManager1");
 			onto.enterCriticalSection(Lock.READ);
 				
 			try {
@@ -108,11 +108,11 @@ public class MemoryManager extends Thread {
 		        
 			} finally {
 				onto.leaveCriticalSection();
-				Logger.log(">>leaveCS: MemoryManager1\n", VerboseLevel.DEBUG, false);
+				Logger.logConcurrency(Logger.LockType.RELEASE_READ, "MemoryManager1");
 			}
 			
 			if (!stmtToRemove.isEmpty()) {
-				Logger.log(">>enterCS: MemoryManager2\n", VerboseLevel.DEBUG, false);
+				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE, "MemoryManager2");
 				onto.enterCriticalSection(Lock.WRITE);
 				try {
 					for (ReifiedStatement s : stmtToRemove) {
@@ -124,7 +124,7 @@ public class MemoryManager extends Thread {
 				}
 				finally {
 					onto.leaveCriticalSection();
-					Logger.log(">>leaveCS: MemoryManager2\n", VerboseLevel.DEBUG, false);
+					Logger.logConcurrency(Logger.LockType.RELEASE_WRITE, "MemoryManager2");
 				}
 				stmtToRemove.clear();
 			}

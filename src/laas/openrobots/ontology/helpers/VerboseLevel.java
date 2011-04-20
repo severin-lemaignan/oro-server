@@ -78,5 +78,10 @@ public enum VerboseLevel {
 	/**
 	 * Not very important debug info.
 	 */
-	DEBUG;
+	DEBUG,
+	
+	/**
+	 * Very verbose debug information, used to track concurrency errors.
+	 */
+	DEBUG_CONCURRENCY;
 }

@@ -383,6 +383,7 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<Set<String>> result = new HashSet<Set<String>>();
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		try {
@@ -440,6 +441,7 @@ public class CategorizationModule implements IServiceProvider {
 		}
 		
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		return result;
 	}
@@ -463,10 +465,12 @@ public class CategorizationModule implements IServiceProvider {
 	)	
 	public Set<Set<String>> getDifferences(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 			OntResource resA = oro.getModel().getOntResource(Namespaces.format(conceptA));
 			OntResource resB = oro.getModel().getOntResource(Namespaces.format(conceptB));
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (resA == null) throw new NotFoundException("Concept " + conceptA + " doesn't exist in the ontology.");
 		if (resB == null) throw new NotFoundException("Concept " + conceptB + " doesn't exist in the ontology.");
@@ -601,6 +605,7 @@ public class CategorizationModule implements IServiceProvider {
 		//Build the list of properties with the number of individuals that use them
 		// and the list of properties with the set of different values they have.
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		for (OntResource i : individuals) {
@@ -623,6 +628,7 @@ public class CategorizationModule implements IServiceProvider {
 		}
 		
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 
 		if (Logger.verbosityMin(VerboseLevel.DEBUG)) {
 			Logger.log("Property -> nb occurences:\n",VerboseLevel.DEBUG);
@@ -799,6 +805,7 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<OntResource> concepts = new HashSet<OntResource>();
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
 			for (String s : rawConcepts) {
@@ -808,6 +815,7 @@ public class CategorizationModule implements IServiceProvider {
 			}
 
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 
 		
 		List<Set<Property>> res = getDiscriminent(concepts);
@@ -958,12 +966,14 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<String> result = new HashSet<String>();
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 		
 		try {
 			loadModels(conceptA, conceptB);
 		} catch (NotComparableException e) {
 			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 			throw e;
 		}
 
@@ -989,6 +999,7 @@ public class CategorizationModule implements IServiceProvider {
 		}
 		
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		return result;
 	}
@@ -1012,10 +1023,12 @@ public class CategorizationModule implements IServiceProvider {
 	)	
 	public Set<String> getSimilarities(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
 			OntResource resA = oro.getModel().getOntResource(Namespaces.format(conceptA));
 			OntResource resB = oro.getModel().getOntResource(Namespaces.format(conceptB));
 		oro.getModel().leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 			
 		if (resA == null) throw new NotFoundException("Concept " + conceptA + " doesn't exist in the ontology.");
 		if (resB == null) throw new NotFoundException("Concept " + conceptB + " doesn't exist in the ontology.");
