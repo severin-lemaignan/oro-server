@@ -700,9 +700,6 @@ public class OpenRobotsOntologyTest {
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a statement!");
 		}
-
-		
-			
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
@@ -906,9 +903,9 @@ public class OpenRobotsOntologyTest {
 		//This time, the consistency check should fail since we assert that a cow is both an animal and a plant which contradict the assert axiom (Animal disjointWith Plant)
 		assertFalse("Ontology should be detected as inconsistent! Cows are not plants!", oro.checkConsistency());
 
+		Set<String> stmtsToRemove = new HashSet<String>();
 		
-		try {
-			Set<String> stmtsToRemove = new HashSet<String>();
+		try {			
 			stmtsToRemove.add("cow rdf:type Plant");
 			oro.clear(stmtsToRemove);
 			assertTrue(oro.checkConsistency());
@@ -919,10 +916,40 @@ public class OpenRobotsOntologyTest {
 		try {
 			onto.add(onto.createStatement("cow climbsOn banana_tree"), MemoryProfile.DEFAULT, false);
 			assertFalse("Ontology should be detected as inconsistent! Cows can not climb on banana trees because they are explicitely not monkeys!", oro.checkConsistency());
+			
+			stmtsToRemove.clear();
+			stmtsToRemove.add("cow climbsOn banana_tree");
+			oro.clear(stmtsToRemove);
+			assertTrue("Ontology should now be back to consistency", oro.checkConsistency());
+			
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
 		}
-				
+		
+		
+		
+		/* Test with a set of updates             */
+		Set<String> updatedStmts = new HashSet<String>();
+		
+		
+		try {
+			updatedStmts.add("gorilla age 12");
+			updatedStmts.add("gorilla weight 100.2");
+
+			oro.clear(updatedStmts);
+			assertTrue("The 'clear' was not successful: a functional property has now 2 values.", oro.checkConsistency());
+			
+			updatedStmts.clear();
+			updatedStmts.add("gorilla age 21");
+			updatedStmts.add("gorilla weight 99.5");
+			
+			oro.add(updatedStmts);
+			assertTrue("'add' shouldn't cause any inconsistency, since previous statements have been cleared.", oro.checkConsistency());
+		} catch (IllegalStatementException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
@@ -955,11 +982,11 @@ public class OpenRobotsOntologyTest {
 			try {
 				
 				/******************************************/
-				/* Test with a set of updates             */
 				Set<String> updatedStmts = new HashSet<String>();
+				
 				updatedStmts.add("gorilla age 21");
 				updatedStmts.add("gorilla weight 99.5");
-				
+					
 				oro.update(updatedStmts);
 				assertTrue("The update was not successful: a functional property has now 2 values.", oro.checkConsistency());
 				
