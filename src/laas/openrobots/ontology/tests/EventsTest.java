@@ -17,11 +17,15 @@
 package laas.openrobots.ontology.tests;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -29,8 +33,12 @@ import static org.junit.Assert.fail;
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
+import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
+import laas.openrobots.ontology.exceptions.InvalidModelException;
+import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.events.GenericWatcher;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -282,6 +290,108 @@ public class EventsTest {
 		//reset the flag
 		consumer.hasBeenTriggered = false;
 				
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	@Test
+	public void eventsFactCheckingAlternateModel() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: FACT_CHECKING events test on alternate models *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+
+		FactCheckingEventConsumer consumer = new FactCheckingEventConsumer();
+		
+		AlteriteModule alterite = null;
+		
+		oro.add(oro.createStatement("myself rdf:type Agent"), MemoryProfile.DEFAULT, false);
+		
+		try {
+			alterite = new AlteriteModule(oro, conf);
+		} catch (InvalidModelException e) {
+		}
+		
+		oro.add(oro.createStatement("gerard rdf:type Agent"), MemoryProfile.DEFAULT, false);
+						
+		List<String> set = new ArrayList<String>();
+		set.add("chicken has teeth");
+		
+		List<String> set2 = new ArrayList<String>();
+		set2.add("?a rdf:type Monkey");
+		set2.add("?a eats grass");
+		
+		try {
+			alterite.registerEventForAgent("gerard",
+								   "FACT_CHECKING",
+								   "ON_TRUE",
+								   set,
+								   consumer);
+			
+			alterite.registerEventForAgent("gerard",
+										   "FACT_CHECKING",
+										   "ON_FALSE_ONE_SHOT",
+										   set,
+										   consumer);
+			
+			alterite.registerEventForAgent("gerard",
+										   "FACT_CHECKING",
+										   "ON_TRUE",
+										   set2,
+										   consumer);
+
+		} catch (EventRegistrationException e) {
+			fail("Error while registering an event!");
+		} catch (AgentNotFoundException e) {
+			fail("Error while registering an event: unknown agent!");
+		} catch (InvalidEventDescriptorException e) {
+			fail("Error while registering an event: invalid event descriptor!");
+		}
+		
+		assertFalse("Initially, the event shouldn't be triggered since the model" +
+				" wasn't updated", consumer.hasBeenTriggered);
+		
+		//triggered a model update
+		Set<String> tmp = new HashSet<String>();
+		
+		try {
+			tmp.add("paris loves dancing");
+			alterite.addForAgent("gerard", tmp);
+
+			assertTrue("Chicken have not yet teeth! we should trigger once the 'ON_FALSE_ONE_SHOT event!", consumer.hasBeenTriggered);
+			//reset the flag
+			consumer.hasBeenTriggered = false;
+			
+			//re-triggered a model update
+			tmp.clear();
+			tmp.add("paris prefers listening_to_music");
+			alterite.addForAgent("gerard", tmp);
+			
+			assertFalse("Chicken have not yet teeth but we already triggered the event!", consumer.hasBeenTriggered);
+			
+			tmp.clear();
+			tmp.add("chicken has teeth");
+			alterite.addForAgent("gerard", tmp);
+			
+			assertTrue("Chicken now should have teeth :-(", consumer.hasBeenTriggered);
+			//reset the flaget
+			consumer.hasBeenTriggered = false;
+			
+			alterite.clearForAgent("gerard", tmp);
+			
+			assertFalse("No events should be triggered there :-(", consumer.hasBeenTriggered);
+			
+			tmp.clear();
+			tmp.add("baboon eats grass");
+			alterite.addForAgent("gerard", tmp);
+			
+			assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
+			//reset the flag
+			consumer.hasBeenTriggered = false;
+		
+		} catch (AgentNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 

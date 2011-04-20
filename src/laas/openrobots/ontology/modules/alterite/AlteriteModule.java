@@ -31,6 +31,7 @@ import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
@@ -553,6 +554,29 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		return catModule.discriminate(rawConcepts);
 		
 	}
+	/***** Events ******/
+	@RPCMethod(
+			category = "agents",
+			desc="registers an event on a specific agent model. Expected " +
+				 "parameters are: agent, type, triggering type, event pattern."
+	)
+	public UUID registerEventForAgent(String agent, String type, String triggeringType, List<String> pattern, IEventConsumer consumer)
+				throws AgentNotFoundException, InvalidEventDescriptorException, EventRegistrationException
+	{
+		return getAgent(agent).getEventModule().registerEvent(type, triggeringType, null, pattern, consumer);
+	}
+	
+	@RPCMethod(
+			category = "agents",
+			desc="registers an event on a specific agent model. Expected " +
+				 "parameters are: agent, type, triggering type, variable, event pattern."
+	)
+	public UUID registerEventForAgent(String agent, String type, String triggeringType, String variable, List<String> pattern, IEventConsumer consumer)
+				throws AgentNotFoundException, InvalidEventDescriptorException, EventRegistrationException
+	{
+		return getAgent(agent).getEventModule().registerEvent(type, triggeringType, variable, pattern, consumer);
+	}
+	
 	
 	/**************************************************************************/
 	
@@ -561,9 +585,17 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		AgentModel a = agents.get(id);
 		if (a == null) throw new AgentNotFoundException("I couldn't find the agent " + id + ".");
 		
-		IOntologyBackend oro = a.model;
-			
-		return oro;
+		return a.model;
+
+	}
+	
+	private AgentModel getAgent(String id) throws AgentNotFoundException {
+		
+		AgentModel a = agents.get(id);
+		if (a == null) throw new AgentNotFoundException("I couldn't find the agent " + id + ".");
+		
+		return a;
+
 	}
 
 	public void close() {

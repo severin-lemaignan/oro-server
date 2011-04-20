@@ -25,6 +25,7 @@ import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+import laas.openrobots.ontology.modules.events.EventModule;
 
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
@@ -42,17 +43,22 @@ public class AgentModel {
 
 	public String id;
 	public IOntologyBackend model;
+	private EventModule events; 
 	
 	public AgentModel(String id, IOntologyBackend model) {
 		super();
 		this.id = id;
 		this.model = model;
+		
+		setupEventModule();
 	}
 	
 	public AgentModel(String id, Properties parameters) throws InvalidModelException {
 		super();
 		this.id = id;
 		this.model = createAgentModel(parameters);
+		
+		setupEventModule();
 	}
 	
 	
@@ -152,5 +158,12 @@ public class AgentModel {
 		return agentModel;
 		
 	}
+	
+	private void setupEventModule() {
 		
+		events = new EventModule(model);
+
+	}
+	
+	public EventModule getEventModule() {return events;}
 }
