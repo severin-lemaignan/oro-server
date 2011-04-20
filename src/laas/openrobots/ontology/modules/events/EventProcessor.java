@@ -322,7 +322,6 @@ public class EventProcessor {
 		
 		
 		if (isAsserted) {
-			Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 			
 			OroEvent e = new OroEventImpl();
 			
@@ -331,10 +330,12 @@ public class EventProcessor {
 				case ON_TOGGLE:
 					//if the last status for this query is NOT true, then, trigger the event.
 					if (!holder.lastStatus) {
+						Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 						holder.watcher.notifySubscribers(e);
 					}
 					break;
 				case ON_TRUE_ONE_SHOT:
+					Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 					holder.watcher.notifySubscribers(e);
 					watchersToBeRemoved.add(holder);
 					break;
@@ -347,15 +348,19 @@ public class EventProcessor {
 				case ON_TOGGLE:
 					//if the last statut for this query is NOT false, then, trigger the event.
 					if (holder.lastStatus) {
+						Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 						holder.watcher.notifySubscribers(e);
 					}
 					break;
 				case ON_FALSE_ONE_SHOT:
+					Logger.log("Event triggered for pattern " + holder.watcher.getWatchPattern() + "\n");
 					holder.watcher.notifySubscribers(e);
 					watchersToBeRemoved.add(holder);
 					break;
 				}				
 		}
+		
+		holder.lastStatus = isAsserted;
 		
 	}
 	
