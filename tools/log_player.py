@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import sys, re
-from pyoro import Oro
+from pyoro import Oro, OroServerError
 
 threads_list = {}
 
@@ -19,7 +19,12 @@ with open(sys.argv[1], 'r') as f:
                 threads_list[thread_id] = Oro("localhost", 6969)
                 
             print "("+str(i)+") Thread " + thread_id + " sending " + req
-            eval("threads_list[thread_id]."+ req)
+            try:
+                eval("threads_list[thread_id]."+ req)
+            except SyntaxError as e:
+                print "[SYNTAX ERROR] -> " + e.text + " @ " + str(e.offset)
+            except OroServerError as e:
+                print "[ORO ERROR] " + str(e)
         except AttributeError:
             #Not a log line with a request content
             pass
