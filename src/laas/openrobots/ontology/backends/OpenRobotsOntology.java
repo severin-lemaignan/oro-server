@@ -393,8 +393,22 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		//TODO: optimization possible for reified statement with onModelChange(rsName)
 		
-		//notify the events subscribers.
-		onModelChange();
+		try {
+			//notify the events subscribers.
+			onModelChange();
+			
+			if (isInInconsistentState) {
+				Logger.log("The ontology is back in a consistent state\n ", 
+						VerboseLevel.WARNING);
+				isInInconsistentState = false;
+			}
+		}
+		catch (InconsistentOntologyException ioe) {
+			isInInconsistentState = true;
+			Logger.log("The ontology is in an inconsistent state! I couldn't " +
+					"update the events subscribers\n ", VerboseLevel.WARNING);
+			Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
+		}
 
 		
 		return allHaveBeenInserted;
@@ -464,8 +478,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		String cause = "";
 		
-		isInInconsistentState = false;
-		
 		if (report == null) {
 			return;
 		}
@@ -473,8 +485,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (!report.isValid())
 		{
 			Logger.demo("Checking consistency:", "ontology is inconsistent!", false);
-			
-			isInInconsistentState = true;
 			
 			for (Iterator<Report> i = report.getReports(); i.hasNext(); ) {
 	            cause += " - " + i.next();
@@ -918,11 +928,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				isInInconsistentState = false;
 			}
 		}
-		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+		catch (InconsistentOntologyException ioe) {
 			isInInconsistentState = true;
 			Logger.log("The ontology is in an inconsistent state! I couldn't " +
 					"update the events subscribers\n ", VerboseLevel.WARNING);
+			Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
 		}
+
 
 	}
 	
@@ -1069,10 +1081,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * 
 	 * @param rsName the name of the reified statements whose creation triggered
 	 *  the update. Can be null if it does not apply.
+	 * @throws InconsistentOntologyException 
 	 * 
 	 * @see #onModelChange()
 	 */
-	protected void onModelChange(String rsName){
+	protected void onModelChange(String rsName) throws InconsistentOntologyException{
 
 		modelChanged = true;
 		
@@ -1082,16 +1095,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		model and classify it before each query.
 		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
 		*/
-		try {
-			checkConsistency();
-		} catch (InconsistentOntologyException e) {
-			Logger.log("The ontology is in an inconsistent state! I won't " +
-					"update the events subscribers\n ", VerboseLevel.WARNING);
-			Logger.log("Inconsistency causes:\n" + e.getMessage() + "\n", VerboseLevel.WARNING, false);
-		}		
-
+		checkConsistency();
+	
 		//Update the event notifiers
-		if (!isInInconsistentState) eventProcessor.process();
+		eventProcessor.process();
 		
 		//TODO: do we need to update it every time?
 		rebuildLookupTable();
@@ -1104,8 +1111,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	/**
 	 * Simply call {@link #onModelChange(String)} with a  {@code null} string.
+	 * @throws InconsistentOntologyException 
 	 */
-	private void onModelChange() {
+	private void onModelChange() throws InconsistentOntologyException {
 		onModelChange(null);		
 	}
 
