@@ -423,6 +423,19 @@ public interface IOntologyBackend extends IServiceProvider {
 			IWatcher watcher) throws EventRegistrationException;
 	
 	/**
+	 * Removes all registered event watchers for this model.
+	 */
+	public abstract void clearEvents();
+	
+	/**
+	 * Removes one specific event watcher.
+	 * 
+	 * @param watcher the watcher to remove
+	 * @throws OntologyServerException 
+	 */
+	public abstract void clearEvent(IWatcher watcher) throws OntologyServerException;
+	
+	/**
 	 * Return the list of event types implemented (hence usable) by this backend.
 	 * 
 	 * @return The list of event type supported by the backend

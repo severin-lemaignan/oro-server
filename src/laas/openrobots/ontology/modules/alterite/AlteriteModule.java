@@ -29,6 +29,7 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
+import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
@@ -556,7 +557,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	}
 	/***** Events ******/
 	@RPCMethod(
-			category = "agents",
+			category = "events",
 			desc="registers an event on a specific agent model. Expected " +
 				 "parameters are: agent, type, triggering type, event pattern."
 	)
@@ -567,7 +568,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	}
 	
 	@RPCMethod(
-			category = "agents",
+			category = "events",
 			desc="registers an event on a specific agent model. Expected " +
 				 "parameters are: agent, type, triggering type, variable, event pattern."
 	)
@@ -577,6 +578,21 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		return getAgent(agent).getEventModule().registerEvent(type, triggeringType, variable, pattern, consumer);
 	}
 	
+	@RPCMethod(
+			category = "events",
+			desc = "Remove all events associated to a specific model."
+	)
+	public void clearEventsForAgent(String agent) throws AgentNotFoundException {
+		getAgent(agent).getEventModule().clearEvents();
+	}
+	
+	@RPCMethod(
+			category = "events",
+			desc = "Remove one specific event from a specific model."
+	)
+	public void clearEvent(String agent, String eventId) throws OntologyServerException {
+		getAgent(agent).getEventModule().clearEvent(eventId);
+	}
 	
 	/**************************************************************************/
 	

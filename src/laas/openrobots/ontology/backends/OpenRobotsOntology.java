@@ -1007,14 +1007,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 	}
 
-
-	/* (non-Javadoc)
-	 * @see laas.openrobots.ontology.backends.IOntologyBackend#registerEventsHandlers(java.util.Set)
-	 */
+	@Override
 	public void registerEvent(IWatcher watcher) throws EventRegistrationException {
-		
 		eventProcessor.add(watcher);
-		
+	}
+	
+	@Override
+	public void clearEvents() {
+		eventProcessor.clear();
+	}
+	
+	@Override
+	public void clearEvent(IWatcher watcher) throws OntologyServerException {
+		eventProcessor.remove(watcher);
 	}
 
 	@Override

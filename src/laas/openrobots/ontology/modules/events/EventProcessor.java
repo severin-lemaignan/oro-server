@@ -24,8 +24,10 @@ import java.util.Set;
 
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -501,4 +503,23 @@ public class EventProcessor {
 		
 	}
 
+	public void clear() {
+		watchers.clear();
+	}
+	
+	public void remove(IWatcher w) throws OntologyServerException {
+		
+		
+		WatcherHolder wh = null;
+		for (WatcherHolder e : watchers) {
+			if (e.watcher.equals(w)) wh = e;
+		}
+		
+		if (wh == null) throw new OntologyServerException("Internal error! Event " + 
+				w.getId().toString() + " is absent from the EventProcessor watchers. Please " +
+				"report this bug to openrobots@laas.fr.");
+		
+		
+		watchers.remove(wh);
+	}
 }

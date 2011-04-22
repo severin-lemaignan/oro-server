@@ -25,6 +25,8 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.hp.hpl.jena.rdf.model.Statement;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,11 +36,14 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
+import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
+import laas.openrobots.ontology.modules.events.EventModule;
 import laas.openrobots.ontology.modules.events.GenericWatcher;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -153,7 +158,7 @@ public class EventsTest {
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}
 	
-	
+
 	private class NewInstanceEventConsumer implements IEventConsumer {
 
 		public boolean hasBeenTriggered = false;		
@@ -391,6 +396,191 @@ public class EventsTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+
+	@Test
+	public void clearEvents() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: clear events test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+
+		FactCheckingEventConsumer consumer = new FactCheckingEventConsumer();
+		
+		EventModule evtModule = new EventModule(oro);
+		
+		List<String> set = new ArrayList<String>();
+		set.add("chicken has teeth");
+		
+		List<String> set2 = new ArrayList<String>();
+		set2.add("?a rdf:type Monkey");
+		set2.add("?a eats grass");
+		
+		try {
+			evtModule.registerEvent("FACT_CHECKING",
+									"ON_TRUE",
+									set,
+									consumer);
+			
+			evtModule.registerEvent("FACT_CHECKING",
+									"ON_TRUE",
+									set2,
+									consumer);
+
+		} catch (EventRegistrationException e) {
+			fail("Error while registering an event!");
+		} catch (InvalidEventDescriptorException e) {
+			fail("Error while registering an event!");
+		}
+		
+		assertFalse("Initially, the event shouldn't be triggered since the model" +
+				" wasn't updated", consumer.hasBeenTriggered);
+	
+		Statement s1 = oro.createStatement("chicken has teeth");
+		Statement s2 = oro.createStatement("baboon eats grass");
+		
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Chicken now should have teeth :-(", consumer.hasBeenTriggered);
+		//reset the flaget
+		consumer.hasBeenTriggered = false;
+			
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
+		
+		oro.remove(s1);
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Chicken now should have teeth again :-(", consumer.hasBeenTriggered);
+		//reset the flaget
+		consumer.hasBeenTriggered = false;
+		
+		oro.remove(s2);
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Baboon eats grass again :-(", consumer.hasBeenTriggered);
+
+		//reset the flag
+		consumer.hasBeenTriggered = false;
+		
+		evtModule.clearEvents();
+		
+		oro.remove(s1);
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
+		
+		oro.remove(s2);
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
+		
+		System.out.println("[UNITTEST] ***** Test successful *****");
+	}
+	
+	@Test
+	public void clearEvent() throws IllegalStatementException {
+
+		System.out.println("[UNITTEST] ***** TEST: clear one single event test *****");
+		IOntologyBackend oro = new OpenRobotsOntology(conf);
+
+		FactCheckingEventConsumer consumer = new FactCheckingEventConsumer();
+		
+		EventModule evtModule = new EventModule(oro);
+		
+		List<String> set = new ArrayList<String>();
+		set.add("chicken has teeth");
+		
+		List<String> set2 = new ArrayList<String>();
+		set2.add("?a rdf:type Monkey");
+		set2.add("?a eats grass");
+		
+		UUID evt1 = null;
+		UUID evt2 = null;
+		
+		try {
+			evt1 = evtModule.registerEvent("FACT_CHECKING",
+									"ON_TRUE",
+									set,
+									consumer);
+			
+			evt2 = evtModule.registerEvent("FACT_CHECKING",
+									"ON_TRUE",
+									set2,
+									consumer);
+
+		} catch (EventRegistrationException e) {
+			fail("Error while registering an event!");
+		} catch (InvalidEventDescriptorException e) {
+			fail("Error while registering an event!");
+		}
+		
+		assertFalse("Initially, the event shouldn't be triggered since the model" +
+				" wasn't updated", consumer.hasBeenTriggered);
+	
+		Statement s1 = oro.createStatement("chicken has teeth");
+		Statement s2 = oro.createStatement("baboon eats grass");
+		
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Chicken now should have teeth :-(", consumer.hasBeenTriggered);
+		//reset the flaget
+		consumer.hasBeenTriggered = false;
+			
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
+		
+		oro.remove(s1);
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Chicken now should have teeth again :-(", consumer.hasBeenTriggered);
+		//reset the flaget
+		consumer.hasBeenTriggered = false;
+		
+		oro.remove(s2);
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Baboon eats grass again :-(", consumer.hasBeenTriggered);
+
+		//reset the flag
+		consumer.hasBeenTriggered = false;
+		
+		try {
+			evtModule.clearEvent(evt1.toString());
+		} catch (EventNotFoundException e) {
+			fail("We should find the event!!");
+		} catch (OntologyServerException e) {
+			fail("We should find the event!!");
+		}
+		
+		oro.remove(s1);
+		oro.add(s1, MemoryProfile.DEFAULT, false);
+		
+		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
+		
+		oro.remove(s2);
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertTrue("Baboons still eat grass! :-(", consumer.hasBeenTriggered);
+		
+		//reset the flag
+		consumer.hasBeenTriggered = false;
+		
+		try {
+			evtModule.clearEvent(evt2.toString());
+		} catch (EventNotFoundException e) {
+			fail("We should find the event!!");
+		} catch (OntologyServerException e) {
+			fail("We should find the event!!");
+		}
+		
+		oro.remove(s2);
+		oro.add(s2, MemoryProfile.DEFAULT, false);
+		
+		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
 	}

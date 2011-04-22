@@ -24,8 +24,10 @@ import java.util.UUID;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
+import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
@@ -47,12 +49,12 @@ public class EventModule implements IServiceProvider {
 
 
 	private Set<IWatcher> registredEvents;
-	private IOntologyBackend oro;
+	private IOntologyBackend onto;
 	
 	public EventModule(IOntologyBackend oro) {
 		registredEvents = new HashSet<IWatcher>();
 		
-		this.oro = oro;
+		this.onto = oro;
 	}
 	
 	/**
@@ -85,7 +87,7 @@ public class EventModule implements IServiceProvider {
 		}
 		registredEvents.add(e);
 
-		oro.registerEvent(e);
+		onto.registerEvent(e);
 
 
 		return e.getId();
@@ -101,8 +103,7 @@ public class EventModule implements IServiceProvider {
 	{
 		return registerEvent(type, triggeringType, null, pattern, consumer);
 	}
-				
-				
+			
 	@RPCMethod(
 			category = "events",
 			desc = "registers an event. Expected parameters are: type, triggering " +
@@ -146,6 +147,40 @@ public class EventModule implements IServiceProvider {
 		}
 		
 		return addEvent(eType, eTriggeringType, variable, pattern, consumer);
+	}
+	
+	@RPCMethod(
+			category = "events",
+			desc = "Remove all events associated to the main model."
+	)
+	public void clearEvents() {
+		onto.clearEvents();
+		registredEvents.clear();
+	}
+	
+	/** Removes one event trigger from the model.
+	 * 
+	 * @param eventId the string representation of the UUID of the event, as returned
+	 * by #addEvent
+	 * @throws OntologyServerException 
+	 */
+	@RPCMethod(
+			category = "events",
+			desc = "Remove one specific event from the main model."
+	)
+	public void clearEvent(String eventId) throws OntologyServerException {
+		
+		UUID id = UUID.fromString(eventId);
+		IWatcher evtToRemove = null;
+		for (IWatcher e : registredEvents) {
+			if (e.getId().equals(id)) evtToRemove = e;
+		}
+		
+		if (evtToRemove == null) throw new EventNotFoundException("Event " + eventId + " does not exist in the model");
+		
+		onto.clearEvent(evtToRemove);
+		registredEvents.remove(evtToRemove);
+		
 	}
 
 }
