@@ -135,6 +135,7 @@ public class AgentModel {
 		IOntologyBackend agentModel = new OpenRobotsOntology(onto, parameters);
 		
 		//Add a first assertion: in this model, 'myself' is the agent.
+		/*
 		try {
 			Logger.log(id + ": ");
 			agentModel.add(agentModel.createStatement("myself owl:sameAs " + id), MemoryProfile.DEFAULT, false);
@@ -144,6 +145,7 @@ public class AgentModel {
 					"going on, but something is wrong with the semantic " +
 					"model.\n", VerboseLevel.SERIOUS_ERROR);
 		}
+		*/
 		
 		
 		String defaultRobotId = parameters.getProperty("robot_id");
