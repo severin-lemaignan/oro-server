@@ -399,8 +399,9 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * 
 	 * @param stmts The set of statements to update in the ontology.
 	 * @throws IllegalStatementException 
+	 * @throws InconsistentOntologyException 
 	 */
-	public abstract void update(Set<Statement> stmts) throws IllegalStatementException;
+	public abstract void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException;
 
 
 	/**

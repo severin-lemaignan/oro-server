@@ -1035,6 +1035,10 @@ public class OpenRobotsOntologyTest {
 				
 			} catch (OntologyServerException e) {
 				e.printStackTrace();
+				fail();
+			} catch (laas.openrobots.ontology.exceptions.InconsistentOntologyException e) {
+				e.printStackTrace();
+				fail();
 			}
 			
 		} catch (IllegalStatementException e) {

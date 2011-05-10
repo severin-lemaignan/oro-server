@@ -32,6 +32,7 @@ import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
+import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.NotComparableException;
@@ -350,10 +351,9 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			category = "agents",
 			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
 	)
-	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException, AgentNotFoundException
 	{
 		IOntologyBackend oro = getModelForAgent(id);
-		
 		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
 		
 		for (String rawStmt : rawStmts) {

@@ -940,7 +940,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 
 	@Override
-	public void update(Set<Statement> stmts) throws IllegalStatementException {
+	public void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException {
 		
 		Set<Statement> stmtsToRemove = new HashSet<Statement>();
 		
@@ -954,14 +954,17 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				StmtIterator stmtsToRemoveIt = null;
 				try {
 					stmtsToRemoveIt = onto.listStatements(selector);
-				} catch (Exception e) {
-						e.printStackTrace();	
+					stmtsToRemove.addAll(stmtsToRemoveIt.toSet());
+				} catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
+					Logger.log("The ontology is in an inconsistent state! I couldn't " +
+							"update any statements.\n ", VerboseLevel.WARNING);
+					throw new InconsistentOntologyException("The ontology is in an inconsistent state! I couldn't " +
+							"update any statements.");
 				} finally {
 					onto.leaveCriticalSection();
 					Logger.logConcurrency(Logger.LockType.RELEASE_READ);				
 				}
-				
-				stmtsToRemove.addAll(stmtsToRemoveIt.toSet());
+
 				
 			}
 		}

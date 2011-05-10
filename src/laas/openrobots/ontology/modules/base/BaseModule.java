@@ -114,6 +114,7 @@ public class BaseModule implements IServiceProvider {
 	 * 
 	 * @param statements A set of string representing statements to be updated.
 	 * @throws IllegalStatementException
+	 * @throws InconsistentOntologyException 
 	 * 
 	 * @see {@link IOntologyBackend#update(Set)}
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -121,7 +122,7 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc="update the value of a functional property."
 	)
-	public void update(Set<String> rawStmts) throws IllegalStatementException
+	public void update(Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException
 	{
 		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
 		
