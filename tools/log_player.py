@@ -8,7 +8,9 @@ threads_list = {}
 i=0
 
 with open(sys.argv[1], 'r') as f:
-    for l in f:
+    lines = f.readlines()
+    nb_line = len(lines)
+    for l in lines:
         i += 1
         cmd_line = re.search("(?<=thread )\d+",l)
         try:
@@ -18,7 +20,7 @@ with open(sys.argv[1], 'r') as f:
                 print "New thread " + thread_id
                 threads_list[thread_id] = Oro("localhost", 6969)
                 
-            print "("+str(i)+") Thread " + thread_id + " sending " + req
+            print "(" + str(i*100/nb_line) +  "% - l."+str(i)+") Thread " + thread_id + " sending " + req
             try:
                 eval("threads_list[thread_id]."+ req)
             except SyntaxError as e:
