@@ -48,6 +48,7 @@ import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.exceptions.PluginNotFoundException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.helpers.Logger.Colors;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
@@ -225,7 +226,7 @@ public class OroServer implements IServiceProvider {
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[6m"); 
-    		Logger.printInBlue(
+    		Logger.colorPrint(Colors.BLUE, 
 	    						"+------------------------------------+\n" +
 	    						"|                                    |\n" +			
 	    						"|          OroServer " + 
@@ -233,7 +234,7 @@ public class OroServer implements IServiceProvider {
 	    						"|                                    |\n" +
 	    						"|       ");
 	    	System.out.print("(c)LAAS-CNRS 2009-2010");
-	    	Logger.printlnInBlue("       |\n" +
+	    	Logger.colorPrint(Colors.BLUE, "       |\n" +
 								"+------------------------------------+");
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[25m");
     	}

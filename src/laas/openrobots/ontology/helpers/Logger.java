@@ -27,9 +27,33 @@ import laas.openrobots.ontology.PartialStatement;
 
 public class Logger {
 
+	private static ILoggingFilter loggingFilter = new SimpleLoggingFilter();
+	private static String agent;
+	
 	public enum LockType {ACQUIRE_READ, ACQUIRE_WRITE, RELEASE_READ, RELEASE_WRITE};
 	
-    static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	public enum Colors {
+		BLUE ("[34m"),
+		GREEN ("[32m"),
+		RED ("[31m"),
+		YELLOW ("[33m"),
+		PURPLE ("[35m"),
+		NONE ("[39m");
+		
+		public String code;
+		
+		Colors(String ansi) {
+			code = ansi;
+		}
+		
+		String format(String msg) {
+			return (char)27 + code + msg + (char)27 + "[39m";
+		}
+		
+		
+	}
+	
+    static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss.S");
     
 	/**
 	 * Outputs server standard messages.
@@ -88,54 +112,65 @@ public class Logger {
 			return;
 		
 		String prefix = "";
-		if (withPrefix)
+		if (withPrefix) {
 			 prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
+			 if (agent != null) prefix += 
+				 (OroServer.HAS_A_TTY ? Colors.YELLOW.format(agent) : agent) + 
+				 ": ";
+			 
+			 else prefix += 
+				 (OroServer.HAS_A_TTY ? Colors.YELLOW.format("myself") : "myself") + 
+				 ": ";
+		}
 		
 	    
 		switch(level) {
 			case FATAL_ERROR:
 			case SERIOUS_ERROR:				
 				if (!OroServer.BLINGBLING)
-					printInRed(prefix + (OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg));
+					colorPrint(Colors.RED, prefix + (OroServer.HAS_A_TTY ? msg : "[ERROR] " + msg));
 				else
-					printInRed("U looser! :P " + msg);
+					colorPrint(Colors.RED, "U looser! :P " + msg);
 				break;
 				
 			case ERROR:
 				if (!OroServer.BLINGBLING)
-					printInRed(prefix + msg);
+					colorPrint(Colors.RED, prefix + msg);
 				else {
 					blingblingPower();
-					printInRed(msg + " lol!!");
+					colorPrint(Colors.RED, msg + " lol!!");
 				}
 			
 				break;
 			
 			case WARNING:
 				if (!OroServer.BLINGBLING)
-					printInPurple(prefix + (OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg));
+					colorPrint(Colors.PURPLE, prefix + (OroServer.HAS_A_TTY ? msg : "[WARNING] " + msg));
 				else {
 					blingblingPower();
-					printInPurple("(°_°) " + msg);
+					colorPrint(Colors.PURPLE, "(°_°) " + msg);
 				}
 				break;
 				
 			case IMPORTANT:
 				if (!OroServer.BLINGBLING)
-						printInGreen(prefix + (OroServer.HAS_A_TTY ? msg : "[!!] " + msg));
+					colorPrint(Colors.GREEN, prefix + (OroServer.HAS_A_TTY ? msg : "[!!] " + msg));
 				else {
 					blingblingPower();
-					printInGreen("(^_^) " + msg);
+					colorPrint(Colors.GREEN, "(^_^) " + msg);
 				}
 				
 				break;
 			
 			case EMPHASIZE:
-				printInRed(prefix + msg);
+				colorPrint(Colors.RED, prefix + msg);
 				break;
 				
 			case INFO:
-				System.out.print(prefix + msg);
+				if (OroServer.HAS_A_TTY)
+					colorPrint(Colors.NONE, prefix + loggingFilter.filter(msg));
+				else
+					colorPrint(Colors.NONE, prefix + msg);
 				break;
 			
 			case VERBOSE:
@@ -143,7 +178,7 @@ public class Logger {
 			case DEBUG_CONCURRENCY:
 				if (withPrefix)
 					 prefix += "[DEBUG] ";
-				printInBlue(prefix + msg);
+				colorPrint(Colors.BLUE, prefix + msg);
 				break;
 		
 		}
@@ -196,52 +231,16 @@ public class Logger {
 			System.out.print('\n');
 	}
 	
-	public static void printInBlue(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[34m");
-		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
 
-	
-	public static void printlnInBlue(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[34m");
-		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
+	public static void colorPrint(Colors c, String msg){
+			
+		if (OroServer.HAS_A_TTY) System.out.print (c.format(msg));
+		else System.out.print (msg);
 	}
 	
-	public static void printlnInGreen(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[32m");
-		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
-	public static void printInGreen(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[32m");
-		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
-	
-	public static void printInRed(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[31m");
-		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
-	
-	public static void printlnInRed(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[31m");
-		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
-	
-	public static void printlnInPurple(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[35m");
-		System.out.println (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
-	}
-	
-	public static void printInPurple(String msg){
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[35m");
-		System.out.print (msg);
-		if (OroServer.HAS_A_TTY) System.out.print ((char)27 + "[39m");
+	public static void colorPrintLn(Colors c, String msg){
+		if (OroServer.HAS_A_TTY) System.out.println (c.format(msg));
+		else System.out.println (msg);
 	}
 	
 	public static void blingblingPower(){
@@ -285,28 +284,28 @@ public class Logger {
 	
 	private static void makeUpStatement(Statement stmt) {
 		
-		printInGreen(Namespaces.toLightString(stmt.getSubject()) + " ");
-		printInBlue(Namespaces.toLightString(stmt.getPredicate()) + " ");
-		printInPurple(Namespaces.toLightString(stmt.getObject()));
+		colorPrint(Colors.GREEN, Namespaces.toLightString(stmt.getSubject()) + " ");
+		colorPrint(Colors.BLUE, Namespaces.toLightString(stmt.getPredicate()) + " ");
+		colorPrint(Colors.PURPLE, Namespaces.toLightString(stmt.getObject()));
 	}
 	
 	private static void makeUpPartialStatement(Statement stmt) {
 		if (stmt.getSubject() == null)
-			printInRed("* ");
+			colorPrint(Colors.RED, "* ");
 		else {
-			printInGreen(Namespaces.toLightString(stmt.getSubject()) + " ");
+			colorPrint(Colors.GREEN, Namespaces.toLightString(stmt.getSubject()) + " ");
 		}
 		
 		if (stmt.getPredicate() == null)
-			printInRed("* ");
+			colorPrint(Colors.RED, "* ");
 		else {
-			printInBlue(Namespaces.toLightString(stmt.getPredicate()) + " ");
+			colorPrint(Colors.BLUE, Namespaces.toLightString(stmt.getPredicate()) + " ");
 		}
 		
 		if (stmt.getObject() == null)
-			printInRed("*");
+			colorPrint(Colors.RED, "*");
 		else {
-			printInPurple(Namespaces.toLightString(stmt.getObject()));
+			colorPrint(Colors.PURPLE, Namespaces.toLightString(stmt.getObject()));
 		}
 	}
 	
@@ -351,9 +350,9 @@ public class Logger {
 		
 		System.out.print(label + " ");
 			if (ok)
-				printInGreen(value);
+				colorPrint(Colors.GREEN, value);
 			else
-				printInRed(value);
+				colorPrint(Colors.RED, value);
 		
 	}
 
@@ -366,6 +365,11 @@ public class Logger {
 			Namespaces.toLightString(node);
 		
 		System.out.print("]\n");
+		
+	}
+
+	public static void agent(String id) {
+		agent = id;
 		
 	}
 }

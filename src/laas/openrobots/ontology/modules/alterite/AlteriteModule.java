@@ -254,6 +254,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 						throws 	IllegalStatementException, 
 								AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		
@@ -265,9 +266,9 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			stmtsToAdd.add(oro.createStatement(rawStmt));			
 		}
 		
-		Logger.log(id + ": ");
 		oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), false);
 
+		Logger.agent(null); //Go back to the robot model
 	}
 	
 	/** Adds statements in a specific agent cognitive model with a specific 
@@ -295,6 +296,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 							throws 	IllegalStatementException, 
 									AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(id);
 		
 		Set<Statement> stmtsToAdd = new HashSet<Statement>();
@@ -305,8 +308,11 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			stmtsToAdd.add(oro.createStatement(rawStmt));			
 		}
 		
-		Logger.log(id + ": ");
-		return oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), true);
+		boolean ok = oro.add(stmtsToAdd, MemoryProfile.fromString(memProfile), true);
+		
+		Logger.agent(null); //Go back to the robot model
+		
+		return ok;		
 	}
 	
 	@RPCMethod(
@@ -325,12 +331,13 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	)
 	public void clearForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(id);
 		
 		Set<Statement> stmtsToRemove = new HashSet<Statement>();
 		
 		for (String rawStmt : rawStmts) {
-			Logger.log(id + ": ");
 			
 			if (rawStmt == null)
 				throw new IllegalStatementException("Got a null statement to remove!");
@@ -345,6 +352,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		}
 		
 		oro.remove(stmtsToRemove);
+		
+		Logger.agent(null); //Go back to the robot model
 	}
 		
 	@RPCMethod(
@@ -353,6 +362,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	)
 	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException, AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(id);
 		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
 		
@@ -362,8 +373,10 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			stmtsToUpdate.add(oro.createStatement(rawStmt));			
 		}
 		
-		Logger.log(id + ": ");
+		
 		oro.update(stmtsToUpdate);
+		
+		Logger.agent(null); //Go back to the robot model
 
 	}
 	
@@ -400,6 +413,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public Set<String> getInfosForAgent(String id, String lex_resource) 
 								throws NotFoundException, AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(id);
 		
 		Logger.log(id + ": ");
@@ -432,6 +447,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 						objString);
 		}
 		
+		Logger.agent(null); //Go back to the robot model
+		
 		return result;
 	}
 	
@@ -446,7 +463,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 									Set<String> filters) 
 						throws IllegalStatementException, OntologyServerException
 	{
-	
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		Set<String> res = new HashSet<String>();
 		
 		if (varName.isEmpty()) {
@@ -458,9 +476,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			Logger.log(id +": Calling the findForAgent() method without partial statement. Returning an empty set of result.\n", VerboseLevel.WARNING);
 			return res;
 		}
-		
-		Logger.log(id + ": ");
-		
+
 		IOntologyBackend oro = getModelForAgent(id);
 		
 		Logger.log("Searching resources in the ontology...\n");
@@ -502,6 +518,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			}
 		}
 
+		Logger.agent(null); //Go back to the robot model
+		
 		return res;
 	}
 	
@@ -524,9 +542,15 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	)
 	public Set<List<String>> lookupForAgent(String agent_id, String id) throws IllegalStatementException, AgentNotFoundException
 	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(agent_id);
 		
-		return oro.lookup(id);
+		Set<List<String>> res = oro.lookup(id);
+		
+		Logger.agent(null); //Go back to the robot model
+		
+		return res;
 	}
 	
 	@RPCMethod(
@@ -535,10 +559,13 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	)
 	public void save(String id, String path) throws AgentNotFoundException, OntologyServerException {
 		
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		Logger.log(id + ": ", VerboseLevel.IMPORTANT);
 		oro.save(path);
+		
+		Logger.agent(null); //Go back to the robot model
 		
 	}
 	
@@ -546,13 +573,19 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			category = "agents",
 			desc="returns a list of properties that helps to differentiate individuals for a specific agent."
 	)
-	public List<Set<String>> discriminateForAgent(String id, Set<String> rawConcepts) throws AgentNotFoundException, OntologyServerException, NotFoundException, NotComparableException {
+	public List<Set<String>> discriminateForAgent(String id, Set<String> rawConcepts) throws AgentNotFoundException, OntologyServerException, NotFoundException, NotComparableException
+	{
+		
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
 		
 		IOntologyBackend oro = getModelForAgent(id);
 		CategorizationModule catModule = new CategorizationModule(oro);
 		
-		Logger.log(id + ": ", VerboseLevel.IMPORTANT);
-		return catModule.discriminate(rawConcepts);
+		List<Set<String>> res = catModule.discriminate(rawConcepts);
+		
+		Logger.agent(null); //Go back to the robot model
+		
+		return res; 
 		
 	}
 	/***** Events ******/
@@ -564,7 +597,13 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public UUID registerEventForAgent(String agent, String type, String triggeringType, List<String> pattern, IEventConsumer consumer)
 				throws AgentNotFoundException, InvalidEventDescriptorException, EventRegistrationException
 	{
-		return getAgent(agent).getEventModule().registerEvent(type, triggeringType, null, pattern, consumer);
+		Logger.agent(agent); //Tell the logger we are working on a specific agent model
+		
+		UUID uuid = getAgent(agent).getEventModule().registerEvent(type, triggeringType, null, pattern, consumer);
+		
+		Logger.agent(null); //Go back to the robot model
+		
+		return uuid;
 	}
 	
 	@RPCMethod(
@@ -575,7 +614,13 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	public UUID registerEventForAgent(String agent, String type, String triggeringType, String variable, List<String> pattern, IEventConsumer consumer)
 				throws AgentNotFoundException, InvalidEventDescriptorException, EventRegistrationException
 	{
-		return getAgent(agent).getEventModule().registerEvent(type, triggeringType, variable, pattern, consumer);
+		Logger.agent(agent); //Tell the logger we are working on a specific agent model
+		
+		UUID uuid = getAgent(agent).getEventModule().registerEvent(type, triggeringType, variable, pattern, consumer);
+		
+		Logger.agent(null); //Go back to the robot model
+		
+		return uuid;
 	}
 	
 	@RPCMethod(
@@ -583,7 +628,11 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			desc = "Remove all events associated to a specific model."
 	)
 	public void clearEventsForAgent(String agent) throws AgentNotFoundException {
+		Logger.agent(agent); //Tell the logger we are working on a specific agent model
+		
 		getAgent(agent).getEventModule().clearEvents();
+		
+		Logger.agent(null); //Go back to the robot model
 	}
 	
 	@RPCMethod(
@@ -591,7 +640,11 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			desc = "Remove one specific event from a specific model."
 	)
 	public void clearEvent(String agent, String eventId) throws OntologyServerException {
+		Logger.agent(agent); //Tell the logger we are working on a specific agent model
+		
 		getAgent(agent).getEventModule().clearEvent(eventId);
+		
+		Logger.agent(null); //Go back to the robot model
 	}
 	
 	/**************************************************************************/

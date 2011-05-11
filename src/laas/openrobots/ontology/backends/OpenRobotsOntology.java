@@ -329,10 +329,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.demo("Adding", statements);
 		
+		String ss = "";
+		for (Statement s : statements) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
+		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? memProfile : "") + ss +"\n");
+		
 		for (Statement statement : statements) {
 			try {
-	
-				Logger.log("Adding new statement in " + memProfile + " memory ["+Namespaces.toLightString(statement)+"]\n");
 				
 				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 				onto.enterCriticalSection(Lock.WRITE);
@@ -904,9 +906,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	public void remove(Set<Statement> stmts) {
-		Logger.log("Removing statements ");
-		for (Statement s : stmts) Logger.log("["+ Namespaces.toLightString(s) + "], ", false);
-		Logger.cr();
+		
+		String ss = "";
+		for (Statement s : stmts) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
+		Logger.log("Removing statements " + ss +"\n");
 		
 		
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
