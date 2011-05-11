@@ -119,7 +119,7 @@ public class Logger {
 		if (withPrefix) {
 			 prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
 			 if (agent != null) prefix += 
-				 (OroServer.HAS_A_TTY ? Colors.YELLOW.format(agent) : agent) + 
+				 (OroServer.HAS_A_TTY ? Colors.YELLOW.formatBold(agent) : agent) + 
 				 ": ";
 			 
 		}

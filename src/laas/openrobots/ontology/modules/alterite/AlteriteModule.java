@@ -481,7 +481,9 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		
 		String ss = "";
 		for (String s : statements) ss += "\n\t ["+ s + "]";
-		for (String f : filters) ss += "\n\t ["+ f + "]";
+		if (filters != null) {
+			for (String f : filters) ss += "\n\t ["+ f + "]";
+		}
 		Logger.log("Searching resources in the ontology matching:" + ss + "\n");
 		
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
