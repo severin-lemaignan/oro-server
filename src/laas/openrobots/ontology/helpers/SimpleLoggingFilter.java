@@ -7,11 +7,14 @@ public class SimpleLoggingFilter implements ILoggingFilter {
 		if (msg.contains("Adding")) {
 			return Logger.Colors.GREEN.format(msg);
 		}
-		else if (msg.contains("Removing")) {
+		else if (msg.contains("Removing") || msg.contains("Clearing")) {
 			return Logger.Colors.RED.format(msg);
 		}
-		else if (msg.contains("Updating")) {
+		else if (msg.contains("Searching")) {
 			return Logger.Colors.YELLOW.format(msg);
+		}
+		else if (msg.contains("=> found")) {
+			return Logger.Colors.YELLOW.formatBold(msg);
 		}
 		else if (msg.contains("Event") || msg.contains("event")) {
 			return Logger.Colors.PURPLE.format(msg);

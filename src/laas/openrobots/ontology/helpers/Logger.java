@@ -47,13 +47,17 @@ public class Logger {
 		}
 		
 		String format(String msg) {
-			return (char)27 + code + msg + (char)27 + "[39m";
+			return (char)27 + code + msg + (char)27 + "[0m";
+		}
+		
+		String formatBold(String msg) {
+			return (char)27 + "[1m" + (char)27 + code + msg + (char)27 + "[0m";
 		}
 		
 		
 	}
 	
-    static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss.S");
+    static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");
     
 	/**
 	 * Outputs server standard messages.
@@ -118,9 +122,6 @@ public class Logger {
 				 (OroServer.HAS_A_TTY ? Colors.YELLOW.format(agent) : agent) + 
 				 ": ";
 			 
-			 else prefix += 
-				 (OroServer.HAS_A_TTY ? Colors.YELLOW.format("myself") : "myself") + 
-				 ": ";
 		}
 		
 	    

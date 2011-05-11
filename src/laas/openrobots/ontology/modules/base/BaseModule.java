@@ -535,7 +535,10 @@ public class BaseModule implements IServiceProvider {
 			return res;
 		}
 		
-		Logger.log("Searching resources in the ontology...\n");
+		String ss = "";
+		for (String s : statements) ss += "\n\t ["+ s + "]";
+		for (String f : filters) ss += "\n\t ["+ f + "]";
+		Logger.log("Searching resources in the ontology matching:\n" + ss + "\n");
 				
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
@@ -573,7 +576,11 @@ public class BaseModule implements IServiceProvider {
 				}
 			}
 		}
-		Logger.log("Done.\n");
+		
+		ss = "[";
+		for (String s : res) ss += s + ", ";
+		Logger.log("\t => found: " + ss + "]\n", false);
+
 		return res;
 	}
 

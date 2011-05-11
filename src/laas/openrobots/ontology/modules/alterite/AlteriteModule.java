@@ -479,7 +479,10 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 
 		IOntologyBackend oro = getModelForAgent(id);
 		
-		Logger.log("Searching resources in the ontology...\n");
+		String ss = "";
+		for (String s : statements) ss += "\n\t ["+ s + "]";
+		for (String f : filters) ss += "\n\t ["+ f + "]";
+		Logger.log("Searching resources in the ontology matching:" + ss + "\n");
 		
 		Set<PartialStatement> stmts = new HashSet<PartialStatement>();
 		
@@ -518,6 +521,10 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			}
 		}
 
+		ss = "[";
+		for (String s : res) ss += s + ", ";
+		Logger.log("\t => found: " + ss + "]\n", false);
+		
 		Logger.agent(null); //Go back to the robot model
 		
 		return res;

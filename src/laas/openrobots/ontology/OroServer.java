@@ -234,7 +234,7 @@ public class OroServer implements IServiceProvider {
 	    						"|                                    |\n" +
 	    						"|       ");
 	    	System.out.print("(c)LAAS-CNRS 2009-2010");
-	    	Logger.colorPrint(Colors.BLUE, "       |\n" +
+	    	Logger.colorPrintLn(Colors.BLUE, "       |\n" +
 								"+------------------------------------+");
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[25m");
     	}

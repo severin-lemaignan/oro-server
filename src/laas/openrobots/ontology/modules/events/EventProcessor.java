@@ -123,8 +123,11 @@ public class EventProcessor {
 							"your statement.\n");
 				}
 				
-				Logger.log("New FACT_CHECKING event registered: new watch " +
-						"expression: " +  watcher.getWatchPattern() + "\n");
+				Logger.log("New FACT_CHECKING event registered:" +
+						"\n\tPattern: " +  watcher.getWatchPattern() +
+						"\n\tTriggering type: " + watcher.getTriggeringType() + 
+						"\n\tID: " + watcher.getId() + "\n");
+
 				
 				break;
 			}
@@ -166,9 +169,9 @@ public class EventProcessor {
 				Logger.log("Initial matching instances: " + lastMatchedResources + 
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
 				
-				Logger.log("New NEW_CLASS_INSTANCE event registered: the class " + 
-						Namespaces.toLightString(referenceClass) + 
-						" is now monitored for new instances.\n");
+				Logger.log("New NEW_CLASS_INSTANCE event registered." +
+						"\n\tClass: " +  Namespaces.toLightString(referenceClass) +
+						"\n\tID: " + watcher.getId() + "\n");
 
 				break;
 			}
@@ -243,7 +246,10 @@ public class EventProcessor {
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
 
 				
-				Logger.log("New NEW_INSTANCE event registered.\n");
+				Logger.log("New NEW_INSTANCE event registered " +
+						"\n\tPattern: " +  watcher.getWatchPattern() +
+						"\n\tTriggering type: " + watcher.getTriggeringType() + 
+						"\n\tID: " + watcher.getId() + "\n");
 			}
 		}
 		
@@ -494,7 +500,7 @@ public class EventProcessor {
 		
 		if (!supportedEventTypes.contains(w.getPatternType())) {
 			Logger.log("An unsupported type of event (" + 
-					w.getPatternType() + ") has reach the compilation stage. It" +
+					w.getPatternType() + ") has reached the compilation stage. It" +
 					"shouldn't happen. Discarding it for now.\n", VerboseLevel.SERIOUS_ERROR);
 		}
 		else {
