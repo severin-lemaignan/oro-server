@@ -289,26 +289,30 @@ public class SocketConnector implements IConnector, Runnable {
 					break;
 	    		}
 
+				
+				req = parseBuffer(null); //First, see if we have a pending request from previous socket reads.
+				if (req == null) {
 			
-				try{
-					req = null;
-					buffer.clear();
-					int count = client.read( buffer );
-					
-					if (count > 0) { 
-						buffer.flip();					
-						req = parseBuffer(buffer);
+					try{
+						req = null;
+						buffer.clear();
+						int count = client.read( buffer );
 						
-						if (req != null && req.size() == 0) {
-							Logger.log("Got an empty query! (only #end#) Discarding it.\n", VerboseLevel.ERROR);
-							req = null;
+						if (count > 0) { 
+							buffer.flip();					
+							req = parseBuffer(buffer);
+							
+							if (req != null && req.size() == 0) {
+								Logger.log("Got an empty query! (only #end#) Discarding it.\n", VerboseLevel.ERROR);
+								req = null;
+							}
 						}
+			    		
+			        } catch (IOException e) {
+			        	Logger.log("Read failed on one of the opened socket (" + getName() + "). Killing it.\n", VerboseLevel.SERIOUS_ERROR);
+						keepOnThisWorker = false;
+						break;
 					}
-		    		
-		        } catch (IOException e) {
-		        	Logger.log("Read failed on one of the opened socket (" + getName() + "). Killing it.\n", VerboseLevel.SERIOUS_ERROR);
-					keepOnThisWorker = false;
-					break;
 				}
 	        
 	    		if (req != null) 
@@ -370,7 +374,10 @@ public class SocketConnector implements IConnector, Runnable {
 		  
 		  private List<String> parseBuffer(ByteBuffer buffer) {
 			
-			  String req = remainsOfMyBuffer + charset.decode(buffer).toString();
+			  String req = remainsOfMyBuffer; 
+			  
+			  if (buffer != null)
+				  req += charset.decode(buffer).toString();
 			  
 			  req = req.replaceAll("\r\n|\r", "\n");
 			  
