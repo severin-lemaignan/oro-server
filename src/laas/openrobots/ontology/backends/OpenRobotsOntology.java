@@ -819,7 +819,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			forceLookupTableUpdate = true;
 			rebuildLookupTable();			
 		}
-				
+		
+		Logger.log("Looking up for " + id + "...\n");
+		
 		Set<List<String>> result = new HashSet<List<String>>();		
 		
 		if (lookupTable.containsKey(id.toLowerCase()))
@@ -831,6 +833,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(l);
 			}
 		}
+		
+		String ss = "[";
+		for (List<String> s : result) ss += s.get(0) + " -> " + s.get(1) + ", ";
+		Logger.log("\t => found: " + ss + "]\n", false);
 		
 		return result;
 		
@@ -849,7 +855,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		if (forceLookupTableUpdate || !lookupTable.containsKey(id.toLowerCase())) {
 			forceLookupTableUpdate = true;
 			rebuildLookupTable();			
-		}		
+		}
+		
+		Logger.log("Looking up for " + id + "of type " + type + "...\n");
 				
 		Set<String> result = new HashSet<String>();		
 		
@@ -859,6 +867,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				if (p.getRight().equals(type))
 					result.add(p.getLeft());
 		}
+		
+		String ss = "[";
+		for (String s : result) ss += s + ", ";
+		Logger.log("\t => found: " + ss + "]\n", false);
 		
 		return result;
 		

@@ -546,17 +546,8 @@ public class BaseModule implements IServiceProvider {
 		
 		if (varName.length() > 0 && varName.charAt(0) == '?') varName = varName.substring(1);
 		
-		Logger.log(" matching following statements:\n");
-		
 		for (String ps : statements) {
-			Logger.log("\t- " + ps + "\n");
 			stmts.add(oro.createPartialStatement(ps));
-		}
-		
-		if (filters != null) {
-			Logger.log("with these restrictions:\n");
-			for (String f : filters)
-				Logger.log("\t- " + f + "\n");
 		}
 
 		Set<RDFNode> raw = oro.find(varName, stmts, filters);

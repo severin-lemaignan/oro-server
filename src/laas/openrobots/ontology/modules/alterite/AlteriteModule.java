@@ -490,17 +490,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		
 		if (varName.length() > 0 && varName.charAt(0) == '?') varName = varName.substring(1);
 		
-		Logger.log(" matching following statements:\n", VerboseLevel.VERBOSE);
-		
 		for (String ps : statements) {
-			Logger.log("\t- " + ps + "\n", VerboseLevel.VERBOSE);
 			stmts.add(oro.createPartialStatement(ps));
-		}
-		
-		if (filters != null) {
-			Logger.log("with these restrictions:\n", VerboseLevel.VERBOSE);
-			for (String f : filters)
-				Logger.log("\t- " + f + "\n", VerboseLevel.VERBOSE);
 		}
 			
 		Set<RDFNode> raw = oro.find(varName, stmts, filters);
