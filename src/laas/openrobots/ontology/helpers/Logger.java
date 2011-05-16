@@ -210,10 +210,13 @@ public class Logger {
 			switch (type) {
 				case ACQUIRE_READ:
 					msg = "enterCS";
+					break;
 				case ACQUIRE_WRITE:
 					msg = "enterCSw";
+					break;
 				case RELEASE_READ:
 					msg = "leaveCS";
+					break;
 				case RELEASE_WRITE:
 					msg = "leaveCSw";
 			}
@@ -221,8 +224,8 @@ public class Logger {
 			if(!info.isEmpty()) info = " (" + info + ")";
 			
 			Logger.log(">>" + msg + info + ": " + 
-					Thread.currentThread().getStackTrace()[3].getMethodName() + 
-					" -> " + Thread.currentThread().getStackTrace()[2].getMethodName() + "\n", 
+					Thread.currentThread().getStackTrace()[4].getMethodName() + 
+					" -> " + Thread.currentThread().getStackTrace()[3].getMethodName() + "\n", 
 					VerboseLevel.DEBUG_CONCURRENCY, false);
 		}
 	}
