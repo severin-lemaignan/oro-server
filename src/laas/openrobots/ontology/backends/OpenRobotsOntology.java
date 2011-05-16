@@ -897,11 +897,18 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
-		StmtIterator stmtsToRemove = onto.listStatements(selector);		
-		onto.leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
-		remove(stmtsToRemove.toSet());
+		StmtIterator stmtsToRemove = null;
+		try {
+			
+			stmtsToRemove = onto.listStatements(selector);
+					
+		} finally {
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
+		
+		if (stmtsToRemove != null) remove(stmtsToRemove.toSet());
 	}
 	
 	/* (non-Javadoc)
