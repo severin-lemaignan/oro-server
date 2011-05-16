@@ -420,16 +420,20 @@ public class SocketConnector implements IConnector, Runnable {
 			  String queryName = raw_query.get(0);
 			  
 			  // Log the incoming request
-			  Logger.log("[thread " + this.hashCode() + "] >> Got incoming request: " + queryName + "(", VerboseLevel.VERBOSE);
+			  String formatted = "";
+			  formatted = "[thread " + this.hashCode() + "] >> Got incoming request: " + queryName + "(";
+	  
 			  if (raw_query.size() > 1) {
-				  for (int i = 1; i < raw_query.size()-1 ; i++)
-				  	  if (raw_query.get(i) instanceof String)
-				  		  Logger.log("\"" + raw_query.get(i) + "\",", VerboseLevel.VERBOSE, false);
+				  for (int i = 1; i < raw_query.size() ; i++) {
+					  String arg = raw_query.get(i);
+				  	  if (arg.startsWith("[") || arg.startsWith("{")) //assume a set or a map
+				  		formatted += arg + ",";
 				  	  else
-				  		  Logger.log(raw_query.get(i) + ",", VerboseLevel.VERBOSE, false);
-				  Logger.log(raw_query.get(raw_query.size()-1), VerboseLevel.VERBOSE, false);
+				  		formatted += "\"" + arg + "\",";
+				  }
+				  formatted = formatted.substring(0, formatted.length() -1); //remove trailing comma
 			  }
-			  Logger.log(")\n", VerboseLevel.VERBOSE, false);
+			  Logger.log(formatted + ")\n", VerboseLevel.VERBOSE, false);
 			  // --end logging
 			  
 	    	if (queryName.equalsIgnoreCase("close")){
