@@ -282,26 +282,30 @@ public class EventProcessor {
 		
 		//iterate over the various registered watchers and notify the subscribers 
 		//when needed.
-		for (WatcherHolder holder : watchers) {
-			
-			switch (holder.getWatcher().getPatternType()) {
-				case FACT_CHECKING:
-					processFactChecking(holder, watchersToBeRemoved);
-					break;
-					
-				case NEW_CLASS_INSTANCE:
-					processNewClassInstance(holder, watchersToBeRemoved);
-					break;
-					
-				case NEW_INSTANCE:
-					processNewInstance(holder, watchersToBeRemoved);
-					break;
-			
-			}	
-	
-		}
+		synchronized (watchers) {
 		
-		watchers.removeAll(watchersToBeRemoved);
+			for (WatcherHolder holder : watchers) {
+				
+				switch (holder.getWatcher().getPatternType()) {
+					case FACT_CHECKING:
+						processFactChecking(holder, watchersToBeRemoved);
+						break;
+						
+					case NEW_CLASS_INSTANCE:
+						processNewClassInstance(holder, watchersToBeRemoved);
+						break;
+						
+					case NEW_INSTANCE:
+						processNewInstance(holder, watchersToBeRemoved);
+						break;
+				
+				}
+		
+			}
+			
+			watchers.removeAll(watchersToBeRemoved);
+		
+		}
 			
 	}
 
@@ -504,28 +508,35 @@ public class EventProcessor {
 					"shouldn't happen. Discarding it for now.\n", VerboseLevel.SERIOUS_ERROR);
 		}
 		else {
-			watchers.add(new WatcherHolder(w));
+			synchronized (watchers) {
+				watchers.add(new WatcherHolder(w));
+			}			
 		}
 		
 	}
 
 	public void clear() {
-		watchers.clear();
+		synchronized (watchers) {
+			watchers.clear();
+		}		
 	}
 	
 	public void remove(IWatcher w) throws OntologyServerException {
 		
 		
 		WatcherHolder wh = null;
-		for (WatcherHolder e : watchers) {
-			if (e.watcher.equals(w)) wh = e;
+		
+		synchronized (watchers) {
+			for (WatcherHolder e : watchers) {
+				if (e.watcher.equals(w)) wh = e;
+			}
+			
+			if (wh == null) throw new OntologyServerException("Internal error! Event " + 
+					w.getId().toString() + " is absent from the EventProcessor watchers. Please " +
+					"report this bug to openrobots@laas.fr.");
+			
+			
+			watchers.remove(wh);	
 		}
-		
-		if (wh == null) throw new OntologyServerException("Internal error! Event " + 
-				w.getId().toString() + " is absent from the EventProcessor watchers. Please " +
-				"report this bug to openrobots@laas.fr.");
-		
-		
-		watchers.remove(wh);
 	}
 }
