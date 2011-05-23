@@ -115,6 +115,7 @@ public class BaseModule implements IServiceProvider {
 	 * @param statements A set of string representing statements to be updated.
 	 * @throws IllegalStatementException
 	 * @throws InconsistentOntologyException 
+	 * @throws OntologyServerException 
 	 * 
 	 * @see {@link IOntologyBackend#update(Set)}
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
@@ -122,7 +123,7 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc="update the value of a functional property."
 	)
-	public void update(Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException
+	public void update(Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException, OntologyServerException
 	{
 		Set<Statement> stmtsToUpdate = new HashSet<Statement>();
 		
@@ -246,6 +247,7 @@ public class BaseModule implements IServiceProvider {
 	 * Remove a set of statements (represented as a strings) from the ontology. Does nothing if the statements don't exist.
 	 * 
 	 * @param stmts A vector of strings representing the statements to remove from the ontology.
+	 * @throws OntologyServerException 
 	 * @deprecated Use {@link #clear(Set)} instead.
 	 * @see #add(Set)
 	 * @see #remove(String)
@@ -253,7 +255,7 @@ public class BaseModule implements IServiceProvider {
 	@RPCMethod(
 			desc="removes one or several statements (triplets S-P-O) from the ontology."
 	)
-	public void remove(Set<String> rawStmts) throws IllegalStatementException {
+	public void remove(Set<String> rawStmts) throws IllegalStatementException, OntologyServerException {
 		Set<Statement> stmtsToRemove = new HashSet<Statement>();
 		
 		for (String rawStmt : rawStmts) {
@@ -284,13 +286,14 @@ public class BaseModule implements IServiceProvider {
 	 * @param stmts A set of statements, partial or not, to remove.
 	 * @throws IllegalStatementException thrown if the string does not represent
 	 * a valid statement or partial statement.
+	 * @throws OntologyServerException 
 	 * @see PartialStatement
 	 * @see SocketConnector General syntax of RPCs for the oro-server socket connector.
 	 */
 	@RPCMethod(
 			desc="removes statements in the given set"
 	)
-	public void clear(Set<String> rawStmts) throws IllegalStatementException {
+	public void clear(Set<String> rawStmts) throws IllegalStatementException, OntologyServerException {
 		
 		Set<Statement> stmtsToRemove = new HashSet<Statement>();
 		

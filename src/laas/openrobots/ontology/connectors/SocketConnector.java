@@ -222,7 +222,9 @@ public class SocketConnector implements IConnector, Runnable {
 		  
 		  private List<Pair<UUID, OroEvent>> eventsQueue;
 		  
-		  ClientWorker(SocketChannel client) {
+		  public ClientWorker(SocketChannel client) {
+			  
+			  if (client == null) return; // Useful when uni-testing functions in this class
 			  
 			  try {
 				  selector = Selector.open();
@@ -372,15 +374,13 @@ public class SocketConnector implements IConnector, Runnable {
 		    }
 		  }
 		  
-		  private List<String> parseBuffer(ByteBuffer buffer) {
+		  public List<String> parseBuffer(ByteBuffer buffer) {
 			
 			  String req = remainsOfMyBuffer; 
 			  
 			  if (buffer != null)
-				  req += charset.decode(buffer).toString();
-			  
-			  req = req.replaceAll("\r\n|\r", "\n");
-			  
+				  req += charset.decode(buffer).toString().replaceAll("\r\n|\r", "\n");
+			  	  
 			  List<String> res = new ArrayList<String>();
 			  
 		      //Special case for the command "help": we don't require to enter 
@@ -391,17 +391,19 @@ public class SocketConnector implements IConnector, Runnable {
 				  return res;
 			  }
 			  
-			  int i = req.indexOf(MESSAGE_TERMINATOR);	
+			  int i = req.indexOf(MESSAGE_TERMINATOR);
+
 			  if (i >= 0) {
 				  String rawReq = req.substring(0, i);
 				  res = Arrays.asList(rawReq.split("\n"));
 				  
-				  remainsOfMyBuffer = req.substring(i + MESSAGE_TERMINATOR.length() + 1);
+				  if (req.length() > i)
+					  remainsOfMyBuffer = req.substring(i + MESSAGE_TERMINATOR.length() + 1);
 				  
 				  return res;
 			  }
 			  
-			  remainsOfMyBuffer = req;
+			  remainsOfMyBuffer = req; // waiting for more input to complete the request
 			  
 			  return null;
 		}
@@ -626,9 +628,12 @@ public class SocketConnector implements IConnector, Runnable {
 					
 				} catch (InvocationTargetException e) {
 					Logger.log("Error while executing the request '" + queryName + "': " + e.getCause().getClass().getName() + " -> " + e.getCause().getLocalizedMessage() + "\n", VerboseLevel.ERROR);
+					
 					result = "error\n" + 
-							e.getCause().getClass().getName() + "\n" +
-							e.getCause().getLocalizedMessage().replace("\"", "'");							
+							e.getCause().getClass().getName() + "\n";
+					
+					String cause = e.getCause().getLocalizedMessage();					
+					if (cause != null) result += cause;
 				
 	    		}
    		
@@ -654,7 +659,8 @@ public class SocketConnector implements IConnector, Runnable {
 		// Fills the serviceIndex map.
 		
 		serviceIndex = new HashMap<String, Set<Pair<IService,Integer>>>();
-		refreshServiceList(registredServices);
+		
+		if (registredServices != null) refreshServiceList(registredServices);
 		
 
 	}

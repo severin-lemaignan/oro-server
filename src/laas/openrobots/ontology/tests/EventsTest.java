@@ -145,7 +145,11 @@ public class EventsTest {
 		//reset the flaget
 		consumer.hasBeenTriggered = false;
 		
-		oro.remove(oro.createStatement("chicken has teeth"));
+		try {
+			oro.remove(oro.createStatement("chicken has teeth"));
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		
 		assertFalse("No events should be triggered there :-(", consumer.hasBeenTriggered);
 		
@@ -380,7 +384,11 @@ public class EventsTest {
 			//reset the flaget
 			consumer.hasBeenTriggered = false;
 			
-			alterite.clearForAgent("gerard", tmp);
+			try {
+				alterite.clearForAgent("gerard", tmp);
+			} catch (OntologyServerException e) {
+				fail();
+			}
 			
 			assertFalse("No events should be triggered there :-(", consumer.hasBeenTriggered);
 			
@@ -450,14 +458,22 @@ public class EventsTest {
 		
 		assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
 		
-		oro.remove(s1);
+		try {
+			oro.remove(s1);
+		} catch (OntologyServerException e1) {
+			fail();
+		}
 		oro.add(s1, MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Chicken now should have teeth again :-(", consumer.hasBeenTriggered);
 		//reset the flaget
 		consumer.hasBeenTriggered = false;
 		
-		oro.remove(s2);
+		try {
+			oro.remove(s2);
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		oro.add(s2, MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Baboon eats grass again :-(", consumer.hasBeenTriggered);
@@ -467,12 +483,20 @@ public class EventsTest {
 		
 		evtModule.clearEvents();
 		
-		oro.remove(s1);
+		try {
+			oro.remove(s1);
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		oro.add(s1, MemoryProfile.DEFAULT, false);
 		
 		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
 		
-		oro.remove(s2);
+		try {
+			oro.remove(s2);
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		oro.add(s2, MemoryProfile.DEFAULT, false);
 		
 		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
@@ -533,14 +557,22 @@ public class EventsTest {
 		
 		assertTrue("Event has not been triggered :-(", consumer.hasBeenTriggered);
 		
-		oro.remove(s1);
+		try {
+			oro.remove(s1);
+		} catch (OntologyServerException e1) {
+			fail();
+		}
 		oro.add(s1, MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Chicken now should have teeth again :-(", consumer.hasBeenTriggered);
 		//reset the flaget
 		consumer.hasBeenTriggered = false;
 		
-		oro.remove(s2);
+		try {
+			oro.remove(s2);
+		} catch (OntologyServerException e1) {
+			fail();
+		}
 		oro.add(s2, MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Baboon eats grass again :-(", consumer.hasBeenTriggered);
@@ -556,12 +588,20 @@ public class EventsTest {
 			fail("We should find the event!!");
 		}
 		
-		oro.remove(s1);
+		try {
+			oro.remove(s1);
+		} catch (OntologyServerException e1) {
+			fail();
+		}
 		oro.add(s1, MemoryProfile.DEFAULT, false);
 		
 		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);
 		
-		oro.remove(s2);
+		try {
+			oro.remove(s2);
+		} catch (OntologyServerException e1) {
+			fail();
+		}
 		oro.add(s2, MemoryProfile.DEFAULT, false);
 		
 		assertTrue("Baboons still eat grass! :-(", consumer.hasBeenTriggered);
@@ -577,7 +617,11 @@ public class EventsTest {
 			fail("We should find the event!!");
 		}
 		
-		oro.remove(s2);
+		try {
+			oro.remove(s2);
+		} catch (OntologyServerException e) {
+			fail();
+		}
 		oro.add(s2, MemoryProfile.DEFAULT, false);
 		
 		assertFalse("No more event, baby! :-(", consumer.hasBeenTriggered);

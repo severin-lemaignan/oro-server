@@ -51,6 +51,7 @@ import laas.openrobots.ontology.modules.memory.MemoryManager;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.RPCMethod;
 
+import org.mindswap.pellet.exceptions.InternalReasonerException;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
@@ -551,6 +552,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
 			this.lastQueryResult = myQueryExecution.execSelect();
+			
+			while (this.lastQueryResult.hasNext()) {
+				QuerySolution s = this.lastQueryResult.nextSolution();
+				res.add(s.get(key));
+			}
 		}
 		catch (QueryParseException e) {
 			Logger.log("Error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.ERROR);
@@ -563,11 +569,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		finally {
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_READ);				
-		}
-				
-		while (this.lastQueryResult.hasNext()) {
-			QuerySolution s = this.lastQueryResult.nextSolution();
-			res.add(s.get(key));
 		}
 		
 		return res;
@@ -890,7 +891,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#clear(laas.openrobots.ontology.PartialStatement)
 	 */
 	@Override
-	public void clear(PartialStatement partialStmt) {
+	public void clear(PartialStatement partialStmt) throws OntologyServerException {
 		Logger.log("Clearing statements matching ["+ partialStmt + "]\n");
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
@@ -916,7 +917,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	@Override
 	@Deprecated
-	public void remove(Statement stmt) {
+	public void remove(Statement stmt) throws OntologyServerException {
 		Set<Statement> toRemove = new HashSet<Statement>();
 		toRemove.add(stmt);
 		
@@ -924,7 +925,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	}
 	
 	@Override
-	public void remove(Set<Statement> stmts) {
+	public void remove(Set<Statement> stmts) throws OntologyServerException {
 		
 		String ss = "";
 		for (Statement s : stmts) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
@@ -933,8 +934,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
-		onto.remove(new ArrayList<Statement>(stmts));	
-		onto.leaveCriticalSection();
+		try {
+			onto.remove(new ArrayList<Statement>(stmts));
+		} catch (InternalReasonerException ire) {
+			throw new OntologyServerException("Pellet internal error: " + ire.getLocalizedMessage());
+		} finally {
+			onto.leaveCriticalSection();	
+		}
+		
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		
 		//force the rebuilt of the lookup table at the next lookup.
@@ -962,7 +969,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 
 	@Override
-	public void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException {
+	public void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException, OntologyServerException {
 		
 		Set<Statement> stmtsToRemove = new HashSet<Statement>();
 		

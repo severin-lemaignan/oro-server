@@ -523,7 +523,6 @@ public class EventProcessor {
 	
 	public void remove(IWatcher w) throws OntologyServerException {
 		
-		
 		WatcherHolder wh = null;
 		
 		synchronized (watchers) {

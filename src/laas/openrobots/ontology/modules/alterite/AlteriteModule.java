@@ -320,7 +320,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			desc="removes one or several statements. Deprecated. Use clearForAgent instead."
 	)
 	@Deprecated
-	public void removeForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	public void removeForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, OntologyServerException
 	{
 		clearForAgent(id, rawStmts);
 	}
@@ -329,7 +329,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			category = "agents",
 			desc="removes statements from a specific agent model."
 	)
-	public void clearForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, AgentNotFoundException
+	public void clearForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, OntologyServerException
 	{
 		Logger.agent(id); //Tell the logger we are working on a specific agent model
 		
@@ -360,7 +360,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			category = "agents",
 			desc="updates one or several statements (triplets S-P-O) in a specific agent model, in long term memory."
 	)
-	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException, AgentNotFoundException
+	public void updateForAgent(String id, Set<String> rawStmts) throws IllegalStatementException, InconsistentOntologyException, OntologyServerException
 	{
 		Logger.agent(id); //Tell the logger we are working on a specific agent model
 		

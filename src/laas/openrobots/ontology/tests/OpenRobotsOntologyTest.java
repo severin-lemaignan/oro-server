@@ -860,10 +860,10 @@ public class OpenRobotsOntologyTest {
 			} catch (OntologyServerException e) {
 				fail();
 			}
-			
-			oro.clear(stmts);
-			
+
 			try {
+				oro.clear(stmts);		
+
 				onto.save("./after_remove.owl");
 			} catch (OntologyServerException e) {
 				fail();
@@ -911,6 +911,9 @@ public class OpenRobotsOntologyTest {
 			assertTrue(oro.checkConsistency());
 		} catch (IllegalStatementException e) {
 			fail();
+		} catch (OntologyServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 		try {
@@ -924,6 +927,8 @@ public class OpenRobotsOntologyTest {
 			
 		} catch (IllegalStatementException e) {
 			fail("Error while adding a set of statements in testConsistency!");
+		} catch (OntologyServerException e) {
+			fail();
 		}
 		
 		
@@ -946,8 +951,9 @@ public class OpenRobotsOntologyTest {
 			oro.add(updatedStmts);
 			assertTrue("'add' shouldn't cause any inconsistency, since previous statements have been cleared.", oro.checkConsistency());
 		} catch (IllegalStatementException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			fail();
+		} catch (OntologyServerException e) {
+			fail();
 		}		
 		
 		System.out.println("[UNITTEST] ***** Test successful *****");
@@ -1106,6 +1112,8 @@ public class OpenRobotsOntologyTest {
 			oro.clear(clearPattern);
 		} catch (IllegalStatementException e1) {
 			e1.printStackTrace();
+		} catch (OntologyServerException e) {
+			fail();
 		}
 		
 		assertTrue("No label \"king kong\" should exist anymore in the ontology.", oro.lookup("king kong").isEmpty());
@@ -1362,6 +1370,8 @@ public class OpenRobotsOntologyTest {
 		} catch (IllegalStatementException e) {
 			fail("Error while removing a set of statements!");
 			e.printStackTrace();
+		} catch (OntologyServerException e) {
+			fail();
 		}
 		
 		try {
@@ -1417,6 +1427,8 @@ public class OpenRobotsOntologyTest {
 		} catch (IllegalStatementException e) {
 			fail("Error while clearing statements!");
 			e.printStackTrace();
+		} catch (OntologyServerException e) {
+				fail();
 		}
 		
 		try {
@@ -2286,6 +2298,8 @@ public class OpenRobotsOntologyTest {
 		} catch (IllegalStatementException e1) {
 			fail("Error while adding a statement!");
 			e1.printStackTrace();
+		} catch (OntologyServerException e) {
+			fail();
 		}
 
 		try {
@@ -2555,9 +2569,9 @@ public class OpenRobotsOntologyTest {
 	        	 try {
 					c.discriminate(concepts);
 				} catch (NotFoundException e) {
-					fail();
+					
 				} catch (NotComparableException e) {
-					fail();
+					
 				}
 	        	 System.out.println(name + " starts to discriminate");
 	         }

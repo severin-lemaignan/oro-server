@@ -364,26 +364,29 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * </pre>
 	 * 
 	 * @param partialStmt The partial statement representing a "mask" of statements to delete.
+	 * @throws OntologyServerException 
 	 */
-	public abstract void clear(PartialStatement partialStmt);
+	public abstract void clear(PartialStatement partialStmt) throws OntologyServerException;
 
 	/**
 	 * Removes a given statement from the ontology. Does nothing if the statement doesn't exist.
 	 * 
 	 * @param stmt The statement to remove from the ontology.
+	 * @throws OntologyServerException 
 	 * @see #add(Statement)
 	 */
 	@Deprecated
-	public abstract void remove(Statement stmt);
+	public abstract void remove(Statement stmt) throws OntologyServerException;
 	
 	/**
 	 * Removes a set of statements from the ontology.
 	 * It ignores statements that do not exist.
 	 * 
 	 * @param stmts The statements to remove from the ontology.
+	 * @throws OntologyServerException 
 	 * @see #add(Set<Statement>)
 	 */
-	public abstract void remove(Set<Statement> stmts);
+	public abstract void remove(Set<Statement> stmts) throws OntologyServerException;
 	
 	/**
 	 * Update the value of a property.
@@ -400,8 +403,9 @@ public interface IOntologyBackend extends IServiceProvider {
 	 * @param stmts The set of statements to update in the ontology.
 	 * @throws IllegalStatementException 
 	 * @throws InconsistentOntologyException 
+	 * @throws OntologyServerException 
 	 */
-	public abstract void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException;
+	public abstract void update(Set<Statement> stmts) throws IllegalStatementException, InconsistentOntologyException, OntologyServerException;
 
 
 	/**
