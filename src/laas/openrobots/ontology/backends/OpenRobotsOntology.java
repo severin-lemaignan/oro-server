@@ -900,16 +900,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.enterCriticalSection(Lock.READ);
 		
 		StmtIterator stmtsToRemove = null;
+		Set<Statement> setToRemove = new HashSet<Statement>();
 		try {
 			
 			stmtsToRemove = onto.listStatements(selector);
+			if (stmtsToRemove != null) setToRemove = stmtsToRemove.toSet();
 					
 		} finally {
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		}
 		
-		if (stmtsToRemove != null) remove(stmtsToRemove.toSet());
+		remove(setToRemove);
+		
+		
 	}
 	
 	/* (non-Javadoc)
