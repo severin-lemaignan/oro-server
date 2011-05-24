@@ -35,7 +35,6 @@ public class Logger {
 
 	private static ILoggingFilter loggingFilter = new SimpleLoggingFilter();
 	private static String agent;
-	private static Pattern filterRegexp = null;
 	
 	public static Boolean display_timestamp = true;
 	
