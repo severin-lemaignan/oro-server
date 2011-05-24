@@ -163,11 +163,19 @@ public class Namespaces {
 		if (uri == null) return "";
 		
 		int step1 = uri.indexOf("^^");
-		int step2 = uri.indexOf("#");
 		
-		if (step2 == -1) return uri; //no expanded namespace
+		for (String prefix : Namespaces.keySet()) {
+			if (uri.startsWith(DEFAULT_NS)) {
+				uri = uri.substring(DEFAULT_NS.length());
+				break;
+			}
+			if (uri.startsWith(Namespaces.get(prefix))) {
+				uri = prefix + ":" + uri.substring(Namespaces.get(prefix).length());
+				break;
+			}
+		}
 		
-		if (step1 == -1) return getPrefix(uri.substring(0, step2 + 1)) + uri.substring(step2 + 1);
+		if (step1 == -1) return uri;
 		
 		return uri.substring(0,step1+2) + contract(uri.substring(step1+2));
 		
