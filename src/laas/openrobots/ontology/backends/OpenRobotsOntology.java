@@ -349,8 +349,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					} catch (InconsistentOntologyException ioe)
 					{
 						onto.remove(statement);	
-						onto.leaveCriticalSection();
-						Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 						Logger.log("...I won't add " + statement + " because it " +
 								"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
 						allHaveBeenInserted = false;
@@ -373,10 +371,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					onto.add(metaStmt2);
 
 				}
-				
-				onto.leaveCriticalSection();
-				Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
-				
+								
 			}
 			catch (ConversionException e) {
 				Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
@@ -385,12 +380,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 						". A concept can not be a class and an instance at the same time in OWL DL.");
 	
 			}
-			catch (Exception e)
-			{
-				Logger.log("\nCouldn't add the statement for an unknown reason. \nDetails:\n ", VerboseLevel.FATAL_ERROR);
-				e.printStackTrace();
-				Logger.log("\nBetter to exit now until proper handling of this exception is added by mainteners! You can help by sending a mail to openrobots@laas.fr with the exception stack.\n ", VerboseLevel.FATAL_ERROR);
-				System.exit(1);
+			finally {
+				onto.leaveCriticalSection();
+				Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 			}
 		}
 		
@@ -475,9 +467,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
-		ValidityReport report = onto.validate();
-		onto.leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);		
+		ValidityReport report = null;
+		try {
+			report = onto.validate();
+		} finally {
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 		
 		String cause = "";
 		
@@ -741,17 +737,19 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
 		
-		ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
-		while (it.hasNext())
-		{
-			OntResource tmp = it.next();
-			if (tmp != null && !tmp.isAnon()){
-				result.add(tmp);
+		try {
+			ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
+			while (it.hasNext())
+			{
+				OntResource tmp = it.next();
+				if (tmp != null && !tmp.isAnon()){
+					result.add(tmp);
+				}
 			}
+		} finally {
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		}
-		
-		onto.leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct instances of " + Namespaces.toLightString(type), result);

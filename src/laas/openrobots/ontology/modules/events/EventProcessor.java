@@ -429,6 +429,17 @@ public class EventProcessor {
 		
 		try {
 			rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
+			
+			// While iterating on the result, we may have internal errors from
+			// the reasoner. To be on the safe side, we do it inside of the 'try'
+			// to be sure to release the lock.
+			if (rawResult != null) {				
+				while (rawResult.hasNext())
+				{
+					QuerySolution row = rawResult.nextSolution();
+					instances.add(row.getResource(holder.varName));
+				}
+			}
 		}
 		catch (QueryExecException e) {
 			Logger.log("Internal error during query execution while " +
@@ -441,16 +452,7 @@ public class EventProcessor {
 			onto.getModel().leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		}
-		
-		if (rawResult != null) {				
-			while (rawResult.hasNext())
-			{
-				QuerySolution row = rawResult.nextSolution();
-				instances.add(row.getResource(holder.varName));
-			}
-		}
-
-		
+				
 		Set<Resource> addedResources = new HashSet<Resource>(instances);
 		addedResources.removeAll(holder.lastMatchedResources);
 		
