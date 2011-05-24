@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -146,15 +144,6 @@ public class Logger {
 		//Displays only message with a superior level of verbosity.
 		if (!verbosityMin(level))
 			return;
-		
-		
-		if (filterRegexp != null) {
-			Matcher m = filterRegexp.matcher(msg);
-			if (m.matches())  msg = m.group();
-			else msg = "";
-		}
-		
-		if (msg.isEmpty()) return;
 		
 		String prefix = "";
 		if (withPrefix) {
@@ -420,8 +409,4 @@ public class Logger {
 		
 	}
 
-	public static void setFilter(String filter) {
-		filterRegexp = Pattern.compile(filter);
-	
-	}
 }
