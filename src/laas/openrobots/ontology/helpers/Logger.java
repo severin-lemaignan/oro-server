@@ -17,7 +17,13 @@
 package laas.openrobots.ontology.helpers;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -29,6 +35,9 @@ public class Logger {
 
 	private static ILoggingFilter loggingFilter = new SimpleLoggingFilter();
 	private static String agent;
+	private static Pattern filterRegexp = null;
+	
+	public static Boolean display_timestamp = true;
 	
 	public enum LockType {ACQUIRE_READ, ACQUIRE_WRITE, RELEASE_READ, RELEASE_WRITE};
 	
@@ -40,18 +49,35 @@ public class Logger {
 		PURPLE ("[35m"),
 		NONE ("[39m");
 		
+		private static final List<Colors> VALUES = Collections.unmodifiableList(Arrays.asList(values()));
+		private static final int SIZE = VALUES.size();
+		private static final Random RANDOM = new Random();
+
 		public String code;
+		public static Map<String, Colors> agentsColor = new HashMap<String, Colors>();
 		
-		Colors(String ansi) {
+		private Colors(String ansi) {
 			code = ansi;
 		}
 		
-		String format(String msg) {
+		public String format(String msg) {
 			return (char)27 + code + msg + (char)27 + "[0m";
 		}
 		
-		String formatBold(String msg) {
+		public String formatBold(String msg) {
 			return (char)27 + "[1m" + (char)27 + code + msg + (char)27 + "[0m";
+		}
+		
+		public static Colors random() {
+			return VALUES.get(RANDOM.nextInt(SIZE));
+		}
+		
+		public static Colors getColorForAgent(String agent) {
+			
+			if (! agentsColor.containsKey(agent)) agentsColor.put(agent, random()); 
+			
+			return agentsColor.get(agent);
+			
 		}
 		
 		
@@ -117,10 +143,12 @@ public class Logger {
 		
 		String prefix = "";
 		if (withPrefix) {
-			 prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
+			if (display_timestamp) {
+				prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
+			}
 			 if (agent != null) prefix += 
-				 (OroServer.HAS_A_TTY ? Colors.YELLOW.formatBold(agent) : agent) + 
-				 ": ";
+				 	(OroServer.HAS_A_TTY ? Colors.getColorForAgent(agent).formatBold(agent) : agent) + 
+				 	": ";
 			 
 		}
 		

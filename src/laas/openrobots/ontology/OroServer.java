@@ -705,6 +705,12 @@ public class OroServer implements IServiceProvider {
 						"to default verbosity.", VerboseLevel.SERIOUS_ERROR);
 			}
 			
+
+			Boolean log_with_timestamp = Boolean.parseBoolean(parameters.getProperty("display_timestamp", "true"));
+			
+			Logger.display_timestamp = log_with_timestamp;
+
+			
 			if (!parameters.containsKey("oro_common_sense"))
 			{
 				Logger.log("No common sense ontology specified in the " +

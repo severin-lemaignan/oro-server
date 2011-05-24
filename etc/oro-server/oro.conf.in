@@ -14,6 +14,9 @@
 
 verbosity = info
 
+# If set to false, no timestamps are displayed in ORO output. True by default.
+#display_timestamp = true
+
 ################################ Internal modules ##############################
 
 # memory_manager: if enabled, allows to add statement that are automatically
