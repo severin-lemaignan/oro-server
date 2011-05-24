@@ -1038,6 +1038,49 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		save(sdf.format(Calendar.getInstance().getTime()) + "-snapshot.owl");
 		
 	}
+	
+	
+	@RPCMethod(
+			category = "administration",
+			desc = "Lists on the serveur stdout all facts matching a given pattern."
+	)
+	public void list(String pattern) throws IllegalStatementException {
+		
+		PartialStatement partialStmt = createPartialStatement(pattern);
+		
+		Selector selector = new SimpleSelector(	partialStmt.getSubject(), 
+												partialStmt.getPredicate(), 
+												partialStmt.getObject());
+		
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		onto.enterCriticalSection(Lock.READ);
+		
+		StmtIterator stmtsToList = null;
+		
+		String list = "List of statements matching [" + pattern + "]:\n";
+		
+		try {
+			
+			stmtsToList = onto.listStatements(selector);
+			
+			if (stmtsToList != null && stmtsToList.hasNext()) {
+				while(stmtsToList.hasNext()) {
+					list += "\t" + 
+							Namespaces.toLightString(stmtsToList.nextStatement()) + 
+							"\n";
+				}
+			}
+			else list += "None\n";
+					
+		} finally {
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
+		
+		Logger.info(list);
+		
+
+	}
 
 	@Override
 	public void registerEvent(IWatcher watcher) throws EventRegistrationException {

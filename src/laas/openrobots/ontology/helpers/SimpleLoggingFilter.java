@@ -10,7 +10,7 @@ public class SimpleLoggingFilter implements ILoggingFilter {
 		else if (msg.contains("Removing") || msg.contains("Clearing")) {
 			return Logger.Colors.RED.format(msg);
 		}
-		else if (msg.contains("Searching") || msg.contains("Looking")) {
+		else if (msg.contains("Searching") || msg.contains("Looking") || msg.contains("List of statements")) {
 			return Logger.Colors.YELLOW.format(msg);
 		}
 		else if (msg.contains("=> found")) {
