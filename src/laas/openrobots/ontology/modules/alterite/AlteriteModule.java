@@ -542,7 +542,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	)
 	public Set<List<String>> lookupForAgent(String agent_id, String id) throws IllegalStatementException, AgentNotFoundException
 	{
-		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		Logger.agent(agent_id); //Tell the logger we are working on a specific agent model
 		
 		IOntologyBackend oro = getModelForAgent(agent_id);
 		
