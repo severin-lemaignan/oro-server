@@ -3,6 +3,9 @@
 import sys, re
 from pyoro import Oro, OroServerError
 
+HOST = "localhost"
+PORT = 6969
+
 threads_list = {}
 
 i=0
@@ -18,7 +21,7 @@ with open(sys.argv[1], 'r') as f:
             req = re.search("(?<=Got incoming request: ).+", l).group(0)
             if thread_id not in threads_list.keys():
                 print "New thread " + thread_id
-                threads_list[thread_id] = Oro("localhost", 6969)
+                threads_list[thread_id] = Oro(HOST, PORT)
                 
             print "(" + str(i*100/nb_line) +  "% - l."+str(i)+") Thread " + thread_id + " sending " + req
             try:
