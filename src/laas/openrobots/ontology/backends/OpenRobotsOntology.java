@@ -334,14 +334,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (Statement s : statements) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
 		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? memProfile : "") + ss +"\n");
 		
-		for (Statement statement : statements) {
-			try {
+		try {
+			for (Statement statement : statements) {
 				
 				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 				onto.enterCriticalSection(Lock.WRITE);
-				
-				onto.add(statement);
-				
+			
+				try {
+					onto.add(statement);
+				}
+				catch (ConversionException e) {
+					Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
+							"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
+					throw new IllegalStatementException("Impossible to assert " + statement + 
+							". A concept can not be a class and an instance at the same time in OWL DL.");
+
+				}
+			
 				//If we are in safe mode, we check that the ontology is not inconsistent.
 				if (safe) {
 					try {
@@ -371,40 +380,37 @@ public class OpenRobotsOntology implements IOntologyBackend {
 					onto.add(metaStmt2);
 
 				}
-								
-			}
-			catch (ConversionException e) {
-				Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
-						"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
-				throw new IllegalStatementException("Impossible to assert " + statement + 
-						". A concept can not be a class and an instance at the same time in OWL DL.");
-	
-			}
-			finally {
-				onto.leaveCriticalSection();
-				Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
-			}
+			}						
 		}
-		
+		finally {
+
+				try {
+						/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+						model and classify it before each query.
+						Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+						*/
+						checkConsistency();				
+					if (isInInconsistentState) {
+						Logger.log("The ontology is back in a consistent state\n ", 
+								VerboseLevel.WARNING);
+						isInInconsistentState = false;
+					}
+				}
+				catch (InconsistentOntologyException ioe) {
+					isInInconsistentState = true;
+					Logger.log("The ontology is in an inconsistent state! I couldn't " +
+							"update the events subscribers\n ", VerboseLevel.WARNING);
+					Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
+				}
+
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
+		}
+	
 		//TODO: optimization possible for reified statement with onModelChange(rsName)
 		
-		try {
-			//notify the events subscribers.
-			onModelChange();
-			
-			if (isInInconsistentState) {
-				Logger.log("The ontology is back in a consistent state\n ", 
-						VerboseLevel.WARNING);
-				isInInconsistentState = false;
-			}
-		}
-		catch (InconsistentOntologyException ioe) {
-			isInInconsistentState = true;
-			Logger.log("The ontology is in an inconsistent state! I couldn't " +
-					"update the events subscribers\n ", VerboseLevel.WARNING);
-			Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
-		}
-
+		//notify the events subscribers.
+		onModelChange();
 		
 		return allHaveBeenInserted;
 	}
@@ -941,6 +947,27 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		} catch (InternalReasonerException ire) {
 			throw new OntologyServerException("Pellet internal error: " + ire.getLocalizedMessage());
 		} finally {
+
+
+			try {
+					/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+					model and classify it before each query.
+					Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+					*/
+					checkConsistency();				
+				if (isInInconsistentState) {
+					Logger.log("The ontology is back in a consistent state\n ", 
+							VerboseLevel.WARNING);
+					isInInconsistentState = false;
+				}
+			}
+			catch (InconsistentOntologyException ioe) {
+				isInInconsistentState = true;
+				Logger.log("The ontology is in an inconsistent state! I couldn't " +
+						"update the events subscribers\n ", VerboseLevel.WARNING);
+				Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
+			}
+
 			onto.leaveCriticalSection();	
 		}
 		
@@ -949,23 +976,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//force the rebuilt of the lookup table at the next lookup.
 		forceLookupTableUpdate = true;
 		
-		try {
-			//notify the events subscribers.
-			onModelChange();
-			
-			if (isInInconsistentState) {
-				Logger.log("The ontology is back in a consistent state\n ", 
-						VerboseLevel.WARNING);
-				isInInconsistentState = false;
-			}
-		}
-		catch (InconsistentOntologyException ioe) {
-			isInInconsistentState = true;
-			Logger.log("The ontology is in an inconsistent state! I couldn't " +
-					"update the events subscribers\n ", VerboseLevel.WARNING);
-			Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
-		}
-
+		//notify the events subscribers.
+		onModelChange();
 
 	}
 	
@@ -1163,23 +1175,16 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * 
 	 * @param rsName the name of the reified statements whose creation triggered
 	 *  the update. Can be null if it does not apply.
-	 * @throws InconsistentOntologyException 
 	 * 
 	 * @see #onModelChange()
 	 */
-	protected void onModelChange(String rsName) throws InconsistentOntologyException{
+	protected void onModelChange(String rsName) {
 
 		modelChanged = true;
 		
 		Logger.log("Model changed!\n", VerboseLevel.DEBUG);
 		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/
-		checkConsistency();
-	
-		//Update the event notifiers
+			//Update the event notifiers
 		eventProcessor.process();
 		
 		//TODO: do we need to update it every time?
@@ -1193,9 +1198,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	/**
 	 * Simply call {@link #onModelChange(String)} with a  {@code null} string.
-	 * @throws InconsistentOntologyException 
 	 */
-	private void onModelChange() throws InconsistentOntologyException {
+	private void onModelChange() {
 		onModelChange(null);		
 	}
 
