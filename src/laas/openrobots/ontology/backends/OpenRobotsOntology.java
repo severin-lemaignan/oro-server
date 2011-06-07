@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -556,10 +557,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			QueryExecution myQueryExecution = QueryExecutionFactory.create(myQuery, onto);
 			this.lastQueryResult = myQueryExecution.execSelect();
 			
-			while (this.lastQueryResult.hasNext()) {
-				QuerySolution s = this.lastQueryResult.nextSolution();
-				res.add(s.get(key));
+			try {
+				while (this.lastQueryResult.hasNext()) {
+					QuerySolution s = this.lastQueryResult.nextSolution();
+					res.add(s.get(key));
+				}
 			}
+			catch (NoSuchElementException nsee) {} // TODO: workaround for a "NoSuchElementException" that is sometimes thrown by 'hasNext()'
+		
+
 		}
 		catch (QueryParseException e) {
 			Logger.log("Error during query parsing ! ("+ e.getLocalizedMessage() +").", VerboseLevel.ERROR);
