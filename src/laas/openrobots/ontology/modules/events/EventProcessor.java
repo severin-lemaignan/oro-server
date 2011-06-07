@@ -167,7 +167,13 @@ public class EventProcessor {
 				
 				//Initialize the list of matching instance from the current 
 				//state on the ontology.
+				onto.getModel().enterCriticalSection(Lock.READ);
+				Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+				
 				lastMatchedResources = new HashSet<Resource>(onto.getInstancesOf(referenceClass, false));
+
+				onto.getModel().leaveCriticalSection();
+				Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 				
 				Logger.log("Initial matching instances: " + lastMatchedResources + 
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
@@ -236,8 +242,12 @@ public class EventProcessor {
 				
 				//Initialize the list of matching instance from the current state on the ontology.
 				lastMatchedResources = new HashSet<Resource>();
-				ResultSet rawResult = QueryExecutionFactory.create(cachedQuery, onto.getModel()).execSelect();
 				
+				onto.getModel().enterCriticalSection(Lock.READ);
+				Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+				
+				ResultSet rawResult = QueryExecutionFactory.create(cachedQuery, onto.getModel()).execSelect();
+								
 				if (rawResult != null) {				
 					while (rawResult.hasNext())
 					{
@@ -245,6 +255,10 @@ public class EventProcessor {
 						lastMatchedResources.add(row.getResource(varName));
 					}
 				}
+				
+				onto.getModel().leaveCriticalSection();
+				Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+				
 				Logger.log("Initial matching instances: " + lastMatchedResources +
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
 
