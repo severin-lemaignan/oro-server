@@ -325,6 +325,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public boolean add(Set<Statement> statements, MemoryProfile memProfile, boolean safe) throws IllegalStatementException
 	{
+		if (statements.isEmpty()) return true;
 		
 		boolean allHaveBeenInserted = true;
 		
