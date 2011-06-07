@@ -383,8 +383,8 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<Set<String>> result = new HashSet<Set<String>>();
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		try {
 			loadModels(conceptA, conceptB);
@@ -465,8 +465,8 @@ public class CategorizationModule implements IServiceProvider {
 	)	
 	public Set<Set<String>> getDifferences(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 			OntResource resA = oro.getModel().getOntResource(Namespaces.format(conceptA));
 			OntResource resB = oro.getModel().getOntResource(Namespaces.format(conceptB));
 		oro.getModel().leaveCriticalSection();
@@ -605,8 +605,8 @@ public class CategorizationModule implements IServiceProvider {
 		//Build the list of properties with the number of individuals that use them
 		// and the list of properties with the set of different values they have.
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		for (OntResource i : individuals) {
 			Map<Property, Set<RDFNode>> newProperties = getProperties(i);
@@ -805,8 +805,8 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<OntResource> concepts = new HashSet<OntResource>();
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 			for (String s : rawConcepts) {
 				OntResource r = oro.getModel().getOntResource(Namespaces.format(s));
@@ -966,8 +966,8 @@ public class CategorizationModule implements IServiceProvider {
 		
 		Set<String> result = new HashSet<String>();
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		try {
 			loadModels(conceptA, conceptB);
@@ -1023,8 +1023,8 @@ public class CategorizationModule implements IServiceProvider {
 	)	
 	public Set<String> getSimilarities(String conceptA, String conceptB) throws NotFoundException, NotComparableException {
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 			OntResource resA = oro.getModel().getOntResource(Namespaces.format(conceptA));
 			OntResource resB = oro.getModel().getOntResource(Namespaces.format(conceptB));
 		oro.getModel().leaveCriticalSection();

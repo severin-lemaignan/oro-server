@@ -589,7 +589,7 @@ public class OroServer implements IServiceProvider {
 	    help += "</ul>\n";
 		return help;
 	}
-
+	
 	/**
 	 * Return a map that associate categories of RPC services to the alphabetically
 	 * sorted list of the services.

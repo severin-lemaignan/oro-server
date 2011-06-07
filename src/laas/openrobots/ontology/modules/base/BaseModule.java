@@ -720,8 +720,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -751,8 +751,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -782,8 +782,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -813,8 +813,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -844,8 +844,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for instances of " + type + "...");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -877,8 +877,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct instances of " + type + "...");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		oro.getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		oro.getModel().leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);

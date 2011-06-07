@@ -179,10 +179,11 @@ public class SocketConnector implements IConnector, Runnable {
 	 * 
 	 * This value may be configured by the option keep_alive_socket_duration in the server configuration file.
 	 */
+	public static final String DEFAULT_KEEP_ALIVE_SOCKET_DURATION = "6000";
+	
 	int KEEP_ALIVE_SOCKET_DURATION;
 	
 	public static final String DEFAULT_PORT = "6969";
-	public static final String DEFAULT_KEEP_ALIVE_SOCKET_DURATION = "6000";
 	public static final String MESSAGE_TERMINATOR = "#end#";
 
 	private Charset charset = Charset.forName("UTF-8");

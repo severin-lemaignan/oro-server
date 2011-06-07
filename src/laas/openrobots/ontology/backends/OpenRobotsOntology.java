@@ -213,8 +213,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
 	public OntProperty createProperty(String lex_property){
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		OntProperty p = onto.createOntProperty(Namespaces.expand(lex_property));
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
@@ -226,8 +226,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#createResource(java.lang.String)
 	 */
 	public OntResource createResource(String lex_resource){
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		OntResource r = onto.createOntResource(Namespaces.expand(lex_resource));
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
@@ -256,8 +256,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			tokens_statement.set(i, Namespaces.format(tokens_statement.get(i)));
 		}
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		
 		subject = onto.getResource(tokens_statement.get(0));
 		predicate = onto.getProperty(tokens_statement.get(1));
@@ -284,8 +284,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public PartialStatement createPartialStatement(String statement) throws IllegalStatementException {
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		
 		PartialStatement p = new PartialStatement(statement, (ModelCom)getModel());
 		
@@ -426,8 +426,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.demo("Checking", statement);
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 
 			boolean status = onto.contains(statement);
 		
@@ -471,8 +471,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	@Override
 	public void checkConsistency() throws InconsistentOntologyException {
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		ValidityReport report = null;
 		try {
 			report = onto.validate();
@@ -510,8 +510,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.log("Checking consistency of statements");
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		for (Statement statement : statements)
 				onto.add(statement);
 				
@@ -546,8 +546,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		this.lastQuery = query;
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		try	{
 			Query myQuery = QueryFactory.create(query, Syntax.syntaxSPARQL );
@@ -617,8 +617,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
 		// This check is only useful to throw an exception...
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntResource node = onto.getOntResource(lex_resource);
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -646,8 +646,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + node.getURI() +">";
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		try	{
 			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 		
@@ -679,8 +679,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Set<OntClass> result = new HashSet<OntClass>();
 		
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		ExtendedIterator<OntClass> it = type.listSuperClasses(onlyDirect);
 		while (it.hasNext())
 		{
@@ -708,8 +708,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 			
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		ExtendedIterator<OntClass> it = type.listSubClasses(onlyDirect);
 		while (it.hasNext())
@@ -740,8 +740,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntResource> result = new HashSet<OntResource>();
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		try {
 			ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
@@ -776,8 +776,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		Individual individual = null;
 		
@@ -900,8 +900,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		StmtIterator stmtsToRemove = null;
 		Set<Statement> setToRemove = new HashSet<Statement>();
@@ -940,8 +940,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.log("Removing statements " + ss +"\n");
 		
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		onto.enterCriticalSection(Lock.WRITE);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		try {
 			onto.remove(new ArrayList<Statement>(stmts));
 		} catch (InternalReasonerException ire) {
@@ -991,8 +991,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
 				
-				Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 				onto.enterCriticalSection(Lock.READ);
+				Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 				
 				StmtIterator stmtsToRemoveIt = null;
 				try {
@@ -1033,8 +1033,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		} catch (FileNotFoundException e) {
 			throw new OntologyServerException("Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 		}
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.write(file);
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
@@ -1066,8 +1066,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 												partialStmt.getPredicate(), 
 												partialStmt.getObject());
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		onto.enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		StmtIterator stmtsToList = null;
 		
@@ -1268,8 +1268,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			onto.setStrictMode(true);
 			
-			Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 			onto.enterCriticalSection(Lock.WRITE);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 			if (scenarioModel != null) onto.add(scenarioModel);
 			
 			String defaultRobotId = parameters.getProperty("robot_id");
@@ -1340,8 +1340,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			forceLookupTableUpdate = false;				
 			lookupTable.clear();
 			
-			Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 			getModel().enterCriticalSection(Lock.READ);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 
 			// if the ontology is inconsistent, do not update the lookup table.
 			ValidityReport report = getModel().validate();
@@ -1463,8 +1463,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return;
 		}
 		
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		getModel().enterCriticalSection(Lock.READ);
+		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
 		for (RDFNode s : functionalProps)
 			functionalProperties.add(s.as(OntProperty.class));

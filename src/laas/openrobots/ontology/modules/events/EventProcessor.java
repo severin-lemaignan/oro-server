@@ -146,9 +146,12 @@ public class EventProcessor {
 				//must use a "for" loop because getWatchPattern is a set, but it
 				//contains actually only one element.
 				for (String s : watcher.getWatchPattern()) {
-					Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+					
 					onto.getModel().enterCriticalSection(Lock.READ);
+					Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+					
 					referenceClass = onto.getModel().getOntClass(Namespaces.format(s));
+					
 					onto.getModel().leaveCriticalSection();
 					Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 					

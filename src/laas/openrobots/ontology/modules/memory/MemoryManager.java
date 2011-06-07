@@ -72,8 +72,8 @@ public class MemoryManager extends Thread {
 				break;
 			}
 			
-			Logger.logConcurrency(Logger.LockType.ACQUIRE_READ, "MemoryManager1");
 			onto.enterCriticalSection(Lock.READ);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_READ, "MemoryManager1");
 				
 			try {
 				
@@ -112,8 +112,8 @@ public class MemoryManager extends Thread {
 			}
 			
 			if (!stmtToRemove.isEmpty()) {
-				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE, "MemoryManager2");
 				onto.enterCriticalSection(Lock.WRITE);
+				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE, "MemoryManager2");
 				try {
 					for (ReifiedStatement s : stmtToRemove) {
 						Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");

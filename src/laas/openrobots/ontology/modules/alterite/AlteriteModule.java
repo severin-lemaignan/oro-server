@@ -29,7 +29,6 @@ import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
-import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -103,7 +102,7 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 		try {
 			Set<PartialStatement> ps = new HashSet<PartialStatement>();
 			ps.add(oro.createPartialStatement("?ag rdf:type Agent"));
-			ps.add(oro.createPartialStatement("?ag owl:differentFrom myself")); //attention! ag must be computed to be actually different from myself!
+			ps.add(oro.createPartialStatement("?ag owl:differentFrom myself"));
 			Set<RDFNode> existing_agents = oro.find("ag", ps, null);
 			
 			for (RDFNode ag : existing_agents) {
