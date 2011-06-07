@@ -337,10 +337,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? memProfile : "") + ss +"\n");
 		
 		try {
+			onto.enterCriticalSection(Lock.WRITE);
+			Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
+			
 			for (Statement statement : statements) {
-				
-				Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
-				onto.enterCriticalSection(Lock.WRITE);
 			
 				try {
 					onto.add(statement);
