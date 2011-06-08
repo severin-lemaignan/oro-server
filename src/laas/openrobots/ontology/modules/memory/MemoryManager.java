@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.mindswap.pellet.jena.PelletInfGraph;
+
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -123,6 +125,12 @@ public class MemoryManager extends Thread {
 					}
 				}
 				finally {
+					/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+					model and classify it before each query.
+					Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+					*/			
+					((PelletInfGraph) onto.getGraph()).classify();
+					
 					onto.leaveCriticalSection();
 					Logger.logConcurrency(Logger.LockType.RELEASE_WRITE, "MemoryManager2");
 				}

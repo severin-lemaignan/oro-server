@@ -27,6 +27,7 @@ import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.modules.events.EventModule;
 
+import org.mindswap.pellet.jena.PelletInfGraph;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
 import com.hp.hpl.jena.ontology.OntModel;
@@ -112,6 +113,12 @@ public class AgentModel {
 			
 			if (scenarioModel != null) onto.add(scenarioModel);
 
+			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+			model and classify it before each query.
+			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+			*/			
+			((PelletInfGraph) onto.getGraph()).classify();
+			
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 			

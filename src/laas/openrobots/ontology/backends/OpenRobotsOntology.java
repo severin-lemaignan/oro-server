@@ -53,6 +53,7 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.RPCMethod;
 
 import org.mindswap.pellet.exceptions.InternalReasonerException;
+import org.mindswap.pellet.jena.PelletInfGraph;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 import org.mindswap.pellet.utils.VersionInfo;
 
@@ -217,6 +218,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.enterCriticalSection(Lock.WRITE);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		OntProperty p = onto.createOntProperty(Namespaces.expand(lex_property));
+		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/			
+		((PelletInfGraph) onto.getGraph()).classify();
+		
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		
@@ -230,6 +238,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		onto.enterCriticalSection(Lock.WRITE);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		OntResource r = onto.createOntResource(Namespaces.expand(lex_resource));
+		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/			
+		((PelletInfGraph) onto.getGraph()).classify();
+		
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		
@@ -272,6 +287,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Statement s =new StatementImpl(subject, predicate, object);
 		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/			
+		((PelletInfGraph) onto.getGraph()).classify();
+		
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		
@@ -289,6 +310,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		
 		PartialStatement p = new PartialStatement(statement, (ModelCom)getModel());
+		
+		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+		model and classify it before each query.
+		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+		*/			
+		((PelletInfGraph) onto.getGraph()).classify();
 		
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
@@ -385,25 +412,26 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}						
 		}
 		finally {
+			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+			model and classify it before each query.
+			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+			*/			
+			((PelletInfGraph) onto.getGraph()).classify();
 
-				try {
-						/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-						model and classify it before each query.
-						Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-						*/
-						checkConsistency();				
-					if (isInInconsistentState) {
-						Logger.log("The ontology is back in a consistent state\n ", 
-								VerboseLevel.WARNING);
-						isInInconsistentState = false;
-					}
+			try {
+					checkConsistency();		
+				if (isInInconsistentState) {
+					Logger.log("The ontology is back in a consistent state\n ", 
+							VerboseLevel.WARNING);
+					isInInconsistentState = false;
 				}
-				catch (InconsistentOntologyException ioe) {
-					isInInconsistentState = true;
-					Logger.log("The ontology is in an inconsistent state! I couldn't " +
-							"update the events subscribers\n ", VerboseLevel.WARNING);
-					Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
-				}
+			}
+			catch (InconsistentOntologyException ioe) {
+				isInInconsistentState = true;
+				Logger.log("The ontology is in an inconsistent state! I couldn't " +
+						"update the events subscribers\n ", VerboseLevel.WARNING);
+				Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
+			}
 
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
@@ -516,6 +544,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
 		for (Statement statement : statements)
 				onto.add(statement);
+		
+				/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+				model and classify it before each query.
+				Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+				*/			
+				((PelletInfGraph) onto.getGraph()).classify();
 				
 		try {
 			checkConsistency();
@@ -547,7 +581,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		query = Namespaces.prefixes() + query;
 		
 		this.lastQuery = query;
-		
+				
 		onto.enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		
@@ -955,12 +989,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			throw new OntologyServerException("Pellet internal error: " + ire.getLocalizedMessage());
 		} finally {
 
-
+			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+			model and classify it before each query.
+			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+			*/			
+			((PelletInfGraph) onto.getGraph()).classify();
+			
 			try {
-					/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-					model and classify it before each query.
-					Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-					*/
 					checkConsistency();				
 				if (isInInconsistentState) {
 					Logger.log("The ontology is back in a consistent state\n ", 
@@ -975,10 +1010,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
 			}
 
-			onto.leaveCriticalSection();	
+			onto.leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		}
-		
-		Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 		
 		//force the rebuilt of the lookup table at the next lookup.
 		forceLookupTableUpdate = true;
@@ -1287,6 +1321,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				} catch (IllegalStatementException e1) {
 					Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
 				}
+			
+			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
+			model and classify it before each query.
+			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
+			*/			
+			((PelletInfGraph) onto.getGraph()).classify();
+			
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_WRITE);
 			
