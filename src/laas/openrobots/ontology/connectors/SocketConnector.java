@@ -424,7 +424,7 @@ public class SocketConnector implements IConnector, Runnable {
 			  
 			  // Log the incoming request
 			  String formatted = "";
-			  formatted = "[thread " + this.hashCode() + "] >> Got incoming request: " + queryName + "(";
+			  formatted = "[" + Logger.GetTimestamp() + " thread " + this.hashCode() + "] >> Got incoming request: " + queryName + "(";
 	  
 			  if (raw_query.size() > 1) {
 				  for (int i = 1; i < raw_query.size() ; i++) {

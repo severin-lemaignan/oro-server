@@ -89,6 +89,10 @@ public class Logger {
 	
     static private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");
     
+	public static String GetTimestamp() {
+		return sdf.format(Calendar.getInstance().getTime());
+	}
+	
 	/**
 	 * Outputs server standard messages.
 	 * 
@@ -148,7 +152,7 @@ public class Logger {
 		String prefix = "";
 		if (withPrefix) {
 			if (display_timestamp) {
-				prefix = "[" + sdf.format(Calendar.getInstance().getTime()) + "] ";
+				prefix = "[" + GetTimestamp() + "] ";
 			}
 			 if (agent != null) prefix += 
 				 	(OroServer.HAS_A_TTY ? Colors.getColorForAgent(agent).formatBold(agent) : agent) + 
@@ -216,7 +220,8 @@ public class Logger {
 		
 		}
 	}
-	
+
+
 	/**
 	 * Tests if a given level of verbosity is superior or egal to the current,
 	 * application-wide, level of verbosity.
