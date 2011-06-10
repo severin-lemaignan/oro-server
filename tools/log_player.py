@@ -10,14 +10,13 @@ from Queue import Queue
 HOST = "localhost"
 PORT = 6969
 
-default_timedelta = timedelta(0,0,0,50) # Time delta used to 'separate' requests when no timestamp is available
-
 threads_list = {}
 
 nb_lines = 0
 current_line = 0
 
 start_time = None
+end_time = None
 
 class Client(Thread):
     def __init__(self, oro, id):
@@ -32,12 +31,16 @@ class Client(Thread):
         while (not self.req.empty()):
             timedelta, req = self.req.get()
 
-            while timedelta > (datetime.now() - start_time):
+            current_timedelta = datetime.now() - start_time
+            while timedelta > current_timedelta:
                     # Wait for the right time
-                    pass
+                    current_timedelta = datetime.now() - start_time
 
+            delay = current_timedelta - timedelta
             current_line += 1
-            print("[" + str(current_line * 100 / nb_lines) + "% - t+" + str(timedelta.seconds) + "." + str(int(timedelta.microseconds/1000)) + "sec - THREAD " + str(self.id) + " SENDING REQUEST " + req + "]")
+            print("[" + str(current_line * 100 / nb_lines) + \
+                  "% - t+" + str(timedelta) + \
+                  " - THREAD " + str(self.id) + " SENDING REQUEST " + req + "]")
 
             try:
                 eval("self.oro." + req)
@@ -53,6 +56,8 @@ class Client(Thread):
 line_nb=0
 
 print "[PARSING THE LOG...]"
+time = None
+
 with open(sys.argv[1], 'r') as f:
     lines = f.readlines()
     for l in lines:
@@ -74,7 +79,7 @@ with open(sys.argv[1], 'r') as f:
             if cmd_line:
                 thread_id = cmd_line.group(0)
 
-                time = datetime.now() #+ default_timedelta * line_nb # Default date if not found in the log
+                time = datetime.now() # Default date if not found in the log
                 if not start_time:
                     # Initializes the start time at the first timestamp
                     start_time = datetime.now()
@@ -92,14 +97,31 @@ with open(sys.argv[1], 'r') as f:
 
 
 nb_lines = line_nb
-print "[PARSING OF THE LOG FINISHED. " + str(nb_lines) + " REQUESTS. STARTING EXECUTION]\n\n\n"
+
+if nb_lines == 0:
+    print("No ORO requests found. Are you sure you're parsing a ORO-server log?")
+    sys.exit(0)
+
+end_time = time
+
+timespan = end_time - start_time
+print "[PARSING OF THE LOG FINISHED. " + str(nb_lines) + " REQUESTS IN " + \
+       str(timespan) + \
+       "sec. STARTING EXECUTION]\n\n\n"
 
 start_time = datetime.now()
-
 for key, t in threads_list.items():
     t.start()
 
 for key, t in threads_list.items():
     t.join()
 
-print "[DONE. LOG REPLAYED.]"
+end_time = datetime.now()
+
+timespan_replay = end_time - start_time
+delay = timespan_replay - timespan
+
+slowdown = (timespan_replay.seconds * 1000000 + timespan_replay.microseconds) / (timespan.seconds * 1000000 + timespan.microseconds)
+print "[DONE. LOG REPLAYED IN " + \
+       str(timespan_replay) + ". Delta = " + str(delay) + " - " + str(int(slowdown * 100)) + "% slower]"
+
