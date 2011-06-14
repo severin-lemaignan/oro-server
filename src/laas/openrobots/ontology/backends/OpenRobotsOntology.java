@@ -654,16 +654,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public OntResource getResource(String lex_resource) throws NotFoundException {
 		
 		lex_resource = Namespaces.format(lex_resource);
-		
-		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
-		// This check is only useful to throw an exception...
-		
+	
 		onto.enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		OntResource node = onto.getOntResource(lex_resource);
 		onto.leaveCriticalSection();
 		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
-		
+
+		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
+		// This check is only useful to throw an exception...
 		if (node == null){
 			throw new NotFoundException("The node " + lex_resource + " was not found in the ontology (tip: check the namespaces!).");
 		}
