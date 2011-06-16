@@ -229,6 +229,46 @@ public class OpenRobotsOntologyTest {
 	}
 	
 	@Test
+	public void socketConnectorRequestParser() {
+	
+		Charset charset = Charset.forName("UTF-8");
+		
+		SocketConnector sc = new SocketConnector(conf, null);
+		ClientWorker s = sc.new ClientWorker(null);
+		
+		List<String> res;
+				
+		res = s.parseBuffer(charset.encode(
+				"help\n" +
+				"addForAgent\nTOTO\n[\"TATA likes TOTO\"]\n#end#\n" +
+				"test2\n"));
+		
+		assertTrue(res.get(0).equals("help"));
+		
+		res = s.parseBuffer(null);
+		assertNotNull(res);
+		assertTrue(res.get(0).equals("addForAgent"));
+		
+		res = s.parseBuffer(null);
+		assertTrue(res == null);
+		
+		res = s.parseBuffer(charset.encode("#end#\nhelp\ntest3\nparam1\n#end"));
+		assertNotNull(res);
+		assertEquals("test2", res.get(0));
+		
+		res = s.parseBuffer(null);
+		assertNotNull(res);
+		assertEquals("help", res.get(0));
+		
+		
+		res = s.parseBuffer(charset.encode("#\n"));
+		assertNotNull(res);
+		assertEquals("test3", res.get(0));
+		
+		
+	}
+	
+	@Test
 	public void rulesTokenizer() {
 	
 		System.out.println("[UNITTEST] ***** TEST: Testing rules tokenizer *****");
