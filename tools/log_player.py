@@ -123,5 +123,5 @@ delay = timespan_replay - timespan
 
 slowdown = (timespan_replay.seconds * 1000000 + timespan_replay.microseconds) / (timespan.seconds * 1000000 + timespan.microseconds)
 print "[DONE. LOG REPLAYED IN " + \
-       str(timespan_replay) + ". Delta = " + str(delay) + " - " + str(int(slowdown * 100)) + "% slower]"
+       str(timespan_replay) + ". Delta = " + str(delay) + " - " + str(int((slowdown - 1) * 100)) + "% slower]"
 
