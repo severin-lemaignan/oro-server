@@ -31,6 +31,7 @@ import com.hp.hpl.jena.rdf.model.Statement;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
+import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 
 public class Logger {
 
@@ -38,9 +39,7 @@ public class Logger {
 	private static String agent;
 	
 	public static Boolean display_timestamp = true;
-	
-	public enum LockType {ACQUIRE_READ, ACQUIRE_WRITE, RELEASE_READ, RELEASE_WRITE};
-	
+		
 	public enum Colors {
 		BLUE ("[34m"),
 		GREEN ("[32m"),
@@ -261,8 +260,8 @@ public class Logger {
 			if(!info.isEmpty()) info = " (" + info + ")";
 			
 			Logger.log(">>" + msg + info + ": " + 
-					Thread.currentThread().getStackTrace()[4].getMethodName() + 
-					" -> " + Thread.currentThread().getStackTrace()[3].getMethodName() + "\n", 
+					Thread.currentThread().getStackTrace()[5].getMethodName() + 
+					" -> " + Thread.currentThread().getStackTrace()[4].getMethodName() + "\n", 
 					VerboseLevel.DEBUG_CONCURRENCY, false);
 		}
 	}

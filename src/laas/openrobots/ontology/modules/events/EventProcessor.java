@@ -24,6 +24,7 @@ import java.util.Set;
 
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
+import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -147,13 +148,11 @@ public class EventProcessor {
 				//contains actually only one element.
 				for (String s : watcher.getWatchPattern()) {
 					
-					onto.getModel().enterCriticalSection(Lock.READ);
-					Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+					onto.lock(LockType.ACQUIRE_READ);
 					
 					referenceClass = onto.getModel().getOntClass(Namespaces.format(s));
 					
-					onto.getModel().leaveCriticalSection();
-					Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+					onto.lock(LockType.RELEASE_READ);
 					
 					if (referenceClass == null) {
 						Logger.log("The class " + s + " does not exists in the " +
@@ -238,8 +237,7 @@ public class EventProcessor {
 				//Initialize the list of matching instance from the current state on the ontology.
 				lastMatchedResources = new HashSet<Resource>();
 				
-				onto.getModel().enterCriticalSection(Lock.READ);
-				Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+				onto.lock(LockType.ACQUIRE_READ);
 				
 				ResultSet rawResult = QueryExecutionFactory.create(cachedQuery, onto.getModel()).execSelect();
 								
@@ -251,8 +249,7 @@ public class EventProcessor {
 					}
 				}
 				
-				onto.getModel().leaveCriticalSection();
-				Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+				onto.lock(LockType.RELEASE_READ);
 				
 				Logger.log("Initial matching instances: " + lastMatchedResources +
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
@@ -326,8 +323,7 @@ public class EventProcessor {
 		
 		boolean isAsserted = false;
 
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		onto.getModel().enterCriticalSection(Lock.READ);
+		onto.lock(LockType.ACQUIRE_READ);		
 		
 		try {
 			isAsserted = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execAsk();
@@ -340,8 +336,7 @@ public class EventProcessor {
 			throw e;
 		}
 		finally {
-			onto.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			onto.lock(LockType.RELEASE_READ);
 		}
 		
 		
@@ -436,8 +431,7 @@ public class EventProcessor {
 		
 		ResultSet rawResult = null;
 
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		onto.getModel().enterCriticalSection(Lock.READ);
+		onto.lock(LockType.ACQUIRE_READ);
 		
 		try {
 			rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
@@ -461,8 +455,7 @@ public class EventProcessor {
 			throw e;
 		}
 		finally {
-			onto.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			onto.lock(LockType.RELEASE_READ);
 		}
 				
 		Set<Resource> addedResources = new HashSet<Resource>(instances);
@@ -524,6 +517,7 @@ public class EventProcessor {
 		else {
 			synchronized (watchers) {
 				watchers.add(new WatcherHolder(w));
+				System.out.println("bouh");
 			}			
 		}
 		

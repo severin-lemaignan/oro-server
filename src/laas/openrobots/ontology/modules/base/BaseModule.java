@@ -27,6 +27,7 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
+import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -666,11 +667,9 @@ public class BaseModule implements IServiceProvider {
 		
 		Set<String> result = new HashSet<String>();
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		Model infos = oro.getSubmodel(oro.getResource(lex_resource));		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		oro.lock(LockType.RELEASE_READ);
 
 		StmtIterator stmts = infos.listStatements();
 
@@ -726,14 +725,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
@@ -764,14 +761,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
@@ -802,14 +797,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
@@ -839,14 +832,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
@@ -876,14 +867,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}		
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
@@ -916,14 +905,12 @@ public class BaseModule implements IServiceProvider {
 		
 		OntClass myClass = null;
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
+		oro.lock(LockType.ACQUIRE_READ);
 		try {
 			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		}
 		finally {
-			oro.getModel().leaveCriticalSection();
-			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			oro.lock(LockType.RELEASE_READ);
 		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
