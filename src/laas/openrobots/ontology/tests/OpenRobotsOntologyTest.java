@@ -17,6 +17,7 @@
 package laas.openrobots.ontology.tests;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,6 +35,8 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.backends.ResourceType;
+import laas.openrobots.ontology.connectors.SocketConnector;
+import laas.openrobots.ontology.connectors.SocketConnector.ClientWorker;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
@@ -233,7 +236,7 @@ public class OpenRobotsOntologyTest {
 	
 		Charset charset = Charset.forName("UTF-8");
 		
-		SocketConnector sc = new SocketConnector(conf, null);
+		SocketConnector sc = new SocketConnector(conf, null, null);
 		ClientWorker s = sc.new ClientWorker(null);
 		
 		List<String> res;
