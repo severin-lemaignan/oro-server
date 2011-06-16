@@ -457,7 +457,7 @@ public class OroServer implements IServiceProvider {
 			category = "administration",
 			desc = "returns some statistics on the server"
 	)
-	public static Map<String, String> stats() {
+	public Map<String, String> stats() {
 		Map<String, String> stats = new HashMap<String, String>();
 		
 		
@@ -484,6 +484,9 @@ public class OroServer implements IServiceProvider {
 		
 		//Nb of clients
 		stats.put("nb_clients", "not available");
+
+		//Amount of pending requests in the server.
+		stats.put("pending_requests", String.valueOf(incomingRequests.size()));
 		
 		return stats;
 	}
