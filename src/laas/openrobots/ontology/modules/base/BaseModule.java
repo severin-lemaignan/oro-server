@@ -724,17 +724,23 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSuperclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+
 		
 		return result;
 	}
@@ -756,17 +762,23 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSuperclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+
 		
 		return result;
 	}
@@ -788,18 +800,23 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSubclassesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
-		
+				
 		return result;
 	}
 	
@@ -820,17 +837,22 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSubclassesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 		
 		return result;
 	}
@@ -852,18 +874,23 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for instances of " + type + "...");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}		
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntResource c : oro.getInstancesOf(myClass, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+
 		
 		Logger.log("done.\n");
 		
@@ -887,16 +914,23 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct instances of " + type + "...");
 		
+		OntClass myClass = null;
+		
 		oro.getModel().enterCriticalSection(Lock.READ);
 		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
-		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		try {
+			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
+		}
+		finally {
+			oro.getModel().leaveCriticalSection();
+			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		}
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntResource c : oro.getInstancesOf(myClass, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+
 
 		Logger.log("done.\n");
 		
@@ -916,12 +950,8 @@ public class BaseModule implements IServiceProvider {
 		
 		OntResource myResource = oro.getResource(individual);
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		for (OntResource c : oro.getClassesOf(myResource, false) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 
 		Logger.log("done.\n");
 		
@@ -940,12 +970,8 @@ public class BaseModule implements IServiceProvider {
 		
 		OntResource myResource = oro.getResource(individual);
 		
-		oro.getModel().enterCriticalSection(Lock.READ);
-		Logger.logConcurrency(Logger.LockType.ACQUIRE_READ);
 		for (OntResource c : oro.getClassesOf(myResource, true) )
 			result.put(Namespaces.contract(c.getURI()), Helpers.getLabel(c));
-		oro.getModel().leaveCriticalSection();
-		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
 
 		Logger.log("done.\n");
 		
