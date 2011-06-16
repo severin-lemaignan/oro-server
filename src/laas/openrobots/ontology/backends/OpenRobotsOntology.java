@@ -1261,7 +1261,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			onto_model_reasonner_name = "No reasonner -";
 		}
 		
-		// loading of the OWL ontologies thanks Jena	
+		// loading of the OWL ontologies through Jena	
 		try {
 			Model mainModel = null;
 			Model scenarioModel = null;
@@ -1293,7 +1293,9 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			// PelletReasonerFactory.THE_SPEC : uses Pellet as reasonner
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
 			
-			onto.setStrictMode(true);
+			// Strict mode set to 'false' because of Jena bug triggered in getClassesOf 
+			// cf http://tech.groups.yahoo.com/group/jena-dev/message/47199
+			onto.setStrictMode(false);
 			
 			onto.enterCriticalSection(Lock.WRITE);
 			Logger.logConcurrency(Logger.LockType.ACQUIRE_WRITE);
