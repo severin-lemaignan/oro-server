@@ -259,7 +259,7 @@ public class Logger {
 			
 			if(!info.isEmpty()) info = " (" + info + ")";
 			
-			Logger.log(">>" + msg + info + ": " + 
+			Logger.log(" (thread " +  Thread.currentThread().getId() + ") >>" + msg + info + ": " + 
 					Thread.currentThread().getStackTrace()[5].getMethodName() + 
 					" -> " + Thread.currentThread().getStackTrace()[4].getMethodName() + "\n", 
 					VerboseLevel.DEBUG_CONCURRENCY, false);
