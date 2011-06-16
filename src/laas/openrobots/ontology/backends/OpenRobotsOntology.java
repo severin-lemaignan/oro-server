@@ -1303,13 +1303,15 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if (scenarioModel != null) onto.add(scenarioModel);
 			
 			String defaultRobotId = parameters.getProperty("robot_id");
-			if (defaultRobotId != null)
-				try {
-					onto.add(this.createStatement("myself owl:sameAs " + defaultRobotId));
-					onto.add(this.createStatement("myself rdf:type Robot"));
-				} catch (IllegalStatementException e1) {
-					Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
+			try {
+				if (defaultRobotId != null) {
+					//TODO workaround for https://softs.laas.fr/bugzilla/show_bug.cgi?id=171
+					//onto.add(this.createStatement("myself owl:sameAs " + defaultRobotId));
 				}
+				onto.add(this.createStatement("myself rdf:type Robot"));
+			} catch (IllegalStatementException e1) {
+				Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
+			}
 			
 			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
 			model and classify it before each query.
