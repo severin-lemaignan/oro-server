@@ -24,8 +24,6 @@ import java.util.Set;
 
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
-import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
-import laas.openrobots.ontology.exceptions.EventNotFoundException;
 import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
@@ -46,7 +44,6 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.shared.Lock;
 
 public class EventProcessor {
 	
@@ -148,11 +145,7 @@ public class EventProcessor {
 				//contains actually only one element.
 				for (String s : watcher.getWatchPattern()) {
 					
-					onto.lock(LockType.ACQUIRE_READ);
-					
 					referenceClass = onto.getModel().getOntClass(Namespaces.format(s));
-					
-					onto.lock(LockType.RELEASE_READ);
 					
 					if (referenceClass == null) {
 						Logger.log("The class " + s + " does not exists in the " +
@@ -237,8 +230,6 @@ public class EventProcessor {
 				//Initialize the list of matching instance from the current state on the ontology.
 				lastMatchedResources = new HashSet<Resource>();
 				
-				onto.lock(LockType.ACQUIRE_READ);
-				
 				ResultSet rawResult = QueryExecutionFactory.create(cachedQuery, onto.getModel()).execSelect();
 								
 				if (rawResult != null) {				
@@ -248,8 +239,6 @@ public class EventProcessor {
 						lastMatchedResources.add(row.getResource(varName));
 					}
 				}
-				
-				onto.lock(LockType.RELEASE_READ);
 				
 				Logger.log("Initial matching instances: " + lastMatchedResources +
 						" (they won't be reported).\n", VerboseLevel.DEBUG);
@@ -322,8 +311,6 @@ public class EventProcessor {
 	private void processFactChecking(WatcherHolder holder, Set<WatcherHolder> watchersToBeRemoved) throws QueryExecException {
 		
 		boolean isAsserted = false;
-
-		onto.lock(LockType.ACQUIRE_READ);		
 		
 		try {
 			isAsserted = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execAsk();
@@ -335,10 +322,6 @@ public class EventProcessor {
 					"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
 		}
-		finally {
-			onto.lock(LockType.RELEASE_READ);
-		}
-		
 		
 		if (isAsserted) {
 			
@@ -431,8 +414,6 @@ public class EventProcessor {
 		
 		ResultSet rawResult = null;
 
-		onto.lock(LockType.ACQUIRE_READ);
-		
 		try {
 			rawResult = QueryExecutionFactory.create(holder.cachedQuery, onto.getModel()).execSelect();
 			
@@ -453,9 +434,6 @@ public class EventProcessor {
 					"("+ e.getLocalizedMessage() +").\nPlease contact the " +
 					"maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			throw e;
-		}
-		finally {
-			onto.lock(LockType.RELEASE_READ);
 		}
 				
 		Set<Resource> addedResources = new HashSet<Resource>(instances);

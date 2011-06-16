@@ -27,7 +27,6 @@ import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.ResourceType;
-import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
@@ -347,17 +346,16 @@ public class BaseModule implements IServiceProvider {
 	public Boolean checkConsistency() {
 		Logger.log("Checking ontology consistency...\n", VerboseLevel.IMPORTANT);
 		
-		try {
-			oro.checkConsistency();
+		if (oro.checkConsistency()) {
+			Logger.log("...no consistency problems.\n", false);
+			return true;
 		}
-		catch (InconsistentOntologyException e){
+		else {
 			Logger.log("...ontology is inconsistent!\n", VerboseLevel.WARNING, false);
-			Logger.log("Inconsistency causes:\n" + e.getMessage() + "\n", VerboseLevel.WARNING, false);
 			return false;
 		}
 		
-		Logger.log("...no consistency problems.\n", false);
-		return true;
+		
 		
 	}
 	
@@ -667,9 +665,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Set<String> result = new HashSet<String>();
 		
-		oro.lock(LockType.ACQUIRE_READ);
 		Model infos = oro.getSubmodel(oro.getResource(lex_resource));		
-		oro.lock(LockType.RELEASE_READ);
 
 		StmtIterator stmts = infos.listStatements();
 
@@ -723,15 +719,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for superclasses of " + type + ".\n");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}
+		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -759,16 +747,8 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct superclasses of " + type + ".\n");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}
-				
+		OntClass myClass =  oro.getModel().getOntClass(Namespaces.format(type));
+						
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
 		for (OntClass c : oro.getSuperclassesOf(myClass, true) )
@@ -795,15 +775,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for subclasses of " + type + ".\n");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}
+		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -830,15 +802,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct subclasses of " + type + ".\n");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}
+		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 				
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -865,15 +829,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking up for instances of " + type + "...");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}		
+		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		
@@ -903,15 +859,7 @@ public class BaseModule implements IServiceProvider {
 		
 		Logger.log("Looking for direct instances of " + type + "...");
 		
-		OntClass myClass = null;
-		
-		oro.lock(LockType.ACQUIRE_READ);
-		try {
-			 myClass = oro.getModel().getOntClass(Namespaces.format(type));
-		}
-		finally {
-			oro.lock(LockType.RELEASE_READ);
-		}
+		OntClass myClass = oro.getModel().getOntClass(Namespaces.format(type));
 		
 		if (myClass == null) throw new NotFoundException("The class " + type + " does not exists in the ontology (tip: if this resource is not in the default namespace, be sure to add the namespace prefix!)");
 		

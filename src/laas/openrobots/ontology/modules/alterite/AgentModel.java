@@ -20,7 +20,6 @@ import java.util.Properties;
 
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
-import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.helpers.Logger;
@@ -108,20 +107,8 @@ public class AgentModel {
 
 				
 			onto = ModelFactory.createOntologyModel(onto_model_reasonner, mainModel);
-			
-			onto.enterCriticalSection(Lock.WRITE);
-			Logger.logConcurrency(LockType.ACQUIRE_WRITE);
-			
+						
 			if (scenarioModel != null) onto.add(scenarioModel);
-
-			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-			model and classify it before each query.
-			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-			*/			
-			((PelletInfGraph) onto.getGraph()).classify();
-			
-			onto.leaveCriticalSection();
-			Logger.logConcurrency(LockType.RELEASE_WRITE);
 			
 			Logger.log("New cognitive model for agent " + id + " created.\n", VerboseLevel.IMPORTANT);
 			

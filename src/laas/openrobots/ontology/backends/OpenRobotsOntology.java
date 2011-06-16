@@ -215,17 +215,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#createProperty(java.lang.String)
 	 */
 	public OntProperty createProperty(String lex_property){
-		
-		lock(LockType.ACQUIRE_WRITE);		
+
 		OntProperty p = onto.createOntProperty(Namespaces.expand(lex_property));
-		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/			
-		classify();
-		
-		lock(LockType.RELEASE_WRITE);
 		
 		return p;
 	}
@@ -234,17 +225,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.IOntologyServer#createResource(java.lang.String)
 	 */
 	public OntResource createResource(String lex_resource){
-		lock(LockType.ACQUIRE_WRITE);
 		
 		OntResource r = onto.createOntResource(Namespaces.expand(lex_resource));
-		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/			
-		classify();
-		
-		lock(LockType.RELEASE_WRITE);
 		
 		return r;
 	}
@@ -270,7 +252,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			tokens_statement.set(i, Namespaces.format(tokens_statement.get(i)));
 		}
 		
-		lock(LockType.ACQUIRE_WRITE);
 		
 		subject = onto.getResource(tokens_statement.get(0));
 		predicate = onto.getProperty(tokens_statement.get(1));
@@ -283,15 +264,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		assert(object!=null);
 		
 		Statement s =new StatementImpl(subject, predicate, object);
-		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/			
-		classify();
-		
-		lock(LockType.RELEASE_WRITE);
-		
 	
 		return s; 
 		
@@ -302,17 +274,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 */
 	public PartialStatement createPartialStatement(String statement) throws IllegalStatementException {
 		
-		lock(LockType.ACQUIRE_WRITE);
-		
 		PartialStatement p = new PartialStatement(statement, (ModelCom)getModel());
-		
-		/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-		model and classify it before each query.
-		Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-		*/			
-		classify();
-		
-		lock(LockType.RELEASE_WRITE);
 		
 		return p;
 	}
@@ -352,35 +314,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
 			isInInconsistentState = true;
-			Logger.log("The ontology is in an inconsistent state! I couldn't " +
-					"update the events subscribers\n ", VerboseLevel.WARNING);
+			Logger.log("The ontology is in an inconsistent state!\n ", 
+					VerboseLevel.WARNING);
 			Logger.log("Inconsistency causes:\n" + ioe.getMessage() + "\n", VerboseLevel.WARNING, false);
 		}
-		
 	}
-	
-	@Override
-	public void lock(LockType lockType) {
 		
-		switch(lockType) {
-		case ACQUIRE_READ:
-			onto.enterCriticalSection(Lock.READ);
-			Logger.logConcurrency(LockType.ACQUIRE_READ);
-			break;
-		case ACQUIRE_WRITE:
-			onto.enterCriticalSection(Lock.WRITE);
-			Logger.logConcurrency(LockType.ACQUIRE_WRITE);
-			break;
-		case RELEASE_READ:
-			onto.leaveCriticalSection();
-			Logger.logConcurrency(LockType.RELEASE_READ);
-			break;
-		case RELEASE_WRITE:
-			onto.leaveCriticalSection();
-			Logger.logConcurrency(LockType.RELEASE_WRITE);
-		}
-	}
-	
 	/* (non-Javadoc)
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#add(com.hp.hpl.jena.rdf.model.Statement, laas.openrobots.ontology.modules.memory.MemoryProfile)
 	 */
@@ -409,63 +348,50 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (Statement s : statements) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
 		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? memProfile : "") + ss +"\n");
 		
-		try {
-			lock(LockType.ACQUIRE_WRITE);
-			
-			for (Statement statement : statements) {
-			
-				try {
-					onto.add(statement);
-				}
-				catch (ConversionException e) {
-					Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
-							"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
-					throw new IllegalStatementException("Impossible to assert " + statement + 
-							". A concept can not be a class and an instance at the same time in OWL DL.");
+		for (Statement statement : statements) {
+		
+			try {
+				onto.add(statement);
+			}
+			catch (ConversionException e) {
+				Logger.log("Impossible to assert " + statement + ". A concept can not be a class " +
+						"and an instance at the same time in OWL DL.\n", VerboseLevel.ERROR);
+				throw new IllegalStatementException("Impossible to assert " + statement + 
+						". A concept can not be a class and an instance at the same time in OWL DL.");
 
+			}
+		
+			//If we are in safe mode, we check that the ontology is not inconsistent.
+			if (safe) {
+				if (!checkConsistency()) {
+					onto.remove(statement);	
+					Logger.log("...I won't add " + statement + " because it " +
+							"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
+					allHaveBeenInserted = false;
+					continue;
 				}
-			
-				//If we are in safe mode, we check that the ontology is not inconsistent.
-				if (safe) {
-					try {
-					checkConsistency();
-					} catch (InconsistentOntologyException ioe)
-					{
-						onto.remove(statement);	
-						Logger.log("...I won't add " + statement + " because it " +
-								"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
-						allHaveBeenInserted = false;
-						continue;
-					}
-				}
+			}
 
-					
-				if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
-				{
-					//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
-					String rsName = "rs_" + Math.abs(statement.hashCode()); 
-					
-					onto.createReifiedStatement(Namespaces.addDefault(rsName), statement);
-					
-					Statement metaStmt = createStatement(rsName + " stmtCreatedOn " + onto.createTypedLiteral(Calendar.getInstance()));
-					//Statement metaStmt = oro.createStatement(rsName + " stmtCreatedOn " + toXSDDate(new Date())); //without timezone
-					Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
-					onto.add(metaStmt);
-					onto.add(metaStmt2);
+				
+			if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
+			{
+				//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
+				String rsName = "rs_" + Math.abs(statement.hashCode()); 
+				
+				onto.createReifiedStatement(Namespaces.addDefault(rsName), statement);
+				
+				Statement metaStmt = createStatement(rsName + " stmtCreatedOn " + onto.createTypedLiteral(Calendar.getInstance()));
+				//Statement metaStmt = oro.createStatement(rsName + " stmtCreatedOn " + toXSDDate(new Date())); //without timezone
+				Statement metaStmt2 = createStatement(rsName + " stmtMemoryProfile " + memProfile + "^^xsd:string");
+				onto.add(metaStmt);
+				onto.add(metaStmt2);
 
-				}
-			}						
-		}
-		finally {
-			
-			classify();
-			
-			//TODO: optimization possible for reified statement with onModelChange(rsName)
-			//notify the events subscribers.
-			if(!isInInconsistentState) onModelChange();
-
-			lock(LockType.RELEASE_WRITE);
-		}
+			}
+		}						
+		
+		//TODO: optimization possible for reified statement with onModelChange(rsName)
+		//notify the events subscribers.
+		if(!isInInconsistentState) onModelChange();
 		
 		return allHaveBeenInserted;
 	}
@@ -480,14 +406,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public boolean check(Statement statement) {
 		
 		Logger.demo("Checking", statement);
-		
-		lock(LockType.ACQUIRE_READ);
 
-			boolean status = onto.contains(statement);
-		
-		lock(LockType.RELEASE_READ);
-		
-		return status;
+		return onto.contains(statement);
 
 	}
 	
@@ -522,34 +442,11 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	 * @see laas.openrobots.ontology.backends.IOntologyBackend#checkConsistency()
 	 */
 	@Override
-	public void checkConsistency() throws InconsistentOntologyException {
+	public boolean checkConsistency() {
 		
-		lock(LockType.ACQUIRE_READ);
-		ValidityReport report = null;
-		try {
-			report = onto.validate();
-		} finally {
-			lock(LockType.RELEASE_READ);
-		}
+		classify();
 		
-		String cause = "";
-		
-		if (report == null) {
-			return;
-		}
-		
-		if (!report.isValid())
-		{
-			Logger.demo("Checking consistency:", "ontology is inconsistent!", false);
-			
-			for (Iterator<Report> i = report.getReports(); i.hasNext(); ) {
-	            cause += " - " + i.next();
-			}
-
-			throw new InconsistentOntologyException(cause);
-		}
-				
-		Logger.demo("Checking consistency:", "ontology is consistent", true);
+		return !isInInconsistentState;
 		
 	}
 	
@@ -561,14 +458,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Logger.log("Checking consistency of statements");
 		
-		lock(LockType.ACQUIRE_WRITE);
-		
 		for (Statement statement : statements) onto.add(statement);
-		classify();
-		consistent = !isInInconsistentState;
+		
+		consistent = checkConsistency();		
+
 		for (Statement statement : statements) onto.remove(statement);
 	
-		lock(LockType.RELEASE_WRITE);
 		return consistent;
 	}
 	
@@ -587,8 +482,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		query = Namespaces.prefixes() + query;
 		
 		this.lastQuery = query;
-				
-		lock(LockType.ACQUIRE_READ);
 		
 		try	{
 			Query myQuery = QueryFactory.create(query, Syntax.syntaxSPARQL );
@@ -613,9 +506,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		catch (QueryExecException e) {
 			Logger.log("Error during query execution ! ("+ e.getLocalizedMessage() +").", VerboseLevel.SERIOUS_ERROR);
 			throw new InvalidQueryException("Error during query execution ! ("+ e.getLocalizedMessage() +")");
-		}
-		finally {
-			lock(LockType.RELEASE_READ);				
 		}
 		
 		return res;
@@ -659,9 +549,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		lex_resource = Namespaces.format(lex_resource);
 	
-		lock(LockType.ACQUIRE_READ);
 		OntResource node = onto.getOntResource(lex_resource);
-		lock(LockType.RELEASE_READ);
 
 		//TODO : is it necessary to check the node exists? if it doesn't exist, the SPARQL query will answer an empty resultset.
 		// This check is only useful to throw an exception...
@@ -688,7 +576,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// cf http://www.w3.org/TR/rdf-sparql-query/#describe for more details
 		resultQuery += "DESCRIBE <" + node.getURI() +">";
 		
-		lock(LockType.ACQUIRE_READ);
 		try	{
 			Query myQuery = QueryFactory.create(resultQuery, Syntax.syntaxSPARQL);
 		
@@ -703,9 +590,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			Logger.log("internal error during query execution while try the get infos! ("+ e.getLocalizedMessage() +").\nPlease contact the maintainer :-)\n", VerboseLevel.SERIOUS_ERROR);
 			return null;
 		}
-		finally {
-			lock(LockType.RELEASE_READ);
-		}
 			
 		return resultModel;
 	}
@@ -719,7 +603,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		Set<OntClass> result = new HashSet<OntClass>();
 		
 		
-		lock(LockType.ACQUIRE_READ);
 		ExtendedIterator<OntClass> it = type.listSuperClasses(onlyDirect);
 		while (it.hasNext())
 		{
@@ -728,7 +611,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(tmp);
 			}
 		}
-		lock(LockType.RELEASE_READ);
 		
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct superclasses of " + Namespaces.toLightString(type), result);
@@ -746,8 +628,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 			
-		lock(LockType.ACQUIRE_READ);
-		
+	
 		ExtendedIterator<OntClass> it = type.listSubClasses(onlyDirect);
 		while (it.hasNext())
 		{
@@ -757,8 +638,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 		}
 		
-		lock(LockType.RELEASE_READ);
-
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct subclasses of " + Namespaces.toLightString(type), result);
 		else
@@ -775,20 +654,14 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	public Set<OntResource> getInstancesOf(OntClass type, boolean onlyDirect) throws NotFoundException {
 		
 		Set<OntResource> result = new HashSet<OntResource>();
-				
-		lock(LockType.ACQUIRE_READ);
 		
-		try {
-			ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
-			while (it.hasNext())
-			{
-				OntResource tmp = it.next();
-				if (tmp != null && !tmp.isAnon()){
-					result.add(tmp);
-				}
+		ExtendedIterator<? extends OntResource> it = type.listInstances(onlyDirect);
+		while (it.hasNext())
+		{
+			OntResource tmp = it.next();
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
 			}
-		} finally {
-			lock(LockType.RELEASE_READ);
 		}
 		
 		if (onlyDirect)
@@ -810,7 +683,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Set<OntClass> result = new HashSet<OntClass>();
 		
-		lock(LockType.ACQUIRE_READ);
 		
 		Individual individual = null;
 		
@@ -818,7 +690,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			individual = resource.asIndividual();
 		}
 		catch (ConversionException ce) {
-			lock(LockType.RELEASE_READ);
 			throw new NotFoundException(Namespaces.toLightString(resource) + " is not an individual!");
 		} 
 
@@ -830,7 +701,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				result.add(tmp);
 			}
 		}
-		lock(LockType.RELEASE_READ);
 		
 
 		if (onlyDirect)
@@ -932,18 +802,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		Selector selector = new SimpleSelector(partialStmt.getSubject(), partialStmt.getPredicate(), partialStmt.getObject());
 		
-		lock(LockType.ACQUIRE_READ);
-		
 		StmtIterator stmtsToRemove = null;
 		Set<Statement> setToRemove = new HashSet<Statement>();
-		try {
-			
-			stmtsToRemove = onto.listStatements(selector);
-			if (stmtsToRemove != null) setToRemove = stmtsToRemove.toSet();
-					
-		} finally {
-			lock(LockType.RELEASE_READ);
-		}
+
+		stmtsToRemove = onto.listStatements(selector);
+		if (stmtsToRemove != null) setToRemove = stmtsToRemove.toSet();
+		
 		
 		remove(setToRemove);
 		
@@ -969,30 +833,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		for (Statement s : stmts) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
 		Logger.log("Removing statements " + ss +"\n");
 		
+		onto.remove(new ArrayList<Statement>(stmts));
 		
-		lock(LockType.ACQUIRE_WRITE);
-		try {
-			onto.remove(new ArrayList<Statement>(stmts));
-		} catch (InternalReasonerException ire) {
-			throw new OntologyServerException("Pellet internal error: " + ire.getLocalizedMessage());
-		} finally {
-						
-			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-			model and classify it before each query.
-			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-			*/			
-			classify();
-							
-			//notify the events subscribers.
-			if (!isInInconsistentState) onModelChange();
-
-			lock(LockType.RELEASE_WRITE);
-		}
+		//notify the events subscribers.
+		if (!isInInconsistentState) onModelChange();
 		
 		//force the rebuilt of the lookup table at the next lookup.
 		forceLookupTableUpdate = true;
-		
-		
 
 	}
 	
@@ -1006,8 +853,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			if(functionalProperties.contains(stmt.getPredicate())) {
 				Selector selector = new SimpleSelector(stmt.getSubject(), stmt.getPredicate(), (RDFNode)null);
 				
-				lock(LockType.ACQUIRE_READ);
-				
 				StmtIterator stmtsToRemoveIt = null;
 				try {
 					stmtsToRemoveIt = onto.listStatements(selector);
@@ -1017,11 +862,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 							"update any statements.\n ", VerboseLevel.WARNING);
 					throw new InconsistentOntologyException("The ontology is in an inconsistent state! I couldn't " +
 							"update any statements.");
-				} finally {
-					lock(LockType.RELEASE_READ);				
-				}
-
-				
+				}				
 			}
 		}
 
@@ -1046,9 +887,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		} catch (FileNotFoundException e) {
 			throw new OntologyServerException("Error while opening " + path + " to output the ontology. Check it's a valid filename and a writable location!");
 		}
-		lock(LockType.ACQUIRE_READ);
+
 		onto.write(file);
-		lock(LockType.RELEASE_READ);
 		
 	}
 	
@@ -1077,28 +917,20 @@ public class OpenRobotsOntology implements IOntologyBackend {
 												partialStmt.getPredicate(), 
 												partialStmt.getObject());
 		
-		lock(LockType.ACQUIRE_READ);
-		
 		StmtIterator stmtsToList = null;
 		
 		String list = "List of statements matching [" + pattern + "]:\n";
 		
-		try {
-			
-			stmtsToList = onto.listStatements(selector);
-			
-			if (stmtsToList != null && stmtsToList.hasNext()) {
-				while(stmtsToList.hasNext()) {
-					list += "\t" + 
-							Namespaces.toLightString(stmtsToList.nextStatement()) + 
-							"\n";
-				}
+		stmtsToList = onto.listStatements(selector);
+		
+		if (stmtsToList != null && stmtsToList.hasNext()) {
+			while(stmtsToList.hasNext()) {
+				list += "\t" + 
+						Namespaces.toLightString(stmtsToList.nextStatement()) + 
+						"\n";
 			}
-			else list += "None\n";
-					
-		} finally {
-			lock(LockType.RELEASE_READ);
 		}
+		else list += "None\n";
 		
 		Logger.info(list);
 		
@@ -1134,6 +966,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		this.lastQuery = "";
 		this.lastQueryResult = null;
+		this.isInInconsistentState = true;
 					
 		Namespaces.loadNamespaces(parameters);
 		
@@ -1279,7 +1112,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			// cf http://tech.groups.yahoo.com/group/jena-dev/message/47199
 			onto.setStrictMode(false);
 			
-			lock(LockType.ACQUIRE_WRITE);
 			if (scenarioModel != null) onto.add(scenarioModel);
 			
 			String defaultRobotId = parameters.getProperty("robot_id");
@@ -1292,15 +1124,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			} catch (IllegalStatementException e1) {
 				Logger.log("Invalid robot id in your configuration file! must be only on word name of letters, numbers and underscores. ID not added.", VerboseLevel.ERROR);
 			}
-			
-			/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-			model and classify it before each query.
-			Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-			*/			
-			classify();
-			
-			lock(LockType.RELEASE_WRITE);
-			
+						
 			Logger.cr();
 			Logger.log("Ontology successfully loaded (using Jena " + com.hp.hpl.jena.Jena.VERSION + ").\n", VerboseLevel.IMPORTANT);
 			
@@ -1311,13 +1135,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			//Perform an initial classification
 			
-			try {
-				checkConsistency();
+			if (checkConsistency()) {
 				Logger.log("\t- Good news: the initial ontology is consistent.\n");
-				isInInconsistentState = false;
-			} catch (InconsistentOntologyException e) {
+			} else {
 				Logger.log("Attention! The initial ontology is inconsistent!", VerboseLevel.IMPORTANT);
-				isInInconsistentState = true;
 			}
 			
 			Logger.cr();
@@ -1357,14 +1178,12 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			modelChanged = false;
 			forceLookupTableUpdate = false;				
 			lookupTable.clear();
-			
-			lock(LockType.ACQUIRE_READ);			
+					
 
 			// if the ontology is inconsistent, do not update the lookup table.
 			ValidityReport report = getModel().validate();
 			
 			if (report == null || !report.isValid()){
-				lock(LockType.RELEASE_READ);
 				return;
 			}
 
@@ -1452,7 +1271,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			}
 		
-		lock(LockType.RELEASE_READ);
 		}
 
 	}
@@ -1478,12 +1296,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			return;
 		}
 		
-		lock(LockType.ACQUIRE_READ);
-		
 		for (RDFNode s : functionalProps)
 			functionalProperties.add(s.as(OntProperty.class));
-		
-		lock(LockType.RELEASE_READ);
 		
 	}
 

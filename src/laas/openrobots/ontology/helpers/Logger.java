@@ -31,7 +31,6 @@ import com.hp.hpl.jena.rdf.model.Statement;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
-import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 
 public class Logger {
 
@@ -233,37 +232,6 @@ public class Logger {
 		if (level.ordinal() > OroServer.VERBOSITY.ordinal())
 			return false;
 		return true;
-	}
-	
-	public static void logConcurrency(LockType type) {
-		logConcurrency(type, "");
-	}
-		
-	public static void logConcurrency(LockType type, String info) {
-		if (Logger.verbosityMin(VerboseLevel.DEBUG_CONCURRENCY)) {
-			
-			String msg = "";
-			switch (type) {
-				case ACQUIRE_READ:
-					msg = "enterCS";
-					break;
-				case ACQUIRE_WRITE:
-					msg = "enterCSw";
-					break;
-				case RELEASE_READ:
-					msg = "leaveCS";
-					break;
-				case RELEASE_WRITE:
-					msg = "leaveCSw";
-			}
-			
-			if(!info.isEmpty()) info = " (" + info + ")";
-			
-			Logger.log(" (thread " +  Thread.currentThread().getId() + ") >>" + msg + info + ": " + 
-					Thread.currentThread().getStackTrace()[5].getMethodName() + 
-					" -> " + Thread.currentThread().getStackTrace()[4].getMethodName() + "\n", 
-					VerboseLevel.DEBUG_CONCURRENCY, false);
-		}
 	}
 
 	public static void cr(){

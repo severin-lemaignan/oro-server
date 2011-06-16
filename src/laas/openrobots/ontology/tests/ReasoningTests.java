@@ -144,12 +144,7 @@ public class ReasoningTests {
 		/********* CHECK CONSISTENCY **************/
 		startTime = System.currentTimeMillis();
 		
-		try {
-			onto.checkConsistency();
-		} catch (InconsistentOntologyException e) {
-			e.printStackTrace();
-			fail();
-		}
+		assert(onto.checkConsistency());
 		
 		duration = (System.currentTimeMillis() - startTime);
 		results.add(duration);
@@ -254,12 +249,7 @@ public class ReasoningTests {
 		/********* CHECK CONSISTENCY **************/
 		startTime = System.currentTimeMillis();
 		
-		try {
-			onto.checkConsistency();
-		} catch (InconsistentOntologyException e) {
-			e.printStackTrace();
-			fail();
-		}
+		assert(onto.checkConsistency());
 		
 		duration = (System.currentTimeMillis() - startTime);
 		results.add(duration);

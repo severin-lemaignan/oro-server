@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.mindswap.pellet.jena.PelletInfGraph;
 
-import laas.openrobots.ontology.backends.IOntologyBackend.LockType;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -75,8 +74,8 @@ public class MemoryManager extends Thread {
 				break;
 			}
 			
-			onto.enterCriticalSection(Lock.READ);
-			Logger.logConcurrency(LockType.ACQUIRE_READ, "MemoryManager1");
+			//onto.enterCriticalSection(Lock.READ);
+			//Logger.logConcurrency(LockType.ACQUIRE_READ, "MemoryManager1");
 				
 			try {
 				
@@ -110,13 +109,13 @@ public class MemoryManager extends Thread {
 		        
 		        
 			} finally {
-				onto.leaveCriticalSection();
-				Logger.logConcurrency(LockType.RELEASE_READ, "MemoryManager1");
+				//onto.leaveCriticalSection();
+				//Logger.logConcurrency(LockType.RELEASE_READ, "MemoryManager1");
 			}
 			
 			if (!stmtToRemove.isEmpty()) {
-				onto.enterCriticalSection(Lock.WRITE);
-				Logger.logConcurrency(LockType.ACQUIRE_WRITE, "MemoryManager2");
+				//onto.enterCriticalSection(Lock.WRITE);
+				//Logger.logConcurrency(LockType.ACQUIRE_WRITE, "MemoryManager2");
 				try {
 					for (ReifiedStatement s : stmtToRemove) {
 						Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
@@ -132,8 +131,8 @@ public class MemoryManager extends Thread {
 					*/			
 					((PelletInfGraph) onto.getGraph()).classify();
 					
-					onto.leaveCriticalSection();
-					Logger.logConcurrency(LockType.RELEASE_WRITE, "MemoryManager2");
+					//onto.leaveCriticalSection();
+					//Logger.logConcurrency(LockType.RELEASE_WRITE, "MemoryManager2");
 				}
 				stmtToRemove.clear();
 			}

@@ -54,18 +54,6 @@ import com.hp.hpl.jena.shared.NotFoundException;
  *
  */
 public interface IOntologyBackend extends IServiceProvider {
-
-	public enum LockType {ACQUIRE_READ, ACQUIRE_WRITE, RELEASE_READ, RELEASE_WRITE};
-	
-	/**
-	 * Implementation of {@link IOntologyBackend} are expected to provide a mean
-	 * to lock the underlying model, either in 'read' or in 'write'.
-	 * 
-	 * The lock mechanism is expected to be re-entrant.
-	 * 
-	 * @param lockType
-	 */
-	public abstract void lock(LockType lockType);
 	
 	/**
 	 * Helper to create a {@link com.hp.hpl.jena.rdf.model.OntProperty property} attached at the current OpenRobotOntology by mapping the method to the underlying ontology model.<br/>
@@ -242,14 +230,10 @@ public interface IOntologyBackend extends IServiceProvider {
 	public abstract boolean check(PartialStatement statement);
 
 	/**
-	 * Performs a consistency validation against the ontology. If the check 
-	 * fails, it throws an exception with details on the inconsistencies sources.
-	 * @throws InconsistentOntologyException thrown if the ontology is currently 
-	 * inconsistent. The exception message contains details on the source of 
-	 * inconsistency.
+	 * Performs a consistency validation against the ontology. Returns false if 
+	 * the check fails.
 	 */
-	public abstract void checkConsistency()
-			throws InconsistentOntologyException;
+	public abstract boolean checkConsistency();			
 
 	/**
 	 * Checks a set of statements (or partial statements) are not inconsistent
