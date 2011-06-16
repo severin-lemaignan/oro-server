@@ -36,6 +36,8 @@ import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
@@ -171,6 +173,11 @@ public class OroServer implements IServiceProvider {
 	
 	private static OpenRobotsOntology oro = null;
 	
+	/**
+	 * This thread-safe queue holds incoming requests.
+	 */
+	private BlockingQueue<Request> incomingRequests;
+	
 	private static AlteriteModule AlteriteModule = null;
 	
 	public class OnShuttingDown extends Thread { 
@@ -192,6 +199,7 @@ public class OroServer implements IServiceProvider {
 		
     	connectors = new HashSet<IConnector>();
     	registredServices = new HashMap<String, IService>();
+    	incomingRequests = new LinkedBlockingQueue<Request>();
     	
     	//Check if the application is connected to a console. We don't want to
     	//color outputs in a logfile for instance.
@@ -222,6 +230,10 @@ public class OroServer implements IServiceProvider {
 		}
 	}
 	
+	public void pushRequest(Request r) {
+		incomingRequests.add(r);
+	}
+	
 	public void runServer() throws InterruptedException, OntologyServerException { 
     	
     	if (! (VERBOSITY == VerboseLevel.SILENT)) {
@@ -250,7 +262,7 @@ public class OroServer implements IServiceProvider {
     	
     	// Currently, only one connector, the socket connector 
     	// (others bridges like YARP or JSON are now out of the oro-server code base)
-    	SocketConnector sc = new SocketConnector(ServerParameters, registredServices);
+    	SocketConnector sc = new SocketConnector(ServerParameters, registredServices, this);
 		connectors.add(sc);
 
 		for (IConnector c : connectors)	{
@@ -277,7 +289,15 @@ public class OroServer implements IServiceProvider {
 
 		while(keepOn) {			
 			
-			Thread.sleep(10);
+			Request r = incomingRequests.take();
+			
+			/**
+			 * Executes the request, and stores the result internally as r.result
+			 * 
+			 * The thread that pushed the request is probably waiting for r.result
+			 * to contain something...
+			 */
+			r.execute();
     	}
 		
 		//Finalization occurs in the shutdown hook, above.
