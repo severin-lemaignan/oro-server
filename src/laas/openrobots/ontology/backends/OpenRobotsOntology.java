@@ -823,23 +823,24 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		try {
 			individual = resource.asIndividual();
-		
-			ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
-			while (it.hasNext())
-			{
-				OntClass tmp = it.next();
-				if (tmp != null && !tmp.isAnon()){
-					result.add(tmp);
-				}
-			}
-		} 
+		}
 		catch (ConversionException ce) {
-			throw new NotFoundException(Namespaces.toLightString(resource) + " is not an individual!");
-		} 
-		finally {
 			onto.leaveCriticalSection();
 			Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+			throw new NotFoundException(Namespaces.toLightString(resource) + " is not an individual!");
+		} 
+
+		ExtendedIterator<OntClass> it = individual.listOntClasses(onlyDirect);
+		while (it.hasNext())
+		{
+			OntClass tmp = it.next();
+			if (tmp != null && !tmp.isAnon()){
+				result.add(tmp);
+			}
 		}
+		onto.leaveCriticalSection();
+		Logger.logConcurrency(Logger.LockType.RELEASE_READ);
+		
 
 		if (onlyDirect)
 			Logger.demo_nodes("Retrieving direct classes of " + Namespaces.toLightString(resource), result);
