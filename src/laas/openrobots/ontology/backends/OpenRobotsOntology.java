@@ -972,6 +972,10 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		if (onto == null) this.load();
 
+		//Force these value to true to ensure the lookup table is build at 
+		// startup
+		modelChanged = true;
+		forceLookupTableUpdate = true;
 		this.lookupTable = new HashMap<String, Set<Pair<String, ResourceType>>>();
 		this.rebuildLookupTable();
 		
