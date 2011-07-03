@@ -8,3 +8,5 @@ doc/
 start
 *~
 *.owl
+*.swp
+*.conf
