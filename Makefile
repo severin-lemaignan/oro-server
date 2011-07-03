@@ -37,7 +37,7 @@ CP?= cp
 ########## Variables for Javadoc documentation ##########
 WINDOWTITLE = 'ORO: the OpenRobots Ontology - Server documentation'
 HEADER = '<b>ORO: the OpenRobots Ontology</b><br/><font size="-1">Server documentation - build on $(shell date +%F)</font>'
-BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2010</font>'
+BOTTOM = '<font size="-1">ORO is a part of the <a href="https://softs.laas.fr/openrobots/wiki/">OpenRobots</a> framework.<br/><a href="mailto:openrobots@laas.fr">openrobots@laas.fr</a><br/>LAAS-CNRS 2009-2011</font>'
 GROUPCORE = "Core Packages" "$(BASE_PACKAGE)*"
 GROUPMODULES  = "Modules Packages" "$(BASE_PACKAGE).modules*"
 #GROUPSERVER  = "Connectors Packages" "$(BASE_PACKAGE).connectors*"
@@ -76,6 +76,8 @@ install: oro-server install-doc
 	$(INSTALL) etc/oro-server/*.conf ${PREFIX}/etc/oro-server
 	$(INSTALL) -d ${PREFIX}/bin
 	$(INSTALL) oro-server ${PREFIX}/bin
+	$(INSTALL) -d ${PREFIX}/share/ontologies
+	$(INSTALL) testing/testsuite.oro.owl ${PREFIX}/share/ontologies
 
 distclean: clean doc-clean
 	$(CLEAN) oro-server
@@ -116,5 +118,5 @@ doc-clean:
 	$(CLEAN) $(DOC_DIR)
 
 test:
-	$(JAVA) -classpath $(CLASSPATH):${PREFIX}/java/oro-server/lib/oro-server.jar -DORO_TEST_CONF=${PREFIX}/etc/oro-server/oro_test.conf junit.textui.TestRunner $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
+	$(JAVA) -classpath $(CLASSPATH):${PREFIX}/java/oro-server/lib/oro-server.jar -DORO_TEST_CONF=${PREFIX}/etc/oro-server/oro_test.conf org.junit.runner.JUnitCore $(BASE_PACKAGE).tests.OpenRobotsOntologyTest
 

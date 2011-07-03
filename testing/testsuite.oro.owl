@@ -1,0 +1,382 @@
+<?xml version="1.0"?>
+
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY owl2xml "http://www.w3.org/2006/12/owl2-xml#" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+    <!ENTITY oro "http://kb.openrobots.org#" >
+]>
+
+
+<rdf:RDF xmlns="http://kb.openrobots.org#"
+     xml:base="http://kb.openrobots.org"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:owl2xml="http://www.w3.org/2006/12/owl2-xml#"
+     xmlns:oro="http://kb.openrobots.org#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <owl:Ontology rdf:about="">
+        <rdfs:comment
+            >This ontology sole purpose is to check that the liboro library works. It is used by the OpenRobotsOntologyTest unit test.</rdfs:comment>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#climbsOn -->
+
+    <owl:ObjectProperty rdf:about="#climbsOn">
+        <rdfs:domain rdf:resource="#Monkey"/>
+        <rdfs:range rdf:resource="#Plant"/>
+        <rdfs:subPropertyOf rdf:resource="#isOn"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#eats -->
+
+    <owl:ObjectProperty rdf:about="#eats">
+        <rdfs:domain rdf:resource="#Animal"/>
+        <rdfs:range rdf:resource="#Plant"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isAt -->
+
+    <owl:ObjectProperty rdf:about="#isAt">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isOn -->
+
+    <owl:ObjectProperty rdf:about="#isOn">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:domain rdf:resource="#Animal"/>
+        <rdfs:subPropertyOf rdf:resource="#isAt"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isUnder -->
+
+    <owl:ObjectProperty rdf:about="#isUnder">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <owl:inverseOf rdf:resource="#isOn"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#age -->
+
+    <owl:DatatypeProperty rdf:about="#age">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="#Animal"/>
+        <rdfs:range rdf:resource="&xsd;int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isFemale -->
+
+    <owl:DatatypeProperty rdf:about="#isFemale">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="#Animal"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#weight -->
+
+    <owl:DatatypeProperty rdf:about="#weight">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="#Animal"/>
+        <rdfs:range rdf:resource="&xsd;double"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#A -->
+
+    <owl:Class rdf:about="#A"/>
+    
+
+
+    <!-- http://kb.openrobots.org#Animal -->
+
+    <owl:Class rdf:about="#Animal">
+        <rdfs:subClassOf rdf:resource="&owl;Thing"/>
+        <owl:disjointWith rdf:resource="#Plant"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#B -->
+
+    <owl:Class rdf:about="#B">
+        <rdfs:subClassOf rdf:resource="#A"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#C -->
+
+    <owl:Class rdf:about="#C">
+        <rdfs:subClassOf rdf:resource="#B"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#D -->
+
+    <owl:Class rdf:about="#D">
+        <rdfs:subClassOf rdf:resource="#A"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#E -->
+
+    <owl:Class rdf:about="#E">
+        <rdfs:subClassOf rdf:resource="#C"/>
+        <rdfs:subClassOf rdf:resource="#D"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#F -->
+
+    <owl:Class rdf:about="#F">
+        <rdfs:subClassOf rdf:resource="#E"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#I -->
+
+    <owl:Class rdf:about="#I">
+        <rdfs:subClassOf rdf:resource="#D"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#J -->
+
+    <owl:Class rdf:about="#J">
+        <rdfs:subClassOf rdf:resource="#B"/>
+        <rdfs:subClassOf rdf:resource="#I"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#K -->
+
+    <owl:Class rdf:about="#K">
+        <rdfs:subClassOf rdf:resource="#B"/>
+        <rdfs:subClassOf rdf:resource="#D"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Monkey -->
+
+    <owl:Class rdf:about="#Monkey">
+        <rdfs:label>Monkey</rdfs:label>
+        <rdfs:subClassOf rdf:resource="#Animal"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#MyAnimals -->
+
+    <owl:Class rdf:about="#MyAnimals">
+        <rdfs:subClassOf rdf:resource="#Animal"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Plant -->
+
+    <owl:Class rdf:about="#Plant">
+        <rdfs:subClassOf rdf:resource="&owl;Thing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#Thing -->
+
+    <owl:Class rdf:about="&owl;Thing"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#apple -->
+
+    <owl:Thing rdf:about="#apple"/>
+    
+
+
+    <!-- http://kb.openrobots.org#baboon -->
+
+    <Monkey rdf:about="#baboon">
+        <rdf:type rdf:resource="#MyAnimals"/>
+        <rdf:type rdf:resource="&owl;Thing"/>
+        <rdfs:label xml:lang="en">baboon monkey</rdfs:label>
+        <rdfs:label xml:lang="fr">babouin</rdfs:label>
+        <age rdf:datatype="&xsd;int">35</age>
+        <weight rdf:datatype="&xsd;double">48.5</weight>
+        <isFemale rdf:datatype="&xsd;boolean">true</isFemale>
+        <climbsOn rdf:resource="#banana_tree"/>
+    </Monkey>
+    
+
+
+    <!-- http://kb.openrobots.org#banana_tree -->
+
+    <Plant rdf:about="#banana_tree">
+        <rdf:type rdf:resource="&owl;Thing"/>
+    </Plant>
+    
+
+
+    <!-- http://kb.openrobots.org#cow -->
+
+    <Animal rdf:about="#cow">
+        <rdf:type rdf:resource="&owl;Thing"/>
+        <rdf:type>
+            <owl:Class>
+                <owl:complementOf rdf:resource="#Monkey"/>
+            </owl:Class>
+        </rdf:type>
+        <age rdf:datatype="&xsd;int">12</age>
+        <weight rdf:datatype="&xsd;double">150.7</weight>
+        <isFemale rdf:datatype="&xsd;boolean">false</isFemale>
+        <eats rdf:resource="#grass"/>
+    </Animal>
+    
+
+
+    <!-- http://kb.openrobots.org#e -->
+
+    <owl:Thing rdf:about="#e">
+        <rdf:type rdf:resource="#E"/>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#f -->
+
+    <F rdf:about="#f">
+        <rdf:type rdf:resource="&owl;Thing"/>
+    </F>
+    
+
+
+    <!-- http://kb.openrobots.org#gorilla -->
+
+    <owl:Thing rdf:about="#gorilla">
+        <rdf:type rdf:resource="#Monkey"/>
+        <rdf:type rdf:resource="#MyAnimals"/>
+        <weight rdf:datatype="&xsd;double">100.2</weight>
+        <age rdf:datatype="&xsd;int">12</age>
+        <isFemale rdf:datatype="&xsd;boolean">false</isFemale>
+        <eats rdf:resource="#apple"/>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#grass -->
+
+    <owl:Thing rdf:about="#grass">
+        <isUnder rdf:resource="#cow"/>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#j -->
+
+    <J rdf:about="#j">
+        <rdf:type rdf:resource="&owl;Thing"/>
+    </J>
+    
+
+
+    <!-- http://kb.openrobots.org#k -->
+
+    <owl:Thing rdf:about="#k">
+        <rdf:type rdf:resource="#K"/>
+    </owl:Thing>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="#gorilla"/>
+            <rdf:Description rdf:about="#cow"/>
+            <rdf:Description rdf:about="#baboon"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 2.2.1.1138) http://owlapi.sourceforge.net -->
+
