@@ -1114,7 +1114,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			
 			// Strict mode set to 'false' because of Jena bug triggered in getClassesOf 
 			// cf http://tech.groups.yahoo.com/group/jena-dev/message/47199
-			onto.setStrictMode(false);
+			//onto.setStrictMode(false);
+			onto.setStrictMode(true);
 			
 			if (scenarioModel != null) onto.add(scenarioModel);
 			
