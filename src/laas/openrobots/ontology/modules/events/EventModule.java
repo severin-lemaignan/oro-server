@@ -85,10 +85,8 @@ public class EventModule implements IServiceProvider {
 				return w.getId();
 			}
 		}
-		registredEvents.add(e);
-
 		onto.registerEvent(e);
-
+		registredEvents.add(e);
 
 		return e.getId();
 	}
