@@ -49,4 +49,11 @@ public interface IModule {
 	 */
 	public IServiceProvider getServiceProvider();
 	
+	/**
+	 * 'Step' the module.
+	 * At each server main loop iteration, the 'step' method is called. 
+	 * The module can do here its own internal homeworks.
+	 */
+	public void step();
+	
 }

@@ -678,4 +678,12 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	protected void finalize() {
 		close();
 	}
+
+	@Override
+	public void step() {
+		for(AgentModel m : agents.values()) {
+			m.model.step();
+		}
+		
+	}
 }

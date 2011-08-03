@@ -38,7 +38,6 @@ import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.connectors.SocketConnector;
 import laas.openrobots.ontology.connectors.SocketConnector.ClientWorker;
 import laas.openrobots.ontology.exceptions.AgentNotFoundException;
-import laas.openrobots.ontology.exceptions.EventRegistrationException;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
@@ -60,7 +59,6 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
 import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.shared.PropertyNotFoundException;
 
@@ -759,8 +757,11 @@ public class OpenRobotsOntologyTest {
 		IOntologyBackend onto = new OpenRobotsOntology(conf);
 		BaseModule oro = new BaseModule(onto);
 		
-		MemoryProfile.TimeBase = 100; //we accelerate 10 times the behaviour of the memory container.
+		MemoryProfile.TimeBase = 100; //a second now lasts 100ms :-) we accelerate 10 times the behaviour of the memory container.
 	
+		//First step -> call to the memory manager.
+		onto.step();
+		
 		try {
 			onto.add(onto.createStatement("snail rdf:type Animal"), MemoryProfile.DEFAULT, false);
 		} catch (IllegalStatementException e) {
@@ -784,6 +785,9 @@ public class OpenRobotsOntologyTest {
 			fail("Error while adding a set of statements!");
 			e.printStackTrace();
 		}
+		
+		//call to the memory manager
+		onto.step();
 
 		int nbSeconds = 1;
 		Date now = new Date();
@@ -791,7 +795,6 @@ public class OpenRobotsOntologyTest {
 		Set<Statement> rs_stmts = new HashSet<Statement>();
 		Set<Statement> rs_short_term = new HashSet<Statement>();
 		
-		onto.getModel().enterCriticalSection(Lock.READ);
 	
 		Property p_createdOn = onto.getModel().createProperty(Namespaces.addDefault("stmtCreatedOn"));
 		Property p_memoryProfile = onto.getModel().createProperty(Namespaces.addDefault("stmtMemoryProfile"));
@@ -811,7 +814,7 @@ public class OpenRobotsOntologyTest {
                 
                 if (elapsedTime < nbSeconds * 1000)
                 {
-                    System.out.println(" * Recent stmt found. Elapsed time -> " + elapsedTime);
+                    System.out.println(" * Recent stmt found. Elapsed time in ms -> " + elapsedTime);
                 	rs_stmts.add(rs.getStatement());
                 }
             	
@@ -839,9 +842,7 @@ public class OpenRobotsOntologyTest {
             //the reified statement	has no stmtMemoryProfile property. We skip it.
             }
         }
- 
-       	onto.getModel().leaveCriticalSection();
-       	
+        	
 		assertEquals("Two recently added statements should be returned.", 2, rs_stmts.size());
 		
 		assertEquals("One short term statements should be returned.", 1, rs_short_term.size());
@@ -856,6 +857,8 @@ public class OpenRobotsOntologyTest {
 		System.out.print(" * Waiting a bit (" + (MemoryProfile.SHORTTERM.duration() + 500) + "ms)...");
 		Thread.sleep(MemoryProfile.SHORTTERM.duration() + 500);
 		
+		//call to the memory manager. Here, older statements should be cleaned.
+		onto.step();
 		
 		try {
 			onto.save("./after_cleaning.owl");
@@ -863,10 +866,8 @@ public class OpenRobotsOntologyTest {
 			fail();
 		}
 
-		onto.getModel().enterCriticalSection(Lock.READ);
 		rsIter = onto.getModel().listReifiedStatements() ;
 		int nb = rsIter.toSet().size();
-		onto.getModel().leaveCriticalSection();
 		
 		assertEquals("Only one reified statement should now remain.", 1, nb);
 				

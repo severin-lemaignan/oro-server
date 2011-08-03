@@ -444,6 +444,13 @@ public interface IOntologyBackend extends IServiceProvider {
 	public Set<EventType> getSupportedEvents();
 
 	/**
+	 * 'Step' the model.
+	 * At each server main loop iteration, the 'step' method is called for each
+	 * model. The model can do here its own internal homeworks.
+	 */
+	public void step();
+	
+	/**
 	 * Closes the model
 	 */
 	public abstract void close();

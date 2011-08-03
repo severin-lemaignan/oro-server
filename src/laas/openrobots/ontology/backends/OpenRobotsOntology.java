@@ -293,12 +293,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	/** Classify the underlying model.
 	 * 
-	 * Be careful, this method is not thread-safe but modifies the model.
-	 * 
-	 * Typically, it should be called inside of a
-	 * model.enterCriticalSection(Lock.WRITE);
-	 * ...
-	 * model.leaveCriticalSection();
+	 * Note that this method modifies the underlying model.
 	 */
 	public void classify() {
 		try {
@@ -985,26 +980,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		// By default, don't enable the memory manager.
 		if (parameters.getProperty("memory_manager", "false").equalsIgnoreCase("true")) {
 			memoryManager = new MemoryManager(onto);
-			memoryManager.start();
 		}
 		
 		eventProcessor = new EventProcessor(this);
 		
 	}
 	
+	@Override
+	public void step() {
+		if (memoryManager != null) memoryManager.gc();
+	}
+	
+	@Override
 	public void close() {
 		
 		if (isClosed)
 			return;
 		
-		if (memoryManager != null) {
-			memoryManager.close();
-			try {
-				memoryManager.join(1000);
-			} catch (InterruptedException e) {
-			}
-		}
-
 		onto.close();
 		
 		isClosed = true;

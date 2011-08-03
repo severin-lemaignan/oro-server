@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010 LAAS-CNRS Séverin Lemaignan slemaign@laas.fr
+ * Copyright (c) 2008-2011 LAAS-CNRS Séverin Lemaignan slemaign@laas.fr
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,8 +21,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.mindswap.pellet.jena.PelletInfGraph;
-
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
@@ -32,23 +30,21 @@ import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RSIterator;
 import com.hp.hpl.jena.rdf.model.ReifiedStatement;
-import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.PropertyNotFoundException;
 
-public class MemoryManager extends Thread {
+public class MemoryManager {
 
-	private final static int KNOWLEDGE_GARBAGE_COLLECTION_FREQ = 1000; //in milliseconds
+	private final static int KNOWLEDGE_GARBAGE_COLLECTION_FREQ = 200; //in milliseconds
+	
+	private long last_gc;
 	
 	private OntModel onto;
 	private Set<String> watchedStmt;
-	private boolean serverIsRunning = true;
 	
 	private Property p_createdOn;
 	Property p_memoryProfile;
 	
 	public MemoryManager(OntModel model) {
-		
-		setName("Agent memory manager"); //name the thread
 		
 		onto = model;
 		watchedStmt = new HashSet<String>();
@@ -56,96 +52,63 @@ public class MemoryManager extends Thread {
 
 		p_createdOn = onto.createProperty(Namespaces.addDefault("stmtCreatedOn"));
 		p_memoryProfile = onto.createProperty(Namespaces.addDefault("stmtMemoryProfile"));
+		
+		last_gc = new Date().getTime();
 	}
 	
-	@Override
-	public void run() {
+	public void gc() {
+		
+		long now = new Date().getTime(); 
+		if (now - last_gc < KNOWLEDGE_GARBAGE_COLLECTION_FREQ) return;
 		
 		Set<ReifiedStatement> stmtToRemove = new HashSet<ReifiedStatement>();
 		
-		while (serverIsRunning) {
-			
-			Date now = new Date();
+		RSIterator rsIter = onto.listReifiedStatements() ;
+		
+        while(rsIter.hasNext())
+        {
+            ReifiedStatement rs = rsIter.nextRS() ;
+            
+            try {
 
-			try {
-				Thread.sleep(KNOWLEDGE_GARBAGE_COLLECTION_FREQ);
-			} catch (InterruptedException e) {
-				Logger.log("The memory manager thread has been interrupted!!\n", VerboseLevel.SERIOUS_ERROR);
-				break;
-			}
-			
-			//onto.enterCriticalSection(Lock.READ);
-			//Logger.logConcurrency(LockType.ACQUIRE_READ, "MemoryManager1");
-				
-			try {
-				
-				RSIterator rsIter = onto.listReifiedStatements() ;
-		        while(rsIter.hasNext())
-		        {
-		            ReifiedStatement rs = rsIter.nextRS() ;
-		            
-		            try {
+            	String lexicalDate = rs.getRequiredProperty(p_createdOn).getLiteral().getLexicalForm();
+                
+                long elapsedTime = (now - Helpers.getDateFromXSD(lexicalDate).getTime());
+                
 
-		            	String lexicalDate = rs.getRequiredProperty(p_createdOn).getLiteral().getLexicalForm();
-		                
-		                long elapsedTime = (now.getTime() - Helpers.getDateFromXSD(lexicalDate).getTime());
-		                
+                MemoryProfile memProfile = MemoryProfile.fromString(rs.getRequiredProperty(p_memoryProfile).getString());
+                
+                if (elapsedTime > memProfile.duration())
+                {
+                	stmtToRemove.add(rs);
+                }
+            	
+            }
+            catch (PropertyNotFoundException pnfe)
+            {
+            //the reified statement	has no createdOn property. We skip it.
+            } catch (ParseException e) {
+				Logger.log("The creation date of [" + Namespaces.toLightString(rs.getStatement()) + "] could not be parsed!\n", VerboseLevel.SERIOUS_ERROR);
+			}
+        }
+	        
+	        
+		
+		if (!stmtToRemove.isEmpty()) {
 
-		                MemoryProfile memProfile = MemoryProfile.fromString(rs.getRequiredProperty(p_memoryProfile).getString());
-		                
-		                if (elapsedTime > memProfile.duration())
-		                {
-		                	stmtToRemove.add(rs);
-		                }
-		            	
-		            }
-		            catch (PropertyNotFoundException pnfe)
-		            {
-		            //the reified statement	has no createdOn property. We skip it.
-		            } catch (ParseException e) {
-						Logger.log("The creation date of [" + Namespaces.toLightString(rs.getStatement()) + "] could not be parsed!\n", VerboseLevel.SERIOUS_ERROR);
-					}
-		        }
-		        
-		        
-			} finally {
-				//onto.leaveCriticalSection();
-				//Logger.logConcurrency(LockType.RELEASE_READ, "MemoryManager1");
+			for (ReifiedStatement s : stmtToRemove) {
+				Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
+				s.getStatement().removeReification();
+				s.getStatement().remove();
+				s.removeProperties();					
 			}
-			
-			if (!stmtToRemove.isEmpty()) {
-				//onto.enterCriticalSection(Lock.WRITE);
-				//Logger.logConcurrency(LockType.ACQUIRE_WRITE, "MemoryManager2");
-				try {
-					for (ReifiedStatement s : stmtToRemove) {
-						Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
-						s.getStatement().removeReification();
-						s.getStatement().remove();
-						s.removeProperties();					
-					}
-				}
-				finally {
-					/* Pellet is not thread-safe. To avoid bad concurrency issue, we lock the
-					model and classify it before each query.
-					Cf http://clarkparsia.com/pellet/faq/jena-concurrency/ for details.
-					*/			
-					((PelletInfGraph) onto.getGraph()).classify();
-					
-					//onto.leaveCriticalSection();
-					//Logger.logConcurrency(LockType.RELEASE_WRITE, "MemoryManager2");
-				}
-				stmtToRemove.clear();
-			}
+			stmtToRemove.clear();
 		}
 			
 	}
 	
 	public void watch(String rsStmt) {
 		watchedStmt.add(rsStmt);
-	}
-	
-	public void close() {
-		serverIsRunning = false;
 	}
 	
 }

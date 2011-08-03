@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010 LAAS-CNRS Séverin Lemaignan slemaign@laas.fr
+ * Copyright (c) 2008-2011 LAAS-CNRS Séverin Lemaignan slemaign@laas.fr
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -38,6 +38,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.connectors.IConnector;
@@ -148,6 +149,7 @@ public class OroServer implements IServiceProvider {
 
 	private volatile boolean keepOn = true;
 	private volatile HashSet<IConnector> connectors;
+	private volatile HashSet<IModule> modules;
 	
 	/**
 	 * This map contains all the "services" offered by the ontology server. Each
@@ -198,6 +200,7 @@ public class OroServer implements IServiceProvider {
 	public OroServer(String confFile) {
 		
     	connectors = new HashSet<IConnector>();
+    	modules = new HashSet<IModule>();
     	registredServices = new HashMap<String, IService>();
     	incomingRequests = new LinkedBlockingQueue<Request>();
     	
@@ -245,7 +248,7 @@ public class OroServer implements IServiceProvider {
 	    										VERSION + "          |\n" +
 	    						"|                                    |\n" +
 	    						"|       ");
-	    	System.out.print("(c)LAAS-CNRS 2009-2010");
+	    	System.out.print("(c)LAAS-CNRS 2008-2011");
 	    	Logger.colorPrintLn(Colors.BLUE, "       |\n" +
 								"+------------------------------------+");
 	    	if (HAS_A_TTY && BLINGBLING) System.out.print((char)27 + "[25m");
@@ -289,7 +292,8 @@ public class OroServer implements IServiceProvider {
 
 		while(keepOn) {			
 			
-			Request r = incomingRequests.take();
+			// Wait 10ms for a request to leave some time to other processes
+			Request r = incomingRequests.poll(10, TimeUnit.MILLISECONDS);
 			
 			/**
 			 * Executes the request, and stores the result internally as r.result
@@ -297,7 +301,12 @@ public class OroServer implements IServiceProvider {
 			 * The thread that pushed the request is probably waiting for r.result
 			 * to contain something...
 			 */
-			r.execute();
+			if (r != null) r.execute();
+			
+			// Step the main models and all modules.
+			oro.step();
+			for (IModule m : modules) m.step();
+
     	}
 		
 		//Finalization occurs in the shutdown hook, above.
@@ -332,6 +341,7 @@ public class OroServer implements IServiceProvider {
 		
 		try {
 			AlteriteModule = new AlteriteModule(oro);
+			modules.add(AlteriteModule);
 			addNewServiceProviders(AlteriteModule);
 		} catch (EventRegistrationException e1) {
 		} catch (InvalidModelException e1) {
@@ -369,6 +379,7 @@ public class OroServer implements IServiceProvider {
 						IModule module;
 						try {
 							module = pl.loadJAR("file://" + jarFile.getAbsolutePath());
+							modules.add(module);
 							addNewServiceProviders(module.getServiceProvider());
 						}
 						catch (PluginNotFoundException e) {
