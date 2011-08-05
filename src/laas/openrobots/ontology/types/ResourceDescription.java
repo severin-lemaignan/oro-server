@@ -28,6 +28,8 @@ import laas.openrobots.ontology.backends.ResourceType;
 import laas.openrobots.ontology.helpers.Helpers;
 
 import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
@@ -72,12 +74,40 @@ public class ResourceDescription implements Serializable {
 			result += "\"name\":\"" + Helpers.getLabel(resource, languageCode) + "\",";
 			result += "\"id\":\"" + Helpers.getId(resource) + "\",";
 			result += "\"type\":\"" + type.toString().toLowerCase() + "\",";
+			result += "\"sameAs\":[";
 			
+			if (type == ResourceType.CLASS){
+				// equivalent classes
+				result += listOntResource(resource.asClass().listEquivalentClasses().filterDrop(
+						new Filter<OntClass>() {
+							@Override
+				            public boolean accept(OntClass c) {
+				                if (c.isAnon() || c.getURI().equalsIgnoreCase(resource.getURI()))                
+				                	return true;
+				                return false;
+				            }
+						}
+				), true);
+			}
+			else if (type == ResourceType.INSTANCE){
+				result += listOntResource(resource.asIndividual().listSameAs().filterDrop(
+						new Filter() {
+							@Override
+				            public boolean accept(Object c) {
+				                if (((OntResource)c).isAnon() || ((OntResource)c).getURI().equalsIgnoreCase(resource.getURI()))                
+				                	return true;
+				                return false;
+				            }
+						}
+				), true);
+			}
+			
+			result += "],";			
 			result += "\"attributes\": [";
 			
 
 			if (type == ResourceType.CLASS){
-			
+				
 				result +="{";
 				
 					//(direct) super classes
@@ -136,18 +166,27 @@ public class ResourceDescription implements Serializable {
 		return result;
 	}
 	
-	private String listOntResource(ExtendedIterator<? extends OntResource> it) {
+	private String listOntResource(ExtendedIterator<? extends Resource> it) {
+		return listOntResource(it, false);
+	}
+	
+	private String listOntResource(ExtendedIterator<? extends Resource> it, boolean only_id) {
 		String result = "";
 		
 		while (it.hasNext())
 		{
-			OntResource tmp = it.next();
+			OntResource tmp = (OntResource) it.next(); // A bit dangerous. Did it because of 'listSameAs' that returns an iterator on resources that are said to be OntResource by the doc
 			
 			if (!tmp.isAnon()) {
 				for (String rToRemove : resourcesToRemove) {
                 	if (!tmp.getURI().equalsIgnoreCase(rToRemove)) {
-                		result += "{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
-    					result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
+                		if (only_id) {
+                			result += "\"" + Helpers.getId(tmp) + "\"";
+                		}
+                		else {
+                			result += "{\"name\":\"" + Helpers.getLabel(tmp, languageCode) + "\", ";
+                			result += "\"id\":\"" + Helpers.getId(tmp) + "\"}";
+                		}
     					if (it.hasNext()) result += ",";
                 	}
             	}
@@ -158,7 +197,7 @@ public class ResourceDescription implements Serializable {
 		
 		return result;
 	}
-	
+		
 	/**
 	 * This method scans all the given statements and build a list of present 
 	 * predicate with their associated objects. This list is then output as a 
