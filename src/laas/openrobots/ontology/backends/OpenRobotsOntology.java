@@ -80,6 +80,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ReifiedStatement;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Selector;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
@@ -988,7 +989,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 	
 	@Override
 	public void step() {
-		if (memoryManager != null) memoryManager.gc();
+		if (memoryManager != null) {
+			Set<ReifiedStatement> stmtsToRemove = memoryManager.gc();
+			
+			if (stmtsToRemove != null && !stmtsToRemove.isEmpty()) {
+
+				for (ReifiedStatement s : stmtsToRemove) {
+					Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
+					s.getStatement().removeReification();
+					s.getStatement().remove();
+					s.removeProperties();					
+				}
+				stmtsToRemove.clear();
+				onModelChange();
+			}
+			
+			
+		}
 	}
 	
 	@Override

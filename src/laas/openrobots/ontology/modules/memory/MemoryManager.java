@@ -56,10 +56,18 @@ public class MemoryManager {
 		last_gc = new Date().getTime();
 	}
 	
-	public void gc() {
+	/**
+	 * Checks if facts that are stored in non-permanent memory must be garbage
+	 * collected.
+	 * 
+	 * @return null, if no garbage collection took place (because of the last time
+	 * this method was called is smaller than KNOWLEDGE_GARBAGE_COLLECTION_FREQ; 
+	 * else a set of (reified) statements to remove.
+	 */
+	public Set<ReifiedStatement> gc() {
 		
 		long now = new Date().getTime(); 
-		if (now - last_gc < KNOWLEDGE_GARBAGE_COLLECTION_FREQ) return;
+		if (now - last_gc < KNOWLEDGE_GARBAGE_COLLECTION_FREQ) return null;
 		
 		Set<ReifiedStatement> stmtToRemove = new HashSet<ReifiedStatement>();
 		
@@ -91,20 +99,8 @@ public class MemoryManager {
 				Logger.log("The creation date of [" + Namespaces.toLightString(rs.getStatement()) + "] could not be parsed!\n", VerboseLevel.SERIOUS_ERROR);
 			}
         }
-	        
-	        
-		
-		if (!stmtToRemove.isEmpty()) {
-
-			for (ReifiedStatement s : stmtToRemove) {
-				Logger.log("Cleaning old statement [" + Namespaces.toLightString(s.getStatement()) +"].\n");
-				s.getStatement().removeReification();
-				s.getStatement().remove();
-				s.removeProperties();					
-			}
-			stmtToRemove.clear();
-		}
-			
+	    
+        return stmtToRemove;	
 	}
 	
 	public void watch(String rsStmt) {
