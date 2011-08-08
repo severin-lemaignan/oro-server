@@ -342,7 +342,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		String ss = "";
 		for (Statement s : statements) ss += "\n\t ["+ Namespaces.toLightString(s) + "]";
-		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? memProfile : "") + ss +"\n");
+		Logger.log("Adding statements " + ((memProfile != MemoryProfile.DEFAULT) ? ("to " + memProfile + " memory") : "") + ss +"\n");
 		
 		for (Statement statement : statements) {
 		
@@ -356,19 +356,23 @@ public class OpenRobotsOntology implements IOntologyBackend {
 						". A concept can not be a class and an instance at the same time in OWL DL.");
 
 			}
+		}
 		
-			//If we are in safe mode, we check that the ontology is not inconsistent.
-			if (safe) {
-				if (!checkConsistency()) {
-					onto.remove(statement);	
-					Logger.log("...I won't add " + statement + " because it " +
-							"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
-					allHaveBeenInserted = false;
-					continue;
-				}
+		Set<Statement> actuallyAdded = statements;
+		
+		//If we are in safe mode, we check that the ontology is not inconsistent.
+		if (safe) {
+			if (!checkConsistency()) {
+				// No consistent!!
+				allHaveBeenInserted = false;
+				// 1 - Remove all statements
+				for (Statement statement : statements) onto.remove(statement);
+				// 2 - Try to insert them again, one after the other
+				actuallyAdded = slowSafeAdd(statements);
 			}
+		}
 
-				
+		for (Statement statement : actuallyAdded) {
 			if (!(memProfile == MemoryProfile.LONGTERM || memProfile == MemoryProfile.DEFAULT)) //not LONGTERM memory
 			{
 				//create a name for this reified statement (concatenation of "rs" with hash made from S + P + O)
@@ -383,7 +387,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 				onto.add(metaStmt2);
 
 			}
-		}						
+		}					
 		
 		//TODO: optimization possible for reified statement with onModelChange(rsName)
 		//notify the events subscribers.
@@ -392,7 +396,34 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		return allHaveBeenInserted;
 	}
 
-	
+	/**
+	 * This method carefully adds statements one after the other to ensure
+	 * only safe statements (ie, statements that do not lead to inconsistencies)
+	 * are added.
+	 * 
+	 * @return the set of statements that were actually added to the ontology
+	 */
+	private Set<Statement> slowSafeAdd(Set<Statement> stmts) {
+		
+		Set<Statement> res = new HashSet<Statement>();
+		
+		for (Statement statement : stmts) {
+			
+			onto.add(statement);
+		
+			//We are in safe mode, we check that the ontology is not inconsistent.
+			if (!checkConsistency()) {
+				onto.remove(statement);	
+				Logger.log("...I won't add " + statement + " because it " +
+						"leads to inconsistencies!\n", VerboseLevel.IMPORTANT);
+				continue;
+			}
+			
+			res.add(statement);
+		}
+		
+		return res;
+	}
 
 	
 	/* (non-Javadoc)
@@ -863,6 +894,7 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		}
 
 		remove(stmtsToRemove);
+		
 		add(stmts, MemoryProfile.DEFAULT, false);
 		
 	}
