@@ -34,12 +34,16 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
-import laas.openrobots.ontology.exceptions.NotComparableException;
+import laas.openrobots.ontology.exceptions.InvalidPolicyException;
+import laas.openrobots.ontology.exceptions.NotComparableException;import laas.openrobots.ontology.exceptions.NotImplementedException;
+
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
+import laas.openrobots.ontology.json.JSONException;
+import laas.openrobots.ontology.json.JSONObject;
 import laas.openrobots.ontology.modules.IModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
@@ -48,6 +52,7 @@ import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
+import laas.openrobots.ontology.types.Policy;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
 
 
@@ -85,6 +90,8 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 			
 			//Add myself as the first agent.
 			agents.put("myself", new AgentModel("myself", oro));
+			//Add "default" as a synonym for "myself"
+			agents.put("default", agents.get("myself"));
 			
 			//Add equivalent concept to 'myself'
 			ExtendedIterator<? extends Resource> sameResource = oro.getResource("myself").listSameAs();
@@ -200,6 +207,68 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	}
 	/**************************************************************************/
 	
+
+	/** Generic knowledge revision request
+	 * @throws OntologyServerException 
+	 * @throws InconsistentOntologyException 
+	 * 
+	 */
+	@RPCMethod()
+	public void revise(Set<String> statements, String json_policy) throws IllegalStatementException, InvalidPolicyException, OntologyServerException, InconsistentOntologyException
+	{
+		Set<Statement> stmtsToRevise = new HashSet<Statement>();
+		
+		for (String rawStmt : statements) {
+			if (rawStmt == null)
+				throw new IllegalStatementException("Got a null statement to revise!");
+			Statement s = oro.createStatement(rawStmt);
+			stmtsToRevise.add(s);		
+		}
+		
+		Policy policy;
+		try {
+			policy = new Policy(new JSONObject(json_policy));
+		} catch (JSONException e) {
+			throw new InvalidPolicyException(e.getLocalizedMessage());
+		}
+				
+		String impacted_models = "all models";
+		if (!policy.getModels().isEmpty()) impacted_models = policy.getModels().toString();
+		
+		Logger.log("Knowledge revision (" + policy.getMethod().toString() + ") for " + impacted_models + "\n");
+					
+		for (Map.Entry<String, AgentModel> e : agents.entrySet()) {
+			if (policy.getModels().isEmpty() // All models must be revised
+				|| policy.getModels().contains(e.getKey())) {
+				
+				Logger.agent(e.getKey());
+				IOntologyBackend oro = e.getValue().model;
+				
+				switch (policy.getMethod()) {
+				case ADD:
+					oro.add(stmtsToRevise, policy.getMemoryProfile(), false);
+					break;
+				case SAFE_ADD:
+					oro.add(stmtsToRevise, policy.getMemoryProfile(), true);
+					break;
+				case RETRACT:
+					oro.remove(stmtsToRevise);
+					break;
+				case UPDATE:
+					oro.update(stmtsToRevise);
+					break;
+				case REVISION:
+				case SAFE_UPDATE:
+					throw new NotImplementedException("SAFE_UPDATE/REVISION methods are not implemented in oro-server");
+				default:
+					assert(false);
+				}
+			}
+		}
+		
+		Logger.agent(null); //Go back to the robot model
+	}
+
 	/** Add statements in a specific agent cognitive model.
 	 * 
 	 * @param id The id of the agent
