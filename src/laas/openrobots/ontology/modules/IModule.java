@@ -16,6 +16,7 @@
 
 package laas.openrobots.ontology.modules;
 
+import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.service.IServiceProvider;
 
 /**

@@ -16,21 +16,16 @@
 
 package laas.openrobots.ontology.tests;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-
-import org.junit.Test;
-
-import com.hp.hpl.jena.rdf.model.Statement;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -51,6 +46,10 @@ import laas.openrobots.ontology.modules.events.NewClassInstanceWatcher;
 import laas.openrobots.ontology.modules.events.OroEvent;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+
+import org.junit.Test;
+
+import com.hp.hpl.jena.rdf.model.Statement;
 
 /**
  * This class holds unit tests that cover the events feature in {@code oro-server}.<br/>

@@ -16,6 +16,12 @@
 
 package laas.openrobots.ontology.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.text.ParseException;
@@ -28,8 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import org.mindswap.pellet.exceptions.InconsistentOntologyException;
 
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.backends.IOntologyBackend;
@@ -50,10 +54,13 @@ import laas.openrobots.ontology.modules.alterite.AlteriteModule;
 import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+
+import org.junit.Test;
+import org.mindswap.pellet.exceptions.InconsistentOntologyException;
+
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
-
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.RSIterator;
@@ -61,13 +68,6 @@ import com.hp.hpl.jena.rdf.model.ReifiedStatement;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.shared.PropertyNotFoundException;
-
-import org.junit.Test;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * This class holds unit tests that cover most of the {@code oro-server} features.<br/>

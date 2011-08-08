@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Statement;
-
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
+
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
 
 public class Logger {
 

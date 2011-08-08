@@ -18,9 +18,7 @@ package laas.openrobots.ontology.helpers;
 
 import java.io.IOException;
 import java.io.StringWriter;
-
 import java.io.Writer;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

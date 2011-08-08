@@ -41,7 +41,6 @@ import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 import laas.openrobots.ontology.types.ResourceDescription;
 
-import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.rdf.model.Literal;
@@ -51,7 +50,6 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ResourceRequiredException;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 
 public class BaseModule implements IServiceProvider {

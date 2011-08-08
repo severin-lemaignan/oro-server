@@ -16,6 +16,8 @@
 
 package laas.openrobots.ontology.tests;
 
+import static org.junit.Assert.fail;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -24,21 +26,18 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Statement;
-
-import org.junit.Test;
-import static org.junit.Assert.fail;
-
 import laas.openrobots.ontology.OroServer;
 import laas.openrobots.ontology.PartialStatement;
 import laas.openrobots.ontology.backends.IOntologyBackend;
 import laas.openrobots.ontology.backends.OpenRobotsOntology;
 import laas.openrobots.ontology.exceptions.IllegalStatementException;
-import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidQueryException;
-
 import laas.openrobots.ontology.modules.memory.MemoryProfile;
+
+import org.junit.Test;
+
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
 
 
 /**

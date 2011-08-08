@@ -35,8 +35,9 @@ import laas.openrobots.ontology.exceptions.InconsistentOntologyException;
 import laas.openrobots.ontology.exceptions.InvalidEventDescriptorException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.exceptions.InvalidPolicyException;
-import laas.openrobots.ontology.exceptions.NotComparableException;import laas.openrobots.ontology.exceptions.NotImplementedException;
-
+import laas.openrobots.ontology.exceptions.InvalidQueryException;
+import laas.openrobots.ontology.exceptions.NotComparableException;
+import laas.openrobots.ontology.exceptions.NotImplementedException;
 import laas.openrobots.ontology.exceptions.OntologyServerException;
 import laas.openrobots.ontology.helpers.Helpers;
 import laas.openrobots.ontology.helpers.Logger;
@@ -45,6 +46,7 @@ import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.json.JSONException;
 import laas.openrobots.ontology.json.JSONObject;
 import laas.openrobots.ontology.modules.IModule;
+import laas.openrobots.ontology.modules.base.BaseModule;
 import laas.openrobots.ontology.modules.categorization.CategorizationModule;
 import laas.openrobots.ontology.modules.events.IEventConsumer;
 import laas.openrobots.ontology.modules.events.IWatcher;
@@ -53,8 +55,6 @@ import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.service.IServiceProvider;
 import laas.openrobots.ontology.service.RPCMethod;
 import laas.openrobots.ontology.types.Policy;
-import laas.openrobots.ontology.exceptions.InvalidQueryException;
-
 
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;

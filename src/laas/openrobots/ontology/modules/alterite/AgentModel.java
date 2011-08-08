@@ -24,10 +24,8 @@ import laas.openrobots.ontology.exceptions.IllegalStatementException;
 import laas.openrobots.ontology.exceptions.InvalidModelException;
 import laas.openrobots.ontology.helpers.Logger;
 import laas.openrobots.ontology.helpers.VerboseLevel;
-import laas.openrobots.ontology.modules.memory.MemoryProfile;
 import laas.openrobots.ontology.modules.events.EventModule;
 
-import org.mindswap.pellet.jena.PelletInfGraph;
 import org.mindswap.pellet.jena.PelletReasonerFactory;
 
 import com.hp.hpl.jena.ontology.OntModel;
@@ -36,7 +34,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.reasoner.ReasonerException;
 import com.hp.hpl.jena.shared.JenaException;
-import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.shared.NotFoundException;
 import com.hp.hpl.jena.util.FileManager;
 

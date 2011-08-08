@@ -33,7 +33,6 @@ import laas.openrobots.ontology.helpers.Namespaces;
 import laas.openrobots.ontology.helpers.VerboseLevel;
 import laas.openrobots.ontology.modules.events.IWatcher.EventType;
 
-
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
