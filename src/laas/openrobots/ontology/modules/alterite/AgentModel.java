@@ -141,7 +141,8 @@ public class AgentModel {
 		}
 		*/
 		
-		
+		// Performs an initial classification.
+		agentModel.checkConsistency();
 		
 		String defaultRobotId = parameters.getProperty("robot_id");
 		if (defaultRobotId != null) {
