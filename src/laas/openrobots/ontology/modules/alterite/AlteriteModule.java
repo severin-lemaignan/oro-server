@@ -207,6 +207,23 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 	}
 	/**************************************************************************/
 	
+	@RPCMethod(
+			category = "agents",
+			desc="Check the consistency of a specific agent model."
+	)
+	public boolean checkConsistencyForAgent(String id) throws AgentNotFoundException 
+	{
+		Logger.agent(id); //Tell the logger we are working on a specific agent model
+		
+		IOntologyBackend oro = getModelForAgent(id);
+		
+		boolean res = oro.checkConsistency();
+
+		Logger.agent(null); //Go back to the robot model
+		
+		return res;
+	}
+
 
 	/** Generic knowledge revision request
 	 * @throws OntologyServerException 
