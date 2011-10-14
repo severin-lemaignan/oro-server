@@ -304,6 +304,13 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			}
 
 		}
+		catch (ClassCastException cce) {
+			// No Pellet!
+			// Just skip explicit classification
+			Logger.log("Using internal reasoner. Assuming ontology is initially consistent.\n", 
+					VerboseLevel.WARNING);
+			isInInconsistentState = false;
+		}
 		catch (org.mindswap.pellet.exceptions.InconsistentOntologyException ioe) {
 			isInInconsistentState = true;
 			Logger.log("The ontology is in an inconsistent state!\n ", 
@@ -1159,7 +1166,6 @@ public class OpenRobotsOntology implements IOntologyBackend {
 			String defaultRobotId = parameters.getProperty("robot_id");
 			try {
 				if (defaultRobotId != null) {
-					//TODO workaround for https://softs.laas.fr/bugzilla/show_bug.cgi?id=171
 					onto.add(this.createStatement("myself owl:sameAs " + defaultRobotId));
 				}
 				onto.add(this.createStatement("myself rdf:type Robot"));
