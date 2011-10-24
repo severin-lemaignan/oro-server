@@ -19,7 +19,7 @@ However several bridges and wrapper to higher-level framework are available
 a YARP connector). New ones can be easily created on request.</p>
 
 <h2>List of available methods</h2>
-<i>(Last updated on 2011-07-03 12:58:47)</i>
+<i>(Last updated on 2011-10-24 10:56:23)</i>
 <ul class="RpcMethodsList">
 	<li>administration
 	<ul>
@@ -40,6 +40,7 @@ a YARP connector). New ones can be easily created on request.</p>
 </li>
 	<li>agents
 	<ul>
+	<li>{@linkplain laas.openrobots.ontology.modules.alterite.AlteriteModule#checkConsistencyForAgent(String) <em>checkConsistencyForAgent</em><i>(String)</i>}: Check the consistency of a specific agent model.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.alterite.AlteriteModule#safeAddForAgent(String, Set) <em>safeAddForAgent</em><i>(String, Set)</i>}: try to add news statements to a specific agent model in long term memory, if they don't lead to inconsistencies (return false if at least one stmt wasn't added).</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.alterite.AlteriteModule#safeAddForAgent(String, Set, String) <em>safeAddForAgent</em><i>(String, Set, String)</i>}: try to add news statements to a specific agent model with a specific memory profile, if they don't lead to inconsistencies (return false if at least one stmt wasn't added).</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.alterite.AlteriteModule#discriminateForAgent(String, Set) <em>discriminateForAgent</em><i>(String, Set)</i>}: returns a list of properties that helps to differentiate individuals for a specific agent.</li>
@@ -66,6 +67,7 @@ a YARP connector). New ones can be easily created on request.</p>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#getLabel(String) <em>getLabel</em><i>(String)</i>}: return the label of a concept, if available.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String) <em>lookup</em><i>(String)</i>}: try to identify a concept from its id or label, and return it, along with its type (class, instance, object_property, datatype_property).</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#lookup(String, String) <em>lookup</em><i>(String, String)</i>}: try to identify a concept from its id or label and its type (class, instance, object_property, datatype_property).</li>
+	<li>{@linkplain laas.openrobots.ontology.modules.alterite.AlteriteModule#revise(Set, String) <em>revise</em><i>(Set, String)</i>}: </li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set) <em>add</em><i>(Set)</i>}: adds one or several statements (triplets S-P-O) to the robot model, in long term memory.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#add(Set, String) <em>add</em><i>(Set, String)</i>}: adds one or several statements (triplets S-P-O) to the robot model associated with a memory profile.</li>
 	<li>{@linkplain laas.openrobots.ontology.modules.base.BaseModule#clear(Set) <em>clear</em><i>(Set)</i>}: removes statements in the given set</li>
