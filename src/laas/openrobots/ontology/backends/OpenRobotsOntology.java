@@ -865,6 +865,8 @@ public class OpenRobotsOntology implements IOntologyBackend {
 		
 		onto.remove(new ArrayList<Statement>(stmts));
 		
+		((PelletInfGraph) onto.getGraph()).reload();
+		
 		//notify the events subscribers.
 		if (!isInInconsistentState) onModelChange();
 		
