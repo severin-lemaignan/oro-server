@@ -46,7 +46,9 @@ import com.hp.hpl.jena.rdf.model.Resource;
 
 public class EventProcessor {
 	
+	public final int PROCESS_DELAY = 200; //in ms between two events processing
 	private Set<EventType> supportedEventTypes;
+	private long lastProcessTimestamp;
 	IOntologyBackend onto;
 	
 	/**
@@ -262,6 +264,9 @@ public class EventProcessor {
 	private Set<WatcherHolder> watchers;
 		
 	public EventProcessor(IOntologyBackend onto) {
+
+		this.lastProcessTimestamp = System.currentTimeMillis();
+
 		this.onto = onto;
 
 		this.watchers = new HashSet<WatcherHolder>();
@@ -274,6 +279,10 @@ public class EventProcessor {
 	}
 
 	public void process() {
+
+		if (System.currentTimeMillis() - this.lastProcessTimestamp < PROCESS_DELAY) return;
+
+		this.lastProcessTimestamp = System.currentTimeMillis();
 				
 		Set<WatcherHolder> watchersToBeRemoved = new HashSet<WatcherHolder>();
 		
