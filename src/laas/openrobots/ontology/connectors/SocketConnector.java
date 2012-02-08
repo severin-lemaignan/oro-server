@@ -293,6 +293,7 @@ public class SocketConnector implements IConnector, Runnable {
 					break;
 	    		}
 
+				long timeStartParsingReq = System.currentTimeMillis();
 				
 				req = parseBuffer(null); //First, see if we have a pending request from previous socket reads.
 				if (req == null) {
@@ -319,6 +320,10 @@ public class SocketConnector implements IConnector, Runnable {
 					}
 				}
 	        
+				if (System.currentTimeMillis() - timeStartParsingReq > 50) { // If we take more than 50ms to parse the socket stream, smthg is wrong somewhere!
+		        	Logger.log("oro-server took " + (System.currentTimeMillis() - timeStartParsingReq) + "ms to parse the socket stream! Too much!\n", VerboseLevel.WARNING);
+				}
+
 	    		if (req != null) 
 	    		{
 		    		timeLastActivity = System.currentTimeMillis();
