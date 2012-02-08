@@ -294,7 +294,10 @@ public class SocketConnector implements IConnector, Runnable {
 	    		}
 
 				long timeStartParsingReq = System.currentTimeMillis();
-				
+			
+				if (remainsOfMyBuffer.length() > 500) {
+								Logger.log("Incoming socket buffer overloaded! Current length: " +  remainsOfMyBuffer.length(), VerboseLevel.WARNING);
+				}
 				req = parseBuffer(null); //First, see if we have a pending request from previous socket reads.
 				if (req == null) {
 			
