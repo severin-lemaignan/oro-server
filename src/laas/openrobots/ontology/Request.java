@@ -34,7 +34,9 @@ public class Request {
 	}
 	
 	public void execute() {
-		
+
+		long startTime = System.currentTimeMillis();
+
 		String res = "ok\n";
 		/** Now, do the invocation **/
 		
@@ -111,7 +113,10 @@ public class Request {
 					 "No way to serialize return value of method '" + m.getName() + 
 					 "' (return type is " + m.getReturnType().getName() + ").";	
 			}
-			
+			else {
+		        Logger.log("Method " + m.getName() + " took " + (System.currentTimeMillis() - startTime) + "ms to execute.\n", VerboseLevel.DEBUG);
+			}
+
 
 			
 		} catch (IllegalArgumentException e) {
