@@ -311,6 +311,14 @@ public class BaseModule implements IServiceProvider {
 		oro.remove(stmtsToRemove);
 	}
 	
+
+	@RPCMethod(
+			desc="removes statements in the given set"
+	)
+	public void retract(Set<String> stmts) throws IllegalStatementException, OntologyServerException {
+		clear(stmts);
+	}
+	
 	@RPCMethod(
 			desc="checks that one or several statements are asserted or can be inferred from the ontology"
 	)
@@ -698,6 +706,14 @@ public class BaseModule implements IServiceProvider {
 		}
 		
 		return result;
+	}
+	
+	@RPCMethod(
+			category="querying",
+			desc = "returns the set of asserted and inferred statements whose the given node is part of. It represents the usages of a resource."
+	)
+	public Set<String> about(String lex_resource) throws NotFoundException {
+		return getInfos(lex_resource);
 	}
 	
 	/** Returns all the super classes of a given class, as asserted or inferred from the ontology.

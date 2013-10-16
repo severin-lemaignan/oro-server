@@ -450,6 +450,26 @@ public class OroServer implements IServiceProvider {
 		serverInitialization(ServerParameters);
 	}
 	
+	@RPCMethod(
+			category = "administration",
+			desc = "Reload the base ontologies, discarding all inserted of " +
+					"removed statements, in every models" 
+	)
+	public void clear() throws OntologyServerException {
+		
+		reset();
+		
+	}
+	
+	@RPCMethod(
+			category = "administration",
+			desc = "returns the name and version of the server"
+	)
+	public String hello() {
+		
+		return "oro-server " + VERSION;
+	}
+	
 	/**
 	 * Returns several statistics on the server.
 	 * 
@@ -584,6 +604,14 @@ public class OroServer implements IServiceProvider {
 	        help.add(m);
 	    }
 		return help;
+	}
+	
+	@RPCMethod(
+			category = "administration",
+			desc = "returns a raw list of available methods."
+	)
+	public Set<String> methods() {
+		return listSimpleMethods();
 	}
 	
 	@RPCMethod(
