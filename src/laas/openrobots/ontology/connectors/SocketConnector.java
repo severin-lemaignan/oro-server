@@ -408,7 +408,7 @@ public class SocketConnector implements IConnector, Runnable {
 				  res = Arrays.asList(rawReq.split("\n"));
 				  
 				  if (req.length() > i)
-					  remainsOfMyBuffer = req.substring(i + MESSAGE_TERMINATOR.length() + 1);
+					  remainsOfMyBuffer = req.substring(i + MESSAGE_TERMINATOR.length()).replaceAll("\n$", "");
 				  
 				  return res;
 			  }
