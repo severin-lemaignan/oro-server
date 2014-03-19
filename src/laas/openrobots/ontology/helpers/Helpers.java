@@ -576,7 +576,7 @@ public class Helpers {
 			boolean isValidMap = true;
 			boolean isValidSet = true;
 			
-			if (val.isEmpty()) {
+			if (val.isEmpty() || val.equalsIgnoreCase("null")) {
 				if (Set.class.isAssignableFrom(type))
 					return (T) new HashSet<String>();
 				if (Map.class.isAssignableFrom(type))

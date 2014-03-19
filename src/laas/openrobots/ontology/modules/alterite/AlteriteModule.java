@@ -548,6 +548,49 @@ public class AlteriteModule implements IModule, IServiceProvider, IEventConsumer
 									Set<String> filters) 
 						throws IllegalStatementException, OntologyServerException
 	{
+
+
+		Set<String> varNames = new HashSet<String>();
+		varNames.add(varName);
+		
+		Set<String> agents = new HashSet<String>();
+		agents.add(id);
+		
+		return find(varNames, statements, filters, agents);
+	}
+
+	@RPCMethod(
+			category = "agents",
+			desc="tries to identify a resource given a set of partially defined " +
+					"statements and restrictions in an specific agent model."
+	)
+	public Set<String> find(Set<String> varNames,	
+							Set<String> statements, 
+							Set<String> filters,
+							Set<String> agents)
+			throws IllegalStatementException, OntologyServerException
+
+	{
+		if (varNames.size() > 1)
+		{
+			throw new NotImplementedException("find can be executed only on a single agent model");
+		}
+
+		if (varNames.size() == 0) {
+			throw new OntologyServerException("One unbound variable must be given to execute a 'find'");
+		}
+		
+		String varName = Helpers.pickRandom(varNames);
+		
+		if (agents.size() > 1)
+		{
+			throw new NotImplementedException("find can be executed only on a single agent model");
+		}
+		String id = "myself";
+		if (agents.size() > 0) {
+			id = Helpers.pickRandom(agents);
+		}
+		
 		Logger.agent(id); //Tell the logger we are working on a specific agent model
 		
 		Set<String> res = new HashSet<String>();
